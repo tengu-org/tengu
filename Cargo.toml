@@ -1,0 +1,6 @@
+[workspace]
+members = ["tengu-wgpu-util", "tengu-tensor"]
+resolver = "2"
+
+[workspace.dependencies]
+wgpu = "22.1.0"
