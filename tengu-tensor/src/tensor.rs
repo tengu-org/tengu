@@ -93,7 +93,7 @@ impl<'a> Tensor<'a> {
             usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
-        self.context.queue().compute(self.context.device(), |encoder| {
+        self.context.compute(|encoder| {
             encoder.copy_buffer_to_buffer(&self.buffer, 0, &staging_buffer, 0, size);
         });
         staging_buffer

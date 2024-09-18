@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use crate::Device;
 
 pub struct Queue {
@@ -18,5 +20,12 @@ impl Queue {
         });
         f(&mut encoder);
         self.queue.submit(Some(encoder.finish()));
+    }
+}
+
+impl Deref for Queue {
+    type Target = wgpu::Queue;
+    fn deref(&self) -> &Self::Target {
+        &self.queue
     }
 }

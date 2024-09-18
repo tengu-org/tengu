@@ -9,13 +9,16 @@ pub struct Context {
 
 impl Context {
     pub async fn new() -> Self {
-        let instance = WGPU::instance().with_backends(wgpu::Backends::PRIMARY);
-        let adapter = instance
-            .builder()
-            .with_default_adapter()
+        let instance = WGPU::builder().backends(wgpu::Backends::PRIMARY).build();
+        let (device, queue) = instance
+            .adapter()
+            .build()
             .await
-            .expect("Failed to find an appropriate adapter");
-        let (device, queue) = adapter.request_device().await.expect("Failed to create device");
+            .expect("Failed to find an appropriate adapter")
+            .device()
+            .build()
+            .await
+            .expect("Failed to create device");
         Self { device, queue }
     }
 
@@ -29,5 +32,16 @@ impl Context {
 
     pub fn queue(&self) -> &Queue {
         &self.queue
+    }
+
+    pub fn compute<F>(&self, f: F)
+    where
+        F: FnOnce(&mut wgpu::CommandEncoder),
+    {
+        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Command Encoder"),
+        });
+        f(&mut encoder);
+        self.queue.submit(Some(encoder.finish()));
     }
 }

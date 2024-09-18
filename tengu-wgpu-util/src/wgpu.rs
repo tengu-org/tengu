@@ -1,78 +1,28 @@
-use crate::{Device, Error, Queue, Surface};
+use bon::bon;
 
-// Adapter builder implementation.
+use crate::{adapter::AdapterBuilder, Result, Surface};
 
-pub struct AdapterBuilder<'surface, 'window> {
+pub struct WGPU {
     instance: wgpu::Instance,
-    request_adapter_options: wgpu::RequestAdapterOptions<'surface, 'window>,
 }
 
-impl<'surface, 'window> AdapterBuilder<'surface, 'window> {
-    pub fn new(instance: wgpu::Instance) -> Self {
-        Self {
-            instance,
-            request_adapter_options: wgpu::RequestAdapterOptions::default(),
-        }
+#[bon]
+impl WGPU {
+    #[builder]
+    pub fn new(backends: wgpu::Backends) -> WGPU {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+            backends,
+            ..Default::default()
+        });
+        WGPU { instance }
     }
 
-    pub fn with_surface(mut self, surface: &'surface Surface<'window>) -> Self {
-        self.request_adapter_options.compatible_surface = Some(surface);
-        self
+    pub fn create_surface<'window>(&self, target: impl Into<wgpu::SurfaceTarget<'window>>) -> Result<Surface<'window>> {
+        let surface = self.instance.create_surface(target)?;
+        Ok(Surface::new(surface))
     }
 
-    pub async fn with_default_adapter(self) -> Result<DeviceBuilder, Error> {
-        let adapter = self
-            .instance
-            .request_adapter(&self.request_adapter_options)
-            .await
-            .ok_or(Error::CreateAdapterError)?;
-        Ok(DeviceBuilder {
-            adapter,
-            features: wgpu::Features::default(),
-            limits: wgpu::Limits::default(),
-        })
-    }
-}
-
-// Device builder implementation.
-
-pub struct DeviceBuilder {
-    adapter: wgpu::Adapter,
-    features: wgpu::Features,
-    limits: wgpu::Limits,
-}
-
-impl DeviceBuilder {
-    pub async fn request_device(self) -> Result<(Device, Queue), Error> {
-        let (device, queue) = self
-            .adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: None,
-                    required_features: self.features,
-                    required_limits: self.limits,
-                    memory_hints: wgpu::MemoryHints::default(),
-                },
-                None, // Trace path
-            )
-            .await?;
-        let device = Device::new(self.adapter, device);
-        let queue = Queue::new(queue);
-        Ok((device, queue))
-    }
-
-    pub fn with_features(mut self, features: wgpu::Features) -> Self {
-        self.features |= features;
-        self
-    }
-
-    pub fn with_limits(mut self, limits: wgpu::Limits) -> Self {
-        self.limits = limits;
-        self
-    }
-
-    pub fn with_webgl_limits(mut self) -> Self {
-        self.limits = wgpu::Limits::downlevel_webgl2_defaults();
-        self
+    pub fn adapter<'surface, 'window>(self) -> AdapterBuilder<'surface, 'window> {
+        AdapterBuilder::new(self.instance)
     }
 }

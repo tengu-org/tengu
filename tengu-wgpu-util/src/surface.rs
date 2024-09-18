@@ -43,7 +43,7 @@ pub struct ConfigBuilder<'window> {
 
 impl<'window> ConfigBuilder<'window> {
     pub fn configure(self, device: &Device) -> Result<BoundSurface<'window>> {
-        let surface_caps = self.surface.get_capabilities(device.parent_adapter());
+        let surface_caps = self.surface.get_capabilities(device.adapter());
         let format = surface_caps.formats.first().copied().ok_or(Error::CreateAdapterError)?;
         let alpha_mode = surface_caps
             .alpha_modes

@@ -98,7 +98,7 @@ pub async fn execute_shader(
         });
 
     // Submit the commands
-    context.queue().compute(context.device(), |encoder| {
+    context.compute(|encoder| {
         let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("Compute Pass"),
             timestamp_writes: None,
