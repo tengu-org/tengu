@@ -20,10 +20,10 @@ impl Tengu {
     }
 
     pub fn tensor(self: &Arc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder {
-        TensorBuilder::new(Arc::clone(self), shape)
+        TensorBuilder::new(self, shape)
     }
 
-    pub fn graph(self: Arc<Self>) -> Graph {
-        Graph::new(Arc::clone(&self))
+    pub fn graph(self: &Arc<Self>) -> Graph {
+        Graph::new(self)
     }
 }

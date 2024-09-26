@@ -11,10 +11,14 @@ pub struct TensorBuilder {
 }
 
 impl TensorBuilder {
-    pub fn new(tengu: Arc<Tengu>, shape: impl Into<Vec<usize>>) -> Self {
+    pub fn new(tengu: &Arc<Tengu>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
-        Self { shape, count, tengu }
+        Self {
+            shape,
+            count,
+            tengu: Arc::clone(tengu),
+        }
     }
 
     pub fn empty<T>(self) -> Tensor<T> {
@@ -78,7 +82,7 @@ impl<T> Tensor<T> {
     }
 
     pub fn probe(&mut self) -> &Probe<T> {
-        self.probe = Some(Probe::new(Arc::clone(&self.tengu), self.count));
+        self.probe = Some(Probe::new(&self.tengu, self.count));
         self.probe
             .as_ref()
             .expect("tensor probe should be non-empty after setting it")
@@ -95,7 +99,7 @@ impl<T: 'static> Emit for Tensor<T> {
 
 impl<T> Probable<T> for Tensor<T> {
     fn probe(&mut self) -> &Probe<T> {
-        let probe = Probe::new(Arc::clone(&self.tengu), self.count);
+        let probe = Probe::new(&self.tengu, self.count);
         self.probe = Some(probe);
         self.probe.as_ref().expect("Should have probe after setting one")
     }

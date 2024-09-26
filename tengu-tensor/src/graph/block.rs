@@ -10,18 +10,17 @@ pub struct Block<T> {
 }
 
 impl<T: 'static> Block<T> {
-    pub fn new(tengu: Arc<Tengu>) -> Self {
+    pub fn new(tengu: &Arc<Tengu>) -> Self {
         Self {
-            tengu,
+            tengu: Arc::clone(tengu),
             computations: Vec::new(),
         }
     }
 
-    pub fn add_computation(&mut self, expression: Expression<T>) -> &Computation<T> {
+    pub fn add_computation(&mut self, expression: Expression<T>) -> &mut Computation<T> {
+        self.computations.push(Computation::new(&self.tengu, expression));
         self.computations
-            .push(Computation::new(Arc::clone(&self.tengu), expression));
-        self.computations
-            .last()
+            .last_mut()
             .expect("Should have a least one computation after adding a new one")
     }
 

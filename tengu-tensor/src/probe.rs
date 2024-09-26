@@ -18,11 +18,11 @@ pub struct Probe<T> {
 }
 
 impl<T> Probe<T> {
-    pub fn new(tengu: Arc<Tengu>, count: usize) -> Self {
+    pub fn new(tengu: &Arc<Tengu>, count: usize) -> Self {
         let size = count.bytes();
         let buffer = tengu.device().buffer::<T>(BufferUsage::Staging).empty(size);
         Self {
-            tengu,
+            tengu: Arc::clone(tengu),
             buffer,
             phantom: PhantomData,
         }

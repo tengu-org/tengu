@@ -30,20 +30,20 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub fn new(tengu: Arc<Tengu>) -> Self {
+    pub fn new(tengu: &Arc<Tengu>) -> Self {
         Self {
-            tengu,
+            tengu: Arc::clone(tengu),
             blocks: Vec::new(),
         }
     }
 
-    pub fn add_block<T: 'static>(&mut self) -> &Block<T> {
-        let block = Block::<T>::new(Arc::clone(&self.tengu));
+    pub fn add_block<T: 'static>(&mut self) -> &mut Block<T> {
+        let block = Block::<T>::new(&self.tengu);
         self.blocks.push(Box::new(block));
         self.blocks
-            .last()
+            .last_mut()
             .expect("Graph blocks should not be empty after inserting a new block")
-            .downcast_ref()
+            .downcast_mut()
             .expect("Added block should have correct type after downcasting")
     }
 

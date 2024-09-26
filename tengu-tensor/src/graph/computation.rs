@@ -10,10 +10,10 @@ pub struct Computation<T> {
 }
 
 impl<T: 'static> Computation<T> {
-    pub fn new(tengu: Arc<Tengu>, expression: Expression<T>) -> Self {
+    pub fn new(tengu: &Arc<Tengu>, expression: Expression<T>) -> Self {
         let output = tengu.tensor(expression.shape()).empty();
         Self {
-            tengu,
+            tengu: Arc::clone(tengu),
             expression,
             output,
             probe: None,
@@ -43,7 +43,7 @@ impl<T: 'static> Emit for Computation<T> {
 
 impl<T> Probable<T> for Computation<T> {
     fn probe(&mut self) -> &Probe<T> {
-        let probe = Probe::new(Arc::clone(&self.tengu), self.output.count());
+        let probe = Probe::new(&self.tengu, self.output.count());
         self.probe = Some(probe);
         self.probe.as_ref().expect("Should have probe after setting one")
     }
