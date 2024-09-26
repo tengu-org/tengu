@@ -1,91 +1,80 @@
-mod bind_entry;
-mod layout_entry;
-
-use bind_entry::BindEntry;
-use layout_entry::LayoutEntry;
-
-use crate::{Buffer, Device};
+use crate::{Buffer, BufferUsage, Device};
 
 pub struct BindGroup<'a, 'device> {
-    layout_entries: Vec<LayoutEntry>,
-    bind_entries: Vec<BindEntry<'a>>,
+    buffers: Vec<&'a Buffer>,
+    layout_entries: Vec<wgpu::BindGroupLayoutEntry>,
+    bind_entries: Vec<wgpu::BindGroupEntry<'a>>,
+    counter: usize,
     device: &'device Device,
 }
 
 impl<'a, 'device> BindGroup<'a, 'device> {
-    pub fn group(self) -> wgpu::BindGroup {
-        let layout_entries = self
-            .layout_entries
-            .into_iter()
-            .map(|le| le.into_entry())
-            .collect::<Vec<_>>();
-        let bind_entries = self
-            .bind_entries
-            .into_iter()
-            .map(|be| be.into_entry())
-            .collect::<Vec<_>>();
-        let layout = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: None,
-            entries: &layout_entries,
-        });
-        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: None,
-            layout: &layout,
-            entries: &bind_entries,
-        })
-    }
-}
-
-// Builder implementation
-
-pub struct BindGroupBuilder<'a, 'device> {
-    buffers: Vec<&'a Buffer>,
-    layout_entries: Vec<LayoutEntry>,
-    bind_entries: Vec<BindEntry<'a>>,
-    counter: u32,
-    device: &'device Device,
-}
-
-impl<'a, 'device> BindGroupBuilder<'a, 'device> {
     pub fn new(device: &'device Device) -> Self {
         Self {
             buffers: Vec::new(),
             layout_entries: Vec::new(),
             bind_entries: Vec::new(),
-            counter: 0u32,
+            counter: 0,
             device,
         }
     }
 
-    pub fn add_input(mut self, buffer: &'a Buffer) -> Self {
-        self.layout_entries.push(LayoutEntry::new(buffer));
-        self.bind_entries.push(BindEntry::new(buffer, self.counter));
+    pub fn add_entry(mut self, buffer: &'a Buffer) -> Self {
+        self.layout_entries.push(create_layout_entry(buffer));
+        self.bind_entries.push(create_bind_entry(buffer, self.counter));
         self.buffers.push(buffer);
         self.counter += 1;
         self
     }
 
-    pub fn add_inputs(mut self, buffers: &'a [Buffer]) -> Self {
-        self.layout_entries.extend(buffers.into_iter().map(LayoutEntry::new));
+    pub fn add_entries(mut self, buffers: &'a [Buffer]) -> Self {
+        self.layout_entries.extend(buffers.into_iter().map(create_layout_entry));
         self.bind_entries.extend(
             buffers
                 .into_iter()
                 .enumerate()
-                .map(|(idx, buffer)| BindEntry::new(buffer, self.counter + idx as u32)),
+                .map(|(idx, buffer)| create_bind_entry(buffer, self.counter + idx)),
         );
         self.buffers.extend(buffers);
-        self.counter += buffers.len() as u32;
+        self.counter += buffers.len();
         self
     }
 
-    pub fn build(mut self, output: &'a Buffer) -> BindGroup<'a, 'device> {
-        self.layout_entries.push(LayoutEntry::new(output));
-        self.bind_entries.push(BindEntry::new(output, self.counter + 1));
-        self.buffers.push(output);
-        BindGroup {
-            device: self.device,
-            layout_entries: self.layout_entries,
-            bind_entries: self.bind_entries,
-        }
+    pub fn build(self) -> wgpu::BindGroup {
+        let layout = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: None,
+            entries: &self.layout_entries,
+        });
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &layout,
+            entries: &self.bind_entries,
+        })
+    }
+}
+
+fn create_layout_entry(buffer: &Buffer) -> wgpu::BindGroupLayoutEntry {
+    let read_only = match buffer.usage() {
+        BufferUsage::Read => true,
+        BufferUsage::Write => false,
+        BufferUsage::ReadWrite => false,
+        BufferUsage::Staging => panic!("staging buffers should not belong to a bind group"),
+    };
+    wgpu::BindGroupLayoutEntry {
+        binding: 0,
+        visibility: wgpu::ShaderStages::COMPUTE,
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Storage { read_only },
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        },
+        count: None,
+    }
+}
+
+fn create_bind_entry(buffer: &Buffer, idx: usize) -> wgpu::BindGroupEntry {
+    wgpu::BindGroupEntry {
+        binding: idx as u32,
+        resource: buffer.as_entire_binding(),
     }
 }

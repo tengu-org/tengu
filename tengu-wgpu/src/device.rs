@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{bind_group::BindGroupBuilder, BufferBuilder, BufferUsage, Error};
+use crate::{bind_group::BindGroup, BufferBuilder, BufferUsage, Error};
 
 pub struct Device {
     device: wgpu::Device,
@@ -34,8 +34,8 @@ impl Device {
         })
     }
 
-    pub fn bind_group(&self) -> BindGroupBuilder {
-        BindGroupBuilder::new(self)
+    pub fn bind_group(&self) -> BindGroup {
+        BindGroup::new(self)
     }
 }
 
