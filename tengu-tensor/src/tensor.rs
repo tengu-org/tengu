@@ -1,9 +1,7 @@
 use random_string::charsets::ALPHA;
 use std::{ops::Add, sync::Arc};
-
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::probe::impl_probable;
 use crate::{Emit, Expression, Probable, Probe, Tengu};
 
 pub struct TensorBuilder {
@@ -95,7 +93,13 @@ impl<T: 'static> Emit for Tensor<T> {
     }
 }
 
-impl_probable!(Tensor<T>);
+impl<T> Probable<T> for Tensor<T> {
+    fn probe(&mut self) -> &Probe<T> {
+        let probe = Probe::new(Arc::clone(&self.tengu), self.count);
+        self.probe = Some(probe);
+        self.probe.as_ref().expect("Should have probe after setting one")
+    }
+}
 
 // Operations
 

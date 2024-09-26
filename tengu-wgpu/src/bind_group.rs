@@ -28,10 +28,10 @@ impl<'a, 'device> BindGroup<'a, 'device> {
     }
 
     pub fn add_entries(mut self, buffers: &'a [Buffer]) -> Self {
-        self.layout_entries.extend(buffers.into_iter().map(create_layout_entry));
+        self.layout_entries.extend(buffers.iter().map(create_layout_entry));
         self.bind_entries.extend(
             buffers
-                .into_iter()
+                .iter()
                 .enumerate()
                 .map(|(idx, buffer)| create_bind_entry(buffer, self.counter + idx)),
         );

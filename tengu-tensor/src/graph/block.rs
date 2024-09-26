@@ -17,9 +17,12 @@ impl<T: 'static> Block<T> {
         }
     }
 
-    pub fn add_computation(&mut self, expression: Expression<T>) {
+    pub fn add_computation(&mut self, expression: Expression<T>) -> &Computation<T> {
         self.computations
             .push(Computation::new(Arc::clone(&self.tengu), expression));
+        self.computations
+            .last()
+            .expect("Should have a least one computation after adding a new one")
     }
 
     fn declaration(&self) -> String {
