@@ -1,4 +1,4 @@
-use crate::{Computation, Tensor};
+use crate::{Emit, Tensor};
 
 use super::Expression;
 
@@ -27,16 +27,16 @@ impl<T> AddExpression<T> {
         }
     }
 
-    pub fn collect_inputs<'a>(&'a self, inputs: &mut Vec<&'a Tensor<T>>) {
+    pub(crate) fn collect_inputs<'a>(&'a self, inputs: &mut Vec<&'a Tensor<T>>) {
         self.lhs.collect_inputs(inputs);
         self.rhs.collect_inputs(inputs);
     }
 }
 
-impl<'a, T> Computation for AddExpression<T> {
-    fn emit(&self, idx: &str) -> String {
-        let lhs = self.lhs.emit(idx);
-        let rhs = self.rhs.emit(idx);
-        format!("({lhs}[{idx}] + {rhs}[{idx}])")
+impl<'a, T: 'static> Emit for AddExpression<T> {
+    fn emit(&self) -> String {
+        let lhs = self.lhs.emit();
+        let rhs = self.rhs.emit();
+        format!("({lhs}[idx] + {rhs}[idx])")
     }
 }

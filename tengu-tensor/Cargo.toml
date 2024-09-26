@@ -12,6 +12,8 @@ flume = "0.11.0"
 thiserror = "1.0.63"
 anyhow = "1.0.89"
 random-string = "1.1.0"
+downcast-rs = "1.2.1"
+itertools = "0.13.0"
 
 [dev-dependencies]
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }

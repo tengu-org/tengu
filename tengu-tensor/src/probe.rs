@@ -3,9 +3,27 @@ use std::sync::Arc;
 
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::Error;
-use crate::Result;
-use crate::Tengu;
+use crate::{Error, Result, Tengu};
+
+pub trait Probable<T> {
+    fn attach_probe(&mut self, tengu: Arc<Tengu>) -> &Probe<T>;
+}
+
+macro_rules! impl_probable {
+    ($type:ty) => {
+        impl<T> Probable<T> for $type {
+            fn attach_probe(&mut self, tengu: Arc<Tengu>) -> &Probe<T> {
+                let probe = Probe::new(Arc::clone(&tengu), self.count());
+                self.probe = Some(probe);
+                self.probe.as_ref().expect("Should have probe after setting one")
+            }
+        }
+    };
+}
+
+pub(crate) use impl_probable;
+
+// Probe implementation
 
 pub struct Probe<T> {
     buffer: Buffer,

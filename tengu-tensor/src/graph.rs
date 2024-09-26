@@ -1,17 +1,19 @@
 use std::sync::Arc;
 
 use block::Block;
+use computation::Computation;
 
-use crate::{expression::Expression, Computation, Tengu};
+use crate::{Emit, Tengu};
 
 mod block;
+mod computation;
 
-pub struct Graph<'a> {
+pub struct Graph {
     tengu: Arc<Tengu>,
-    blocks: Vec<Box<dyn Computation + 'a>>,
+    blocks: Vec<Box<dyn Emit>>,
 }
 
-impl<'a> Graph<'a> {
+impl Graph {
     pub fn new(tengu: Arc<Tengu>) -> Self {
         Self {
             tengu,
@@ -19,11 +21,13 @@ impl<'a> Graph<'a> {
         }
     }
 
-    pub fn add_block<T: 'a>(&mut self, expression: Expression<T>) -> &Box<dyn Computation + 'a> {
-        let block = Block::new(Arc::clone(&self.tengu), expression);
+    pub fn add_block<T: 'static>(&mut self) -> &Block<T> {
+        let block = Block::<T>::new(Arc::clone(&self.tengu));
         self.blocks.push(Box::new(block));
         self.blocks
             .last()
-            .expect("Graph blocks should not be mpty after inserting a new block")
+            .expect("Graph blocks should not be empty after inserting a new block")
+            .downcast_ref()
+            .expect("Added block should have correct type after downcasting")
     }
 }

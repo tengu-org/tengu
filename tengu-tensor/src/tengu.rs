@@ -23,7 +23,7 @@ impl Tengu {
         TensorBuilder::new(Arc::clone(self), shape)
     }
 
-    pub fn graph<'a>(self: Arc<Self>) -> Graph<'a> {
-        todo!();
+    pub fn graph(self: Arc<Self>) -> Graph {
+        Graph::new(Arc::clone(&self))
     }
 }

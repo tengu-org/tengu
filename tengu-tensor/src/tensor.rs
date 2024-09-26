@@ -1,8 +1,10 @@
 use random_string::charsets::ALPHA;
 use std::{ops::Add, sync::Arc};
+
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::{expression::add::AddExpression, tengu::Tengu, Computation, Expression, Probe};
+use crate::probe::impl_probable;
+use crate::{Emit, Expression, Probable, Probe, Tengu};
 
 pub struct TensorBuilder {
     shape: Vec<usize>,
@@ -85,27 +87,28 @@ impl<T> Tensor<T> {
     }
 }
 
-impl<T> Computation for Tensor<T> {
-    fn emit(&self, idx: &str) -> String {
-        format!("{label}[{idx}]", label = self.label.clone())
+// Trait implementations
+
+impl<T: 'static> Emit for Tensor<T> {
+    fn emit(&self) -> String {
+        format!("{label}[idx]", label = self.label.clone())
     }
 }
+
+impl_probable!(Tensor<T>);
 
 // Operations
 
 impl<T> Tensor<T> {
     pub fn add(self, other: Tensor<T>) -> Expression<T> {
-        let lhs = Expression::Tensor(self);
-        let rhs = Expression::Tensor(other);
-        let add_expression = AddExpression::new(lhs, rhs);
-        Expression::Add(add_expression)
+        Expression::add(self, other)
     }
 }
 
 impl<T> Add for Tensor<T> {
-    type Output = Tensor<T>;
+    type Output = Expression<T>;
 
-    fn add(self, _other: Tensor<T>) -> Tensor<T> {
-        todo!();
+    fn add(self, other: Tensor<T>) -> Self::Output {
+        self.add(other)
     }
 }

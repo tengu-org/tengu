@@ -1,48 +1,55 @@
+use itertools::Itertools;
 use std::sync::Arc;
 
-use crate::{expression::Expression, Computation, Tengu, Tensor};
+use super::Computation;
+use crate::{expression::Expression, Emit, Tengu};
 
 pub struct Block<T> {
-    expression: Expression<T>,
-    output: Tensor<T>,
+    tengu: Arc<Tengu>,
+    computations: Vec<Computation<T>>,
 }
 
-impl<T> Block<T> {
-    pub fn new(tengu: Arc<Tengu>, expression: Expression<T>) -> Self {
-        let output = tengu.tensor(expression.shape()).empty();
-        Self { expression, output }
+impl<T: 'static> Block<T> {
+    pub fn new(tengu: Arc<Tengu>) -> Self {
+        Self {
+            tengu,
+            computations: Vec::new(),
+        }
+    }
+
+    pub fn add_computation(&mut self, expression: Expression<T>) {
+        self.computations
+            .push(Computation::new(Arc::clone(&self.tengu), expression));
     }
 
     fn declaration(&self) -> String {
         let group = 0; // TODO: Should we increment this somewhere?
-        self.expression
-            .inputs()
+        self.computations
             .iter()
-            .enumerate()
-            .map(|(binding, tensor)| tensor.declaration(group, binding))
-            .collect::<Vec<_>>()
+            .map(|computation| computation.declarations(group))
+            .concat()
+            .values()
             .join("\n")
     }
 
-    fn body(&self, idx: &str) -> String {
+    fn body(&self) -> String {
         format!(
             r"
             @compute
             @workgroup_size(64)
             fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {{
                 let idx = global_id.x;
-                {} = {}
+                {}
             }}",
-            self.output.emit(idx),
-            self.expression.emit(idx)
+            self.computations.iter().map(|c| c.emit()).join("\n"),
         )
     }
 }
 
-impl<T> Computation for Block<T> {
-    fn emit(&self, idx: &str) -> String {
+impl<T: 'static> Emit for Block<T> {
+    fn emit(&self) -> String {
         let declaration = self.declaration();
-        let body = self.body(idx);
+        let body = self.body();
         format!("{declaration}\n{body}")
     }
 }
