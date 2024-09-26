@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{BufferBuilder, BufferUsage, Error};
+use crate::{bind_group::BindGroupBuilder, BufferBuilder, BufferUsage, Error};
 
 pub struct Device {
     device: wgpu::Device,
@@ -25,6 +25,17 @@ impl Device {
 
     pub fn buffer<T>(&self, buffer_kind: BufferUsage) -> BufferBuilder {
         BufferBuilder::new(self, buffer_kind)
+    }
+
+    pub fn shader(&self, source: &str) -> wgpu::ShaderModule {
+        self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: None,
+            source: wgpu::ShaderSource::Wgsl(source.into()),
+        })
+    }
+
+    pub fn bind_group(&self) -> BindGroupBuilder {
+        BindGroupBuilder::new(self)
     }
 }
 

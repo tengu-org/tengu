@@ -1,4 +1,5 @@
 mod adapter;
+mod bind_group;
 mod buffer;
 mod device;
 mod error;
