@@ -1,21 +1,35 @@
-use crate::{Buffer, BufferUsage, Device};
+use crate::{Buffer, BufferUsage, ComputePipeline, Device};
 
-pub struct BindGroup<'a, 'device> {
+pub struct BindGroup<'device> {
+    device: &'device Device,
+    bind_group_layout: wgpu::BindGroupLayout,
+    bind_group: wgpu::BindGroup,
+}
+
+impl<'device> BindGroup<'device> {
+    pub fn compute_pipeline(self) -> ComputePipeline<'device> {
+        ComputePipeline::new(self.device, self.bind_group_layout, self.bind_group)
+    }
+}
+
+// Builder implementation
+
+pub struct BindGroupBuilder<'a, 'device> {
+    device: &'device Device,
     buffers: Vec<&'a Buffer>,
     layout_entries: Vec<wgpu::BindGroupLayoutEntry>,
     bind_entries: Vec<wgpu::BindGroupEntry<'a>>,
     counter: usize,
-    device: &'device Device,
 }
 
-impl<'a, 'device> BindGroup<'a, 'device> {
+impl<'a, 'device> BindGroupBuilder<'a, 'device> {
     pub fn new(device: &'device Device) -> Self {
         Self {
+            device,
             buffers: Vec::new(),
             layout_entries: Vec::new(),
             bind_entries: Vec::new(),
             counter: 0,
-            device,
         }
     }
 
@@ -40,16 +54,21 @@ impl<'a, 'device> BindGroup<'a, 'device> {
         self
     }
 
-    pub fn build(self) -> wgpu::BindGroup {
+    pub fn build(self) -> BindGroup<'device> {
         let layout = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: None,
             entries: &self.layout_entries,
         });
-        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: None,
             layout: &layout,
             entries: &self.bind_entries,
-        })
+        });
+        BindGroup {
+            device: self.device,
+            bind_group_layout: layout,
+            bind_group,
+        }
     }
 }
 

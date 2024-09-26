@@ -33,7 +33,7 @@ impl<T> AddExpression<T> {
     }
 }
 
-impl<'a, T: 'static> Emit for AddExpression<T> {
+impl<T: 'static> Emit for AddExpression<T> {
     fn emit(&self) -> String {
         let lhs = self.lhs.emit();
         let rhs = self.rhs.emit();

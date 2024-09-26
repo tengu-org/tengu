@@ -1,6 +1,7 @@
 mod adapter;
 mod bind_group;
 mod buffer;
+mod compute_pipeline;
 mod device;
 mod error;
 mod size;
@@ -8,7 +9,9 @@ mod surface;
 mod wgpu;
 
 pub use adapter::Adapter;
+pub use bind_group::BindGroupBuilder;
 pub use buffer::{Buffer, BufferBuilder, BufferUsage};
+pub use compute_pipeline::ComputePipeline;
 pub use device::Device;
 pub use error::{Error, Result};
 pub use size::{ByteSize, Size};

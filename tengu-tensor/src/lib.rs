@@ -2,7 +2,6 @@ mod emit;
 mod error;
 mod expression;
 mod graph;
-mod operations;
 mod probe;
 mod tengu;
 mod tensor;

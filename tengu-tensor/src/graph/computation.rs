@@ -29,6 +29,10 @@ impl<T: 'static> Computation<T> {
             .map(|(binding, tensor)| (tensor.emit(), tensor.declaration(group, binding)))
             .collect()
     }
+
+    pub fn count(&self) -> usize {
+        self.expression.count()
+    }
 }
 
 impl<T: 'static> Emit for Computation<T> {

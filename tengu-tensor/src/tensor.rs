@@ -103,16 +103,10 @@ impl<T> Probable<T> for Tensor<T> {
 
 // Operations
 
-impl<T> Tensor<T> {
-    pub fn add(self, other: Tensor<T>) -> Expression<T> {
-        Expression::add(self, other)
-    }
-}
-
 impl<T> Add for Tensor<T> {
     type Output = Expression<T>;
 
     fn add(self, other: Tensor<T>) -> Self::Output {
-        self.add(other)
+        Expression::add(self, other)
     }
 }

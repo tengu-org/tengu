@@ -1,7 +1,7 @@
 use itertools::Itertools;
 use std::sync::Arc;
 
-use super::Computation;
+use super::{Computation, Count};
 use crate::{expression::Expression, Emit, Tengu};
 
 pub struct Block<T> {
@@ -49,10 +49,18 @@ impl<T: 'static> Block<T> {
     }
 }
 
+// Trait implementations
+
 impl<T: 'static> Emit for Block<T> {
     fn emit(&self) -> String {
         let declaration = self.declaration();
         let body = self.body();
         format!("{declaration}\n{body}")
+    }
+}
+
+impl<T: 'static> Count for Block<T> {
+    fn count(&self) -> Option<usize> {
+        self.computations.iter().map(|c| c.count()).max()
     }
 }
