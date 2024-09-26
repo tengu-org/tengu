@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{Device, Error, Result};
+use crate::{Adapter, Device, Error, Result};
 
 pub struct Surface<'window> {
     surface: wgpu::Surface<'window>,
@@ -16,10 +16,16 @@ impl<'window> Surface<'window> {
         assert!(height > 0, "height should be > 0");
         ConfigBuilder {
             surface: self.surface,
-            height,
-            width,
-            presentation_mode: wgpu::PresentMode::default(),
-            maximum_frame_latency: 2,
+            config: wgpu::SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format: wgpu::TextureFormat::Rgba8Unorm,
+                width,
+                height,
+                present_mode: wgpu::PresentMode::default(),
+                alpha_mode: wgpu::CompositeAlphaMode::default(),
+                view_formats: Vec::new(),
+                desired_maximum_frame_latency: 2,
+            },
         }
     }
 }
@@ -35,45 +41,36 @@ impl<'window> Deref for Surface<'window> {
 
 pub struct ConfigBuilder<'window> {
     surface: wgpu::Surface<'window>,
-    height: u32,
-    width: u32,
-    presentation_mode: wgpu::PresentMode,
-    maximum_frame_latency: u32,
+    config: wgpu::SurfaceConfiguration,
 }
 
 impl<'window> ConfigBuilder<'window> {
-    pub fn configure(self, device: &Device) -> Result<BoundSurface<'window>> {
-        let surface_caps = self.surface.get_capabilities(device.adapter());
-        let format = surface_caps.formats.first().copied().ok_or(Error::CreateAdapterError)?;
-        let alpha_mode = surface_caps
+    pub fn configure(mut self, adapter: &Adapter) -> Result<Self> {
+        let surface_caps = self.surface.get_capabilities(adapter);
+        self.config.format = surface_caps.formats.first().copied().ok_or(Error::CreateAdapterError)?;
+        self.config.alpha_mode = surface_caps
             .alpha_modes
             .first()
             .copied()
             .ok_or(Error::CreateAdapterError)?;
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format,
-            width: self.width,
-            height: self.height,
-            present_mode: self.presentation_mode,
-            alpha_mode,
-            view_formats: Vec::new(),
-            desired_maximum_frame_latency: self.maximum_frame_latency,
-        };
-        self.surface.configure(device, &config);
-        Ok(BoundSurface {
+        Ok(self)
+    }
+
+    pub fn bind_device(self, device: &Device) -> BoundSurface<'window> {
+        self.surface.configure(device, &self.config);
+        BoundSurface {
             surface: self.surface,
-            config,
-        })
+            config: self.config,
+        }
     }
 
     pub fn with_presentation_mode(mut self, mode: wgpu::PresentMode) -> Self {
-        self.presentation_mode = mode;
+        self.config.present_mode = mode;
         self
     }
 
     pub fn with_maximum_frame_latency(mut self, latency: u32) -> Self {
-        self.maximum_frame_latency = latency;
+        self.config.desired_maximum_frame_latency = latency;
         self
     }
 }

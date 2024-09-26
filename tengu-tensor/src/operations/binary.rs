@@ -1,11 +1,13 @@
+use std::sync::Arc;
+
 use wgpu::Buffer;
 
-use crate::context::Context;
+use crate::Tengu;
 
 use super::ENTRY;
 
 pub async fn execute_shader(
-    context: &Context,
+    tengu: Arc<Tengu>,
     a_buffer: &Buffer,
     b_buffer: &Buffer,
     output_buffer: &Buffer,
@@ -13,13 +15,13 @@ pub async fn execute_shader(
     shader_source: &str,
 ) {
     // Compile the provided WGSL shader
-    let shader = context.device().create_shader_module(wgpu::ShaderModuleDescriptor {
+    let shader = tengu.device().create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Compute Shader"),
         source: wgpu::ShaderSource::Wgsl(shader_source.into()),
     });
 
     // Create a bind group layout
-    let bind_group_layout = context
+    let bind_group_layout = tengu
         .device()
         .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("Bind Group Layout"),
@@ -58,7 +60,7 @@ pub async fn execute_shader(
         });
 
     // Create a bind group
-    let bind_group = context.device().create_bind_group(&wgpu::BindGroupDescriptor {
+    let bind_group = tengu.device().create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Bind Group"),
         layout: &bind_group_layout,
         entries: &[
@@ -78,15 +80,13 @@ pub async fn execute_shader(
     });
 
     // Create a compute pipeline
-    let pipeline_layout = context
-        .device()
-        .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("Pipeline Layout"),
-            bind_group_layouts: &[&bind_group_layout],
-            push_constant_ranges: &[],
-        });
+    let pipeline_layout = tengu.device().create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("Pipeline Layout"),
+        bind_group_layouts: &[&bind_group_layout],
+        push_constant_ranges: &[],
+    });
 
-    let compute_pipeline = context
+    let compute_pipeline = tengu
         .device()
         .create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("Compute Pipeline"),
@@ -98,7 +98,7 @@ pub async fn execute_shader(
         });
 
     // Submit the commands
-    context.compute(|encoder| {
+    tengu.device().compute(|encoder| {
         let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some("Compute Pass"),
             timestamp_writes: None,

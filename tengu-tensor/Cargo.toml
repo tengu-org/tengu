@@ -4,11 +4,14 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-pollster = "0.3.0"
 wgpu = { workspace = true }
-tengu-wgpu-util = { path = "../tengu-wgpu-util" }
+pollster = "0.3.0"
+tengu-wgpu = { path = "../tengu-wgpu" }
 bytemuck = "1.17.1"
 flume = "0.11.0"
+thiserror = "1.0.63"
+anyhow = "1.0.89"
+random-string = "1.1.0"
 
 [dev-dependencies]
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }

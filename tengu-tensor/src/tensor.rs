@@ -1,109 +1,111 @@
-use pollster::FutureExt;
-use std::ops::Add;
-use wgpu::util::{BufferInitDescriptor, DeviceExt};
-use wgpu::{Buffer, BufferUsages};
+use random_string::charsets::ALPHA;
+use std::{ops::Add, sync::Arc};
+use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::context::Context;
+use crate::{expression::add::AddExpression, tengu::Tengu, Computation, Expression, Probe};
 
-pub struct TensorBuilder<'a> {
+pub struct TensorBuilder {
     shape: Vec<usize>,
-    size: usize,
-    context: &'a Context,
+    count: usize,
+    tengu: Arc<Tengu>,
 }
 
-impl<'a> TensorBuilder<'a> {
-    pub fn new(context: &'a Context, shape: impl Into<Vec<usize>>) -> Self {
+impl TensorBuilder {
+    pub fn new(tengu: Arc<Tengu>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
-        let size = shape.iter().product();
-        Self { shape, size, context }
+        let count = shape.iter().product();
+        Self { shape, count, tengu }
     }
 
-    pub fn init(self, data: &[f32]) -> Tensor<'a> {
-        assert_eq!(data.len(), self.size, "data length does not match shape");
-        let buffer = self.context.device().create_buffer_init(&BufferInitDescriptor {
-            label: Some("Tensor Buffer"),
-            contents: bytemuck::cast_slice(data),
-            usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC | BufferUsages::COPY_DST,
-        });
+    pub fn empty<T>(self) -> Tensor<T> {
+        let size = self.count.bytes();
+        let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
         Tensor {
+            label: random_string::generate(6, ALPHA),
             buffer,
-            size: self.size,
+            count: self.count,
             shape: self.shape,
-            context: self.context,
-        }
-    }
-}
-
-pub struct Tensor<'a> {
-    buffer: Buffer,
-    size: usize,
-    shape: Vec<usize>,
-    context: &'a Context,
-}
-
-impl<'a> Tensor<'a> {
-    pub async fn data(&self) -> Vec<f32> {
-        let staging_buffer = self.make_staging_buffer();
-        let buffer_slice = staging_buffer.slice(..);
-        let (sender, receiver) = flume::bounded(1);
-        buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
-        self.context.device().poll(wgpu::Maintain::wait()).panic_on_timeout();
-        if let Ok(Ok(())) = receiver.recv_async().await {
-            let data = buffer_slice.get_mapped_range();
-            let result = bytemuck::cast_slice(&data).to_vec();
-            drop(data);
-            staging_buffer.unmap();
-            result
-        } else {
-            panic!("failed to retrieve tensor buffer") // TODO: return Result
+            tengu: self.tengu,
+            probe: None,
         }
     }
 
-    pub async fn add(self, other: Tensor<'a>) -> Tensor<'a> {
-        assert_eq!(self.shape, other.shape, "Shapes must match for addition");
-        let size = (self.size * std::mem::size_of::<f32>()) as wgpu::BufferAddress;
-        let result_buffer = self.context.device().create_buffer(&wgpu::BufferDescriptor {
-            label: Some("Result Buffer"),
-            size,
-            usage: BufferUsages::STORAGE | BufferUsages::COPY_SRC,
-            mapped_at_creation: false,
-        });
-        crate::operations::binary::execute_shader(
-            self.context,
-            &self.buffer,
-            &other.buffer,
-            &result_buffer,
-            self.shape.iter().product(),
-            include_str!("shaders/add.wgsl"),
-        )
-        .await;
+    pub fn init<T>(self, data: &[T]) -> Tensor<T>
+    where
+        T: bytemuck::Pod,
+    {
+        assert_eq!(data.len(), self.count, "data length does not match shape");
+        let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).with_data(data);
         Tensor {
-            buffer: result_buffer,
-            size: self.size,
-            shape: self.shape.clone(),
-            context: self.context,
+            label: random_string::generate(6, ALPHA),
+            buffer,
+            count: self.count,
+            shape: self.shape,
+            tengu: self.tengu,
+            probe: None,
         }
-    }
-
-    fn make_staging_buffer(&self) -> Buffer {
-        let size = (self.size * std::mem::size_of::<f32>()) as wgpu::BufferAddress;
-        let staging_buffer = self.context.device().create_buffer(&wgpu::BufferDescriptor {
-            label: None,
-            size,
-            usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        self.context.compute(|encoder| {
-            encoder.copy_buffer_to_buffer(&self.buffer, 0, &staging_buffer, 0, size);
-        });
-        staging_buffer
     }
 }
 
-impl<'a> Add for Tensor<'a> {
-    type Output = Tensor<'a>;
+pub struct Tensor<T> {
+    label: String,
+    buffer: Buffer,
+    count: usize,
+    shape: Vec<usize>,
+    probe: Option<Probe<T>>,
+    tengu: Arc<Tengu>,
+}
 
-    fn add(self, other: Tensor<'a>) -> Tensor<'a> {
-        self.add(other).block_on()
+impl<T> Tensor<T> {
+    pub fn shape(&self) -> &[usize] {
+        &self.shape
+    }
+
+    pub fn count(&self) -> usize {
+        self.count
+    }
+
+    pub fn declaration(&self, group: usize, binding: usize) -> String {
+        let label = &self.label;
+        let type_name = std::any::type_name::<T>();
+        let access = match self.buffer.usage() {
+            BufferUsage::Read => "read",
+            BufferUsage::Write => "write",
+            BufferUsage::ReadWrite => "read_write",
+            BufferUsage::Staging => panic!("cannot declare a staging buffer in a shader"),
+        };
+        format!("@group({group}) @binding({binding}) var<storage, {access}> {label}: array<{type_name}>")
+    }
+
+    pub fn probe(&mut self) -> &Probe<T> {
+        self.probe = Some(Probe::new(Arc::clone(&self.tengu), self.count));
+        self.probe
+            .as_ref()
+            .expect("tensor probe should be non-empty after setting it")
+    }
+}
+
+impl<T> Computation for Tensor<T> {
+    fn emit(&self, idx: &str) -> String {
+        format!("{label}[{idx}]", label = self.label.clone())
+    }
+}
+
+// Operations
+
+impl<T> Tensor<T> {
+    pub fn add(self, other: Tensor<T>) -> Expression<T> {
+        let lhs = Expression::Tensor(self);
+        let rhs = Expression::Tensor(other);
+        let add_expression = AddExpression::new(lhs, rhs);
+        Expression::Add(add_expression)
+    }
+}
+
+impl<T> Add for Tensor<T> {
+    type Output = Tensor<T>;
+
+    fn add(self, _other: Tensor<T>) -> Tensor<T> {
+        todo!();
     }
 }

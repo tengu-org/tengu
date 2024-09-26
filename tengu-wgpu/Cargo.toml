@@ -1,5 +1,5 @@
 [package]
-name = "tengu-wgpu-util"
+name = "tengu-wgpu"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,4 @@ edition = "2021"
 wgpu = { workspace = true }
 thiserror = "1.0.63"
 bon = "2.3.0"
+bytemuck = "1.18.0"

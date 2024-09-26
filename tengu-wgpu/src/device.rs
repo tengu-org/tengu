@@ -1,19 +1,30 @@
 use std::ops::Deref;
 
-use crate::{Error, Queue};
+use crate::{BufferBuilder, BufferUsage, Error};
 
 pub struct Device {
-    adapter: wgpu::Adapter,
     device: wgpu::Device,
+    queue: wgpu::Queue,
 }
 
 impl Device {
-    pub fn new(adapter: wgpu::Adapter, device: wgpu::Device) -> Device {
-        Self { adapter, device }
+    pub fn new(device: wgpu::Device, queue: wgpu::Queue) -> Device {
+        Self { device, queue }
     }
 
-    pub fn adapter(&self) -> &wgpu::Adapter {
-        &self.adapter
+    pub fn compute<F>(&self, command: F)
+    where
+        F: FnOnce(&mut wgpu::CommandEncoder),
+    {
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+        command(&mut encoder);
+        self.queue.submit(Some(encoder.finish()));
+    }
+
+    pub fn buffer<T>(&self, buffer_kind: BufferUsage) -> BufferBuilder {
+        BufferBuilder::new(self, buffer_kind)
     }
 }
 
@@ -41,7 +52,7 @@ impl DeviceBuilder {
         }
     }
 
-    pub async fn build(self) -> Result<(Device, Queue), Error> {
+    pub async fn request(self) -> Result<Device, Error> {
         let (device, queue) = self
             .adapter
             .request_device(
@@ -54,9 +65,7 @@ impl DeviceBuilder {
                 None, // Trace path
             )
             .await?;
-        let device = Device::new(self.adapter, device);
-        let queue = Queue::new(queue);
-        Ok((device, queue))
+        Ok(Device::new(device, queue))
     }
 
     pub fn with_features(mut self, features: wgpu::Features) -> Self {

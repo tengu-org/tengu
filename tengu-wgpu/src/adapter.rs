@@ -1,10 +1,25 @@
+use std::ops::Deref;
+
 use crate::{device::DeviceBuilder, Error, Surface};
 
-pub struct Adapter(wgpu::Adapter);
+pub struct Adapter {
+    adapter: wgpu::Adapter,
+}
 
 impl Adapter {
+    pub fn new(adapter: wgpu::Adapter) -> Self {
+        Self { adapter }
+    }
+
     pub fn device(self) -> DeviceBuilder {
-        DeviceBuilder::new(self.0)
+        DeviceBuilder::new(self.adapter)
+    }
+}
+
+impl Deref for Adapter {
+    type Target = wgpu::Adapter;
+    fn deref(&self) -> &Self::Target {
+        &self.adapter
     }
 }
 
@@ -28,12 +43,12 @@ impl<'surface, 'window> AdapterBuilder<'surface, 'window> {
         self
     }
 
-    pub async fn build(self) -> Result<Adapter, Error> {
+    pub async fn request(self) -> Result<Adapter, Error> {
         let adapter = self
             .instance
             .request_adapter(&self.request_adapter_options)
             .await
             .ok_or(Error::CreateAdapterError)?;
-        Ok(Adapter(adapter))
+        Ok(Adapter::new(adapter))
     }
 }

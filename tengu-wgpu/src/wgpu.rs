@@ -1,6 +1,6 @@
 use bon::bon;
 
-use crate::{adapter::AdapterBuilder, Result, Surface};
+use crate::{adapter::AdapterBuilder, Device, Result, Surface};
 
 pub struct WGPU {
     instance: wgpu::Instance,
@@ -24,5 +24,10 @@ impl WGPU {
 
     pub fn adapter<'surface, 'window>(self) -> AdapterBuilder<'surface, 'window> {
         AdapterBuilder::new(self.instance)
+    }
+
+    pub async fn default_context() -> Result<Device> {
+        let instance = Self::builder().backends(wgpu::Backends::PRIMARY).build();
+        instance.adapter().request().await?.device().request().await
     }
 }

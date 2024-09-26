@@ -1,5 +1,5 @@
 [workspace]
-members = ["tengu-wgpu-util", "tengu-tensor"]
+members = ["tengu-wgpu", "tengu-tensor"]
 resolver = "2"
 
 [workspace.dependencies]
