@@ -2,7 +2,7 @@ pub struct Size(pub usize);
 
 impl Size {
     pub fn of<T>(data: &[T]) -> Size {
-        Self(size_of_val(data))
+        Self(std::mem::size_of_val(data))
     }
 }
 

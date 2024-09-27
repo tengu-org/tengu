@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{BindGroupBuilder, BufferBuilder, BufferUsage, Error};
+use crate::{buffer::BufferBuilder, pipeline::LayoutBuilder, BufferUsage, Error};
 
 pub struct Device {
     device: wgpu::Device,
@@ -34,8 +34,8 @@ impl Device {
         })
     }
 
-    pub fn bind_group(&self) -> BindGroupBuilder {
-        BindGroupBuilder::new(self)
+    pub fn layout(&self) -> LayoutBuilder {
+        LayoutBuilder::new(self)
     }
 }
 
