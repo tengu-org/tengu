@@ -5,12 +5,6 @@ use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
 use crate::{Error, Result, Tengu};
 
-pub trait Probable<T> {
-    fn probe(&mut self) -> &Probe<T>;
-}
-
-// Probe implementation
-
 pub struct Probe<T> {
     buffer: Buffer,
     tengu: Arc<Tengu>,

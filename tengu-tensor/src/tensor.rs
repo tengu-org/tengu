@@ -2,7 +2,7 @@ use random_string::charsets::ALPHA;
 use std::{ops::Add, sync::Arc};
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::{Emit, Expression, Probable, Probe, Tengu};
+use crate::{Expression, Probe, Tengu};
 
 const LABEL_LENGTH: usize = 6;
 
@@ -28,6 +28,14 @@ impl<T> Tensor<T> {
 
     pub fn label(&self) -> &str {
         &self.label
+    }
+
+    pub fn buffer(&self) -> &Buffer {
+        &self.buffer
+    }
+
+    pub fn emit(&self) -> String {
+        format!("{label}[idx]", label = self.label.clone())
     }
 
     pub fn declaration(&self, group: usize, binding: usize) -> String {
@@ -78,11 +86,7 @@ impl TensorBuilder {
 
     pub fn empty<T>(mut self) -> Tensor<T> {
         let size = self.count.bytes();
-        let buffer = self
-            .tengu
-            .device()
-            .buffer::<T>(BufferUsage::ReadWrite)
-            .empty(size);
+        let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
         Tensor {
             label: self.label(),
             buffer,
@@ -98,11 +102,7 @@ impl TensorBuilder {
         T: bytemuck::Pod,
     {
         assert_eq!(data.len(), self.count, "data length does not match shape");
-        let buffer = self
-            .tengu
-            .device()
-            .buffer::<T>(BufferUsage::ReadWrite)
-            .with_data(data);
+        let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).with_data(data);
         Tensor {
             label: self.label(),
             buffer,
@@ -117,24 +117,6 @@ impl TensorBuilder {
         self.label
             .take()
             .unwrap_or_else(|| random_string::generate(LABEL_LENGTH, ALPHA))
-    }
-}
-
-// Trait implementations
-
-impl<T: 'static> Emit for Tensor<T> {
-    fn emit(&self) -> String {
-        format!("{label}[idx]", label = self.label.clone())
-    }
-}
-
-impl<T> Probable<T> for Tensor<T> {
-    fn probe(&mut self) -> &Probe<T> {
-        let probe = Probe::new(&self.tengu, self.count);
-        self.probe = Some(probe);
-        self.probe
-            .as_ref()
-            .expect("Should have probe after setting one")
     }
 }
 

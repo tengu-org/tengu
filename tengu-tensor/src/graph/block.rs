@@ -1,8 +1,10 @@
 use itertools::Itertools;
-use std::sync::Arc;
+use std::{any::Any, collections::HashMap, sync::Arc};
+use tengu_wgpu::Buffer;
 
-use super::{Computation, Count};
-use crate::{expression::Expression, Emit, Tengu};
+use super::descriptor::{Describe, Descriptor};
+use super::Computation;
+use crate::{expression::Expression, Tengu, Tensor};
 
 pub struct Block<T> {
     tengu: Arc<Tengu>,
@@ -22,6 +24,26 @@ impl<T: 'static> Block<T> {
         self.computations
             .last_mut()
             .expect("Should have a least one computation after adding a new one")
+    }
+
+    pub fn count(&self) -> usize {
+        self.computations.iter().map(|c| c.count()).max().unwrap_or_default()
+    }
+
+    pub fn sources(&self) -> Vec<&Buffer> {
+        self.computations
+            .iter()
+            .flat_map(|c| c.sources().into_iter())
+            .collect::<HashMap<&str, &Tensor<T>>>()
+            .values()
+            .map(|tensor| tensor.buffer())
+            .collect()
+    }
+
+    pub fn emit(&self) -> String {
+        let declaration = self.declaration();
+        let body = self.body();
+        format!("{declaration}\n{body}")
     }
 
     fn declaration(&self) -> String {
@@ -48,18 +70,18 @@ impl<T: 'static> Block<T> {
     }
 }
 
-// Trait implementations
+// Describe trait implementation
 
-impl<T: 'static> Emit for Block<T> {
-    fn emit(&self) -> String {
-        let declaration = self.declaration();
-        let body = self.body();
-        format!("{declaration}\n{body}")
+impl<T: 'static> Describe for Block<T> {
+    fn descriptor(&self) -> super::descriptor::Descriptor {
+        Descriptor {
+            count: self.count(),
+            rep: self.emit(),
+            buffers: self.sources(),
+        }
     }
-}
 
-impl<T: 'static> Count for Block<T> {
-    fn count(&self) -> Option<usize> {
-        self.computations.iter().map(|c| c.count()).max()
+    fn as_any(&mut self) -> &mut dyn Any {
+        self
     }
 }

@@ -2,31 +2,22 @@ use std::sync::Arc;
 
 use block::Block;
 use computation::Computation;
-use downcast_rs::{impl_downcast, Downcast};
-use tengu_wgpu::ComputePipeline;
+use descriptor::{Describe, Descriptor};
+use tengu_wgpu::Pipeline;
 
-use crate::{Emit, Tengu};
+use crate::Tengu;
 
 mod block;
 mod computation;
+mod descriptor;
 
-// Block tratis
-
-trait Count {
-    fn count(&self) -> Option<usize>;
-}
-
-trait Compute: Emit + Count + Downcast {}
-
-impl<T: 'static> Compute for T where T: Emit + Count {}
-
-impl_downcast!(Compute);
+const WORKGROUP_SIZE: u32 = 64;
 
 // Graph implementation
 
 pub struct Graph {
     tengu: Arc<Tengu>,
-    blocks: Vec<Box<dyn Compute>>,
+    blocks: Vec<Box<dyn Describe>>,
 }
 
 impl Graph {
@@ -43,27 +34,37 @@ impl Graph {
         self.blocks
             .last_mut()
             .expect("Graph blocks should not be empty after inserting a new block")
+            .as_any()
             .downcast_mut()
             .expect("Added block should have correct type after downcasting")
     }
 
     pub async fn compute(&self) {
-        let shader_source = self.blocks.first().unwrap().emit();
-        let shader_module = self.tengu.device().shader(&shader_source);
-        let compute_pipeline = self.create_pipeline();
-        let count = self.blocks.iter().flat_map(|b| b.count()).max().unwrap();
+        let block = self.blocks.first().unwrap().descriptor();
+        self.compute_block(block).await;
+    }
+
+    pub async fn compute_block(&self, descriptor: Descriptor<'_>) {
+        let count = descriptor.count;
+        let pipeline = self.create_pipeline(descriptor);
         self.tengu.device().compute(|encoder| {
             let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
                 label: Some("Compute Pass"),
                 timestamp_writes: None,
             });
-            compute_pass.set_pipeline(&compute_pipeline.build(shader_module));
-            compute_pass.set_bind_group(0, compute_pipeline.bind_group(), &[]);
-            compute_pass.dispatch_workgroups((count as u32 + 63) / 64, 1, 1); // Assumes workgroup_size is 64
+            compute_pass.set_pipeline(&pipeline);
+            compute_pass.set_bind_group(0, pipeline.bind_group(), &[]);
+            compute_pass.dispatch_workgroups((count as u32 / WORKGROUP_SIZE) + 1, 1, 1);
         });
     }
 
-    fn create_pipeline(&self) -> ComputePipeline {
-        todo!();
+    fn create_pipeline(&self, descriptor: Descriptor) -> Pipeline {
+        let shader = self.tengu.device().shader(&descriptor.rep);
+        self.tengu
+            .device()
+            .layout()
+            .add_entries(descriptor.buffers)
+            .pipeline()
+            .build(shader)
     }
 }

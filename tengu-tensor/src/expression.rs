@@ -1,6 +1,6 @@
 use add::AddExpression;
 
-use crate::{Emit, Tensor};
+use crate::Tensor;
 
 pub mod add;
 
@@ -30,6 +30,13 @@ impl<T> Expression<T> {
         }
     }
 
+    pub fn emit(&self) -> String {
+        match self {
+            Self::Tensor(tensor) => tensor.emit(),
+            Self::Add(add) => add.emit(),
+        }
+    }
+
     fn collect_inputs<'a>(&'a self, inputs: &mut Vec<&'a Tensor<T>>) {
         match self {
             Self::Tensor(tensor) => inputs.push(tensor),
@@ -50,16 +57,5 @@ impl<T> Expression<T> {
         let rhs = Self::tensor(rhs);
         let add_expression = AddExpression::new(lhs, rhs);
         Self::Add(add_expression)
-    }
-}
-
-// Trait implementations
-
-impl<T: 'static> Emit for Expression<T> {
-    fn emit(&self) -> String {
-        match self {
-            Self::Tensor(tensor) => tensor.emit(),
-            Self::Add(add) => add.emit(),
-        }
     }
 }

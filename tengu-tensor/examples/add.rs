@@ -1,4 +1,4 @@
-use tengu_tensor::{Probable, Tengu};
+use tengu_tensor::Tengu;
 
 #[tokio::main]
 pub async fn main() {
