@@ -37,6 +37,29 @@ impl<T: 'static> Emit for AddExpression<T> {
     fn emit(&self) -> String {
         let lhs = self.lhs.emit();
         let rhs = self.rhs.emit();
-        format!("({lhs}[idx] + {rhs}[idx])")
+        format!("({lhs} + {rhs})")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Tengu;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_add_expression() {
+        let tengu = Tengu::new().await.unwrap();
+        let lhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_lhs").empty::<f32>());
+        let rhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_rhs").empty::<f32>());
+        let add = AddExpression::new(lhs, rhs);
+        assert_eq!(add.count(), 6);
+        assert_eq!(add.shape(), &[1, 2, 3]);
+        let mut inputs = Vec::new();
+        add.collect_inputs(&mut inputs);
+        assert_eq!(inputs.len(), 2);
+        assert_eq!(inputs[0].shape(), &[1, 2, 3]);
+        assert_eq!(inputs[1].shape(), &[1, 2, 3]);
+        assert_eq!(add.emit(), "(tz_lhs[idx] + tz_rhs[idx])");
     }
 }
