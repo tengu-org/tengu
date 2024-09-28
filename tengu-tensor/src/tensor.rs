@@ -1,5 +1,5 @@
 use random_string::charsets::ALPHA;
-use std::{ops::Add, sync::Arc};
+use std::{cell::OnceCell, marker::PhantomData, ops::Add, sync::Arc};
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
 use crate::{Expression, Probe, Tengu};
@@ -13,8 +13,9 @@ pub struct Tensor<T> {
     buffer: Buffer,
     count: usize,
     shape: Vec<usize>,
-    probe: Option<Probe<T>>,
+    probe: OnceCell<Probe>,
     tengu: Arc<Tengu>,
+    phantom: PhantomData<T>,
 }
 
 impl<T> Tensor<T> {
@@ -38,6 +39,10 @@ impl<T> Tensor<T> {
         format!("{label}[idx]", label = self.label.clone())
     }
 
+    pub fn probe(&self) -> &Probe {
+        self.probe.get_or_init(|| Probe::new(&self.tengu, self))
+    }
+
     pub fn declaration(&self, group: usize, binding: usize) -> String {
         let label = &self.label;
         let type_name = std::any::type_name::<T>();
@@ -48,13 +53,6 @@ impl<T> Tensor<T> {
             BufferUsage::Staging => panic!("cannot declare a staging buffer in a shader"),
         };
         format!("@group({group}) @binding({binding}) var<storage, {access}> {label}: array<{type_name}>")
-    }
-
-    pub fn probe(&mut self) -> &Probe<T> {
-        self.probe = Some(Probe::new(&self.tengu, self.count));
-        self.probe
-            .as_ref()
-            .expect("tensor probe should be non-empty after setting it")
     }
 }
 
@@ -93,7 +91,8 @@ impl TensorBuilder {
             count: self.count,
             shape: self.shape,
             tengu: self.tengu,
-            probe: None,
+            probe: OnceCell::new(),
+            phantom: PhantomData,
         }
     }
 
@@ -109,7 +108,8 @@ impl TensorBuilder {
             count: self.count,
             shape: self.shape,
             tengu: self.tengu,
-            probe: None,
+            probe: OnceCell::new(),
+            phantom: PhantomData,
         }
     }
 

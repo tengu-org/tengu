@@ -1,28 +1,25 @@
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::{Error, Result, Tengu};
+use crate::{Error, Result, Tengu, Tensor};
 
-pub struct Probe<T> {
+pub struct Probe {
     buffer: Buffer,
     tengu: Arc<Tengu>,
-    phantom: PhantomData<T>,
 }
 
-impl<T> Probe<T> {
-    pub fn new(tengu: &Arc<Tengu>, count: usize) -> Self {
-        let size = count.bytes();
+impl Probe {
+    pub fn new<T>(tengu: &Arc<Tengu>, from: &Tensor<T>) -> Self {
+        let size = from.count().bytes();
         let buffer = tengu.device().buffer::<T>(BufferUsage::Staging).empty(size);
         Self {
             tengu: Arc::clone(tengu),
             buffer,
-            phantom: PhantomData,
         }
     }
 
-    pub async fn retrieve(&self) -> Result<Vec<f32>> {
+    pub async fn retrieve<T: bytemuck::Pod>(&self) -> Result<Vec<T>> {
         let buffer_slice = self.buffer.slice(..);
         let (sender, receiver) = flume::bounded(1);
         buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());

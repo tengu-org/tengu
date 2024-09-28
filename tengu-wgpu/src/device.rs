@@ -46,7 +46,7 @@ impl Deref for Device {
     }
 }
 
-// Device builder implementation.
+// Device builder implementation
 
 pub struct DeviceBuilder {
     adapter: wgpu::Adapter,

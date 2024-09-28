@@ -1,43 +1,48 @@
 use itertools::Itertools;
-use std::{any::Any, collections::HashMap, sync::Arc};
-use tengu_wgpu::Buffer;
+use std::{any::Any, sync::Arc};
+use tengu_wgpu::Pipeline;
 
-use super::descriptor::{Describe, Descriptor};
 use super::Computation;
-use crate::{expression::Expression, Tengu, Tensor};
+use crate::{Expression, Probe, Tengu, Tensor};
+
+const WORKGROUP_SIZE: u32 = 64;
+
+// Block implementation
 
 pub struct Block<T> {
     tengu: Arc<Tengu>,
+    label: String,
     computations: Vec<Computation<T>>,
 }
 
 impl<T: 'static> Block<T> {
-    pub fn new(tengu: &Arc<Tengu>) -> Self {
+    pub fn new(tengu: &Arc<Tengu>, label: impl Into<String>) -> Self {
         Self {
             tengu: Arc::clone(tengu),
+            label: label.into(),
             computations: Vec::new(),
         }
     }
 
-    pub fn add_computation(&mut self, expression: Expression<T>) -> &mut Computation<T> {
-        self.computations.push(Computation::new(&self.tengu, expression));
-        self.computations
-            .last_mut()
-            .expect("Should have a least one computation after adding a new one")
+    pub fn add_computation(&mut self, label: impl Into<String>, expression: Expression<T>) -> &mut Self {
+        let computation = Computation::new(&self.tengu, label, expression);
+        self.computations.push(computation);
+        self
     }
 
     pub fn count(&self) -> usize {
         self.computations.iter().map(|c| c.count()).max().unwrap_or_default()
     }
 
-    pub fn sources(&self) -> Vec<&Buffer> {
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+
+    pub(crate) fn nodes(&self) -> impl Iterator<Item = &Tensor<T>> {
         self.computations
             .iter()
-            .flat_map(|c| c.sources().into_iter())
-            .collect::<HashMap<&str, &Tensor<T>>>()
-            .values()
-            .map(|tensor| tensor.buffer())
-            .collect()
+            .flat_map(|c| c.nodes())
+            .unique_by(|t| t.label())
     }
 
     pub fn emit(&self) -> String {
@@ -68,17 +73,47 @@ impl<T: 'static> Block<T> {
             self.computations.iter().map(|c| c.emit()).join("\n"),
         )
     }
+
+    fn create_pipeline(&self) -> Pipeline {
+        let shader = self.tengu.device().shader(&self.emit());
+        let buffers = self.nodes().map(|t| t.buffer());
+        self.tengu
+            .device()
+            .layout()
+            .add_entries(buffers)
+            .pipeline()
+            .build(shader)
+    }
 }
 
-// Describe trait implementation
+// Traits
 
-impl<T: 'static> Describe for Block<T> {
-    fn descriptor(&self) -> super::descriptor::Descriptor {
-        Descriptor {
-            count: self.count(),
-            rep: self.emit(),
-            buffers: self.sources(),
-        }
+pub trait Compute {
+    fn compute(&self);
+    fn probe<'a>(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe>;
+    fn as_any(&mut self) -> &mut dyn Any;
+}
+
+impl<T: 'static> Compute for Block<T> {
+    fn compute(&self) {
+        let pipeline = self.create_pipeline();
+        self.tengu.device().compute(|encoder| {
+            let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("Compute Pass"),
+                timestamp_writes: None,
+            });
+            compute_pass.set_pipeline(&pipeline);
+            compute_pass.set_bind_group(0, pipeline.bind_group(), &[]);
+            compute_pass.dispatch_workgroups((self.count() as u32 / WORKGROUP_SIZE) + 1, 1, 1);
+        });
+    }
+
+    fn probe<'a>(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe> {
+        (self.label() == block_label).then(|| {
+            self.nodes()
+                .find(|tensor| tensor.label() == tensor_label)
+                .map(|tensor| tensor.probe())
+        })?
     }
 
     fn as_any(&mut self) -> &mut dyn Any {

@@ -1,33 +1,18 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{Expression, Probe, Tengu, Tensor};
+use itertools::Itertools;
+
+use crate::{Expression, Tengu, Tensor};
 
 pub struct Computation<T> {
-    tengu: Arc<Tengu>,
     expression: Expression<T>,
     output: Tensor<T>,
-    probe: Option<Probe<T>>,
 }
 
 impl<T: 'static> Computation<T> {
-    pub fn new(tengu: &Arc<Tengu>, expression: Expression<T>) -> Self {
-        let output = tengu.tensor(expression.shape()).empty();
-        Self {
-            tengu: Arc::clone(tengu),
-            expression,
-            output,
-            probe: None,
-        }
-    }
-
-    pub fn with_label(tengu: &Arc<Tengu>, expression: Expression<T>, label: impl Into<String>) -> Self {
+    pub fn new(tengu: &Arc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
         let output = tengu.tensor(expression.shape()).with_label(label).empty();
-        Self {
-            tengu: Arc::clone(tengu),
-            expression,
-            output,
-            probe: None,
-        }
+        Self { expression, output }
     }
 
     pub fn declarations(&self, group: usize) -> HashMap<&str, String> {
@@ -40,22 +25,16 @@ impl<T: 'static> Computation<T> {
             .collect()
     }
 
-    pub fn sources(&self) -> HashMap<&str, &Tensor<T>> {
+    pub(crate) fn nodes(&self) -> impl Iterator<Item = &Tensor<T>> {
         self.expression
             .inputs()
             .into_iter()
             .chain(std::iter::once(&self.output))
-            .map(|tensor| (tensor.label(), tensor))
-            .collect()
-    }
-    pub fn emit(&self) -> String {
-        format!("{} = {};", self.output.emit(), self.expression.emit())
+            .unique_by(|t| t.label())
     }
 
-    pub fn probe(&mut self) -> &Probe<T> {
-        let probe = Probe::new(&self.tengu, self.output.count());
-        self.probe = Some(probe);
-        self.probe.as_ref().expect("Should have probe after setting one")
+    pub fn emit(&self) -> String {
+        format!("{} = {};", self.output.emit(), self.expression.emit())
     }
 
     pub fn count(&self) -> usize {
@@ -74,7 +53,7 @@ mod tests {
         let tengu = Tengu::new().await.unwrap();
         let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
         let b = tengu.tensor([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
-        let computation = Computation::new(&tengu, a + b);
+        let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.count(), 4);
     }
 
@@ -83,7 +62,7 @@ mod tests {
         let tengu = Tengu::new().await.unwrap();
         let a = tengu.tensor([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
         let b = tengu.tensor([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
-        let computation = Computation::with_label(&tengu, a + b, "c");
+        let computation = Computation::new(&tengu, "c", a + b);
         let declarations = computation.declarations(1);
         assert_eq!(declarations.len(), 3);
         assert_eq!(
@@ -105,7 +84,7 @@ mod tests {
         let tengu = Tengu::new().await.unwrap();
         let a = tengu.tensor([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
         let b = tengu.tensor([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
-        let computation = Computation::with_label(&tengu, a + b, "c");
+        let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.emit(), "c[idx] = (a[idx] + b[idx]);");
     }
 }
