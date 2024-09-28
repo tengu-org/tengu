@@ -99,7 +99,7 @@ impl<T: 'static> Compute for Block<T> {
         let pipeline = self.create_pipeline();
         self.tengu.device().compute(|encoder| {
             let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some("Compute Pass"),
+                label: Some(self.label()),
                 timestamp_writes: None,
             });
             compute_pass.set_pipeline(&pipeline);
