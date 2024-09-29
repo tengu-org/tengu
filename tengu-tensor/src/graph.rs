@@ -4,7 +4,7 @@ pub use block::Block;
 use block::Compute;
 pub use computation::Computation;
 
-use crate::{Probe, Tengu};
+use crate::{Probe, Tengu, WGSLType};
 
 mod block;
 mod computation;
@@ -24,7 +24,7 @@ impl Graph {
         }
     }
 
-    pub fn add_block<T: 'static>(&mut self, label: impl Into<String>) -> &mut Block<T> {
+    pub fn add_block<T: WGSLType + 'static>(&mut self, label: impl Into<String>) -> &mut Block<T> {
         let block = Block::<T>::new(&self.tengu, label);
         self.blocks.push(Box::new(block));
         self.blocks

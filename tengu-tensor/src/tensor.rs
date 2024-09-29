@@ -2,7 +2,7 @@ use random_string::charsets::ALPHA;
 use std::{cell::OnceCell, marker::PhantomData, ops::Add, sync::Arc};
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize, Encoder};
 
-use crate::{Expression, Probe, Tengu};
+use crate::{Expression, Probe, Tengu, WGSLType};
 
 const LABEL_LENGTH: usize = 6;
 
@@ -72,7 +72,7 @@ pub struct TensorBuilder<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T> TensorBuilder<T> {
+impl<T: WGSLType> TensorBuilder<T> {
     pub fn new(tengu: &Arc<Tengu>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
@@ -104,10 +104,7 @@ impl<T> TensorBuilder<T> {
         }
     }
 
-    pub fn init(mut self, data: &[T]) -> Tensor<T>
-    where
-        T: bytemuck::Pod,
-    {
+    pub fn init(mut self, data: &[T]) -> Tensor<T> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).with_data(data);
         Tensor {

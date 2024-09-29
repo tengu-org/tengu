@@ -23,9 +23,9 @@ impl Device {
         BufferBuilder::new(self, buffer_kind)
     }
 
-    pub fn shader(&self, source: &str) -> wgpu::ShaderModule {
+    pub fn shader(&self, label: &str, source: &str) -> wgpu::ShaderModule {
         self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: None,
+            label: Some(label),
             source: wgpu::ShaderSource::Wgsl(source.into()),
         })
     }

@@ -2,14 +2,14 @@ use std::{collections::HashMap, sync::Arc};
 
 use itertools::Itertools;
 
-use crate::{Expression, Tengu, Tensor};
+use crate::{Expression, Tengu, Tensor, WGSLType};
 
 pub struct Computation<T> {
     expression: Expression<T>,
     output: Tensor<T>,
 }
 
-impl<T: 'static> Computation<T> {
+impl<T: WGSLType> Computation<T> {
     pub fn new(tengu: &Arc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
         let output = tengu.tensor(expression.shape()).with_label(label).empty();
         Self { expression, output }
@@ -52,8 +52,8 @@ mod tests {
     #[tokio::test]
     async fn computation_builder() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor::<f32>([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
-        let b = tengu.tensor::<f32>([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
+        let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
+        let b = tengu.tensor([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
         let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.count(), 4);
     }
@@ -61,8 +61,8 @@ mod tests {
     #[tokio::test]
     async fn computation_declaration() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor::<f32>([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
-        let b = tengu.tensor::<f32>([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
+        let a = tengu.tensor([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
+        let b = tengu.tensor([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
         let computation = Computation::new(&tengu, "c", a + b);
         let declarations = computation.declarations(1);
         assert_eq!(declarations.len(), 3);
@@ -83,8 +83,8 @@ mod tests {
     #[tokio::test]
     async fn computation_emit() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor::<f32>([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
-        let b = tengu.tensor::<f32>([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
+        let a = tengu.tensor::<f32>([2, 2]).with_label("a").empty();
+        let b = tengu.tensor::<f32>([2, 2]).with_label("b").empty();
         let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.emit(), "c[idx] = (a[idx] + b[idx]);");
     }

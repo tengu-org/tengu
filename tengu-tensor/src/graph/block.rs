@@ -4,7 +4,7 @@ use std::{any::Any, sync::Arc};
 use tengu_wgpu::Pipeline;
 
 use super::Computation;
-use crate::{Expression, Probe, Tengu, Tensor};
+use crate::{Expression, Probe, Tengu, Tensor, WGSLType};
 
 const WORKGROUP_SIZE: u32 = 64;
 
@@ -16,7 +16,7 @@ pub struct Block<T> {
     computations: Vec<Computation<T>>,
 }
 
-impl<T: 'static> Block<T> {
+impl<T: WGSLType> Block<T> {
     pub fn new(tengu: &Arc<Tengu>, label: impl Into<String>) -> Self {
         Self {
             tengu: Arc::clone(tengu),
@@ -95,7 +95,7 @@ pub trait Compute {
     fn as_any(&mut self) -> &mut dyn Any;
 }
 
-impl<T: 'static> Compute for Block<T> {
+impl<T: WGSLType + 'static> Compute for Block<T> {
     fn compute(&self) {
         let pipeline = self.create_pipeline();
         let mut encoder = self.tengu.device().compute(&self.label, |pass| {

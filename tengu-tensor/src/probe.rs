@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::{Error, Result, Tengu, Tensor};
+use crate::{Error, Result, Tengu, Tensor, WGSLType};
 
 pub struct Probe {
     buffer: Buffer,
@@ -23,7 +23,7 @@ impl Probe {
         &self.buffer
     }
 
-    pub async fn retrieve<T: bytemuck::Pod>(&self) -> Result<Vec<T>> {
+    pub async fn retrieve<T: WGSLType>(&self) -> Result<Vec<T>> {
         let buffer_slice = self.buffer.slice(..);
         let (sender, receiver) = flume::bounded(1);
         buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
