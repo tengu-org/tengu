@@ -135,9 +135,9 @@ mod tests {
         let block = graph.add_block("addition").add_computation("out", a + b);
         let declaration = block.declaration();
         let declaration = declaration.lines().collect::<Vec<_>>();
-        assert!(declaration.contains(&"@group(0) @binding(0) var<storage, read_write> a: array<f32>"));
-        assert!(declaration.contains(&"@group(0) @binding(1) var<storage, read_write> b: array<f32>"));
-        assert!(declaration.contains(&"@group(0) @binding(2) var<storage, read_write> out: array<f32>"));
+        assert!(declaration.contains(&"@group(0) @binding(0) var<storage, read_write> a: array<f32>;"));
+        assert!(declaration.contains(&"@group(0) @binding(1) var<storage, read_write> b: array<f32>;"));
+        assert!(declaration.contains(&"@group(0) @binding(2) var<storage, read_write> out: array<f32>;"));
     }
 
     #[tokio::test]
