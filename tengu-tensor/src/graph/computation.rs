@@ -47,12 +47,13 @@ impl<T: 'static> Computation<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn computation_builder() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
-        let b = tengu.tensor([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
+        let a = tengu.tensor::<f32>([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
+        let b = tengu.tensor::<f32>([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
         let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.count(), 4);
     }
@@ -60,30 +61,30 @@ mod tests {
     #[tokio::test]
     async fn computation_declaration() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
-        let b = tengu.tensor([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
+        let a = tengu.tensor::<f32>([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
+        let b = tengu.tensor::<f32>([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
         let computation = Computation::new(&tengu, "c", a + b);
         let declarations = computation.declarations(1);
         assert_eq!(declarations.len(), 3);
         assert_eq!(
             declarations.get("a").unwrap(),
-            "@group(1) @binding(0) var<storage, read> a: array<f32>"
+            "@group(1) @binding(0) var<storage, read_write> a: array<f32>"
         );
         assert_eq!(
             declarations.get("b").unwrap(),
-            "@group(1) @binding(1) var<storage, read> b: array<f32>"
+            "@group(1) @binding(1) var<storage, read_write> b: array<f32>"
         );
         assert_eq!(
-            declarations.get("3").unwrap(),
-            "@group(1) @binding(1) var<storage, read_write> c: array<f32>"
+            declarations.get("c").unwrap(),
+            "@group(1) @binding(2) var<storage, read_write> c: array<f32>"
         );
     }
 
     #[tokio::test]
     async fn computation_emit() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
-        let b = tengu.tensor([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
+        let a = tengu.tensor::<f32>([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
+        let b = tengu.tensor::<f32>([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
         let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.emit(), "c[idx] = (a[idx] + b[idx]);");
     }

@@ -13,6 +13,8 @@ thiserror = "1.0.63"
 anyhow = "1.0.89"
 random-string = "1.1.0"
 itertools = "0.13.0"
+indoc = "2.0.5"
 
 [dev-dependencies]
+pretty_assertions = "1.4.1"
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }

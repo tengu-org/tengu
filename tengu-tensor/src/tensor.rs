@@ -64,14 +64,15 @@ impl<T> Tensor<T> {
 
 // Builder implementation
 
-pub struct TensorBuilder {
+pub struct TensorBuilder<T> {
     shape: Vec<usize>,
     count: usize,
     label: Option<String>,
     tengu: Arc<Tengu>,
+    phantom: PhantomData<T>,
 }
 
-impl TensorBuilder {
+impl<T> TensorBuilder<T> {
     pub fn new(tengu: &Arc<Tengu>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
@@ -80,6 +81,7 @@ impl TensorBuilder {
             count,
             label: None,
             tengu: Arc::clone(tengu),
+            phantom: PhantomData,
         }
     }
 
@@ -88,7 +90,7 @@ impl TensorBuilder {
         self
     }
 
-    pub fn empty<T>(mut self) -> Tensor<T> {
+    pub fn empty(mut self) -> Tensor<T> {
         let size = self.count.bytes();
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
         Tensor {
@@ -102,7 +104,7 @@ impl TensorBuilder {
         }
     }
 
-    pub fn init<T>(mut self, data: &[T]) -> Tensor<T>
+    pub fn init(mut self, data: &[T]) -> Tensor<T>
     where
         T: bytemuck::Pod,
     {
@@ -142,11 +144,12 @@ impl<T> Add for Tensor<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn tensor_builder() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).empty::<f32>();
+        let tensor = tengu.tensor::<i32>([3, 3, 3]).empty();
         assert_eq!(tensor.count(), 27);
         assert_eq!(tensor.shape(), &[3, 3, 3]);
     }
@@ -154,18 +157,18 @@ mod tests {
     #[tokio::test]
     async fn tensor_declaration() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).with_label("tz").empty::<f32>();
+        let tensor = tengu.tensor::<i32>([3, 3, 3]).with_label("tz").empty();
         let declaration = tensor.declaration(1, 2);
         assert_eq!(
             declaration,
-            "@group(1) @binding(2) var<storage, read_write> tz: array<f32>"
+            "@group(1) @binding(2) var<storage, read_write> tz: array<i32>"
         );
     }
 
     #[tokio::test]
     async fn tensor_label() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).empty::<f32>();
+        let tensor = tengu.tensor::<i32>([3, 3, 3]).empty();
         assert_eq!(tensor.label().len(), LABEL_LENGTH);
         assert!(tensor.label().chars().all(|c| c.is_alphabetic()));
 
@@ -177,7 +180,7 @@ mod tests {
     #[tokio::test]
     async fn tensor_emit() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).with_label("tenzor").empty::<f32>();
+        let tensor = tengu.tensor::<i32>([3, 3, 3]).with_label("tenzor").empty();
         assert_eq!(tensor.emit(), "tenzor[idx]");
 
         let tensor = tengu.tensor([3]).with_label("tenzor").init(&[1, 2, 3]);
@@ -189,8 +192,8 @@ mod tests {
     #[should_panic]
     async fn test_shape_mismatch() {
         let tengu = Tengu::new().await.unwrap();
-        let lhs = tengu.tensor([1, 2, 3]).empty::<f32>();
-        let rhs = tengu.tensor([3, 2, 1]).empty::<f32>();
+        let lhs = tengu.tensor::<i32>([1, 2, 3]).empty();
+        let rhs = tengu.tensor::<i32>([3, 2, 1]).empty();
         let _ = lhs + rhs;
     }
 }

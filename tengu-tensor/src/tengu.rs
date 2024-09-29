@@ -19,7 +19,7 @@ impl Tengu {
         &self.device
     }
 
-    pub fn tensor(self: &Arc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder {
+    pub fn tensor<T>(self: &Arc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder<T> {
         TensorBuilder::new(self, shape)
     }
 
