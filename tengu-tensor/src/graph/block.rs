@@ -76,7 +76,7 @@ impl<T: 'static> Block<T> {
     }
 
     fn create_pipeline(&self) -> Pipeline {
-        let shader = self.tengu.device().shader(&self.emit());
+        let shader = self.tengu.device().shader(self.label(), &self.emit());
         let buffers = self.nodes().map(|t| t.buffer());
         self.tengu
             .device()

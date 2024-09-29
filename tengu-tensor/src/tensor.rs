@@ -58,7 +58,7 @@ impl<T> Tensor<T> {
             BufferUsage::ReadWrite => "read_write",
             BufferUsage::Staging => panic!("cannot declare a staging buffer in a shader"),
         };
-        format!("@group({group}) @binding({binding}) var<storage, {access}> {label}: array<{type_name}>")
+        format!("@group({group}) @binding({binding}) var<storage, {access}> {label}: array<{type_name}>;")
     }
 }
 
@@ -161,7 +161,7 @@ mod tests {
         let declaration = tensor.declaration(1, 2);
         assert_eq!(
             declaration,
-            "@group(1) @binding(2) var<storage, read_write> tz: array<i32>"
+            "@group(1) @binding(2) var<storage, read_write> tz: array<i32>;"
         );
     }
 
