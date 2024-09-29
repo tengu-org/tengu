@@ -48,8 +48,8 @@ mod tests {
     #[tokio::test]
     async fn test_add_expression() {
         let tengu = Tengu::new().await.unwrap();
-        let lhs = Expression::tensor(tengu.tensor::<f32>([1, 2, 3]).with_label("tz_lhs").empty());
-        let rhs = Expression::tensor(tengu.tensor::<f32>([1, 2, 3]).with_label("tz_rhs").empty());
+        let lhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_lhs").empty::<f32>());
+        let rhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_rhs").empty::<f32>());
         let add = AddExpression::new(lhs, rhs);
         assert_eq!(add.count(), 6);
         assert_eq!(add.shape(), &[1, 2, 3]);

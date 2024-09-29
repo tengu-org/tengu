@@ -64,15 +64,14 @@ impl<T> Tensor<T> {
 
 // Builder implementation
 
-pub struct TensorBuilder<T> {
+pub struct TensorBuilder {
     shape: Vec<usize>,
     count: usize,
     label: Option<String>,
     tengu: Arc<Tengu>,
-    phantom: PhantomData<T>,
 }
 
-impl<T: WGSLType> TensorBuilder<T> {
+impl TensorBuilder {
     pub fn new(tengu: &Arc<Tengu>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
@@ -81,7 +80,6 @@ impl<T: WGSLType> TensorBuilder<T> {
             count,
             label: None,
             tengu: Arc::clone(tengu),
-            phantom: PhantomData,
         }
     }
 
@@ -90,7 +88,7 @@ impl<T: WGSLType> TensorBuilder<T> {
         self
     }
 
-    pub fn empty(mut self) -> Tensor<T> {
+    pub fn empty<T: WGSLType>(mut self) -> Tensor<T> {
         let size = self.count.of::<T>();
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
         Tensor {
@@ -104,7 +102,7 @@ impl<T: WGSLType> TensorBuilder<T> {
         }
     }
 
-    pub fn init(mut self, data: &[T]) -> Tensor<T> {
+    pub fn init<T: WGSLType>(mut self, data: &[T]) -> Tensor<T> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).with_data(data);
         Tensor {
@@ -146,7 +144,7 @@ mod tests {
     #[tokio::test]
     async fn tensor_builder() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor::<i32>([3, 3, 3]).empty();
+        let tensor = tengu.tensor([3, 3, 3]).empty::<i32>();
         assert_eq!(tensor.count(), 27);
         assert_eq!(tensor.shape(), &[3, 3, 3]);
     }
@@ -154,7 +152,7 @@ mod tests {
     #[tokio::test]
     async fn tensor_declaration() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor::<i32>([3, 3, 3]).with_label("tz").empty();
+        let tensor = tengu.tensor([3, 3, 3]).with_label("tz").empty::<i32>();
         let declaration = tensor.declaration(1, 2);
         assert_eq!(
             declaration,
@@ -165,7 +163,7 @@ mod tests {
     #[tokio::test]
     async fn tensor_label() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor::<i32>([3, 3, 3]).empty();
+        let tensor = tengu.tensor([3, 3, 3]).empty::<i32>();
         assert_eq!(tensor.label().len(), LABEL_LENGTH);
         assert!(tensor.label().chars().all(|c| c.is_alphabetic()));
 
@@ -177,7 +175,7 @@ mod tests {
     #[tokio::test]
     async fn tensor_emit() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor::<i32>([3, 3, 3]).with_label("tenzor").empty();
+        let tensor = tengu.tensor([3, 3, 3]).with_label("tenzor").empty::<i32>();
         assert_eq!(tensor.emit(), "tenzor[idx]");
 
         let tensor = tengu.tensor([3]).with_label("tenzor").init(&[1, 2, 3]);
@@ -189,8 +187,8 @@ mod tests {
     #[should_panic]
     async fn test_shape_mismatch() {
         let tengu = Tengu::new().await.unwrap();
-        let lhs = tengu.tensor::<i32>([1, 2, 3]).empty();
-        let rhs = tengu.tensor::<i32>([3, 2, 1]).empty();
+        let lhs = tengu.tensor([1, 2, 3]).empty::<i32>();
+        let rhs = tengu.tensor([3, 2, 1]).empty::<i32>();
         let _ = lhs + rhs;
     }
 }

@@ -29,7 +29,7 @@ impl Tengu {
         &self.device
     }
 
-    pub fn tensor<T: WGSLType>(self: &Arc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder<T> {
+    pub fn tensor(self: &Arc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder {
         TensorBuilder::new(self, shape)
     }
 

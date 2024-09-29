@@ -129,8 +129,8 @@ mod tests {
     #[tokio::test]
     async fn bilder_declaration() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor::<f32>([2, 2]).with_label("a").empty();
-        let b = tengu.tensor::<f32>([2, 2]).with_label("b").empty();
+        let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
+        let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
         let mut graph = tengu.graph();
         let block = graph.add_block("addition").add_computation("out", a + b);
         let declaration = block.declaration();
@@ -143,8 +143,8 @@ mod tests {
     #[tokio::test]
     async fn bilder_body() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor::<f32>([2, 2]).with_label("a").empty();
-        let b = tengu.tensor::<f32>([2, 2]).with_label("b").empty();
+        let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
+        let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
         let mut graph = tengu.graph();
         let block = graph.add_block("addition").add_computation("out", a + b);
         assert_eq!(

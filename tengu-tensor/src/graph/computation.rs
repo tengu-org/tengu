@@ -83,8 +83,8 @@ mod tests {
     #[tokio::test]
     async fn computation_emit() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor::<f32>([2, 2]).with_label("a").empty();
-        let b = tengu.tensor::<f32>([2, 2]).with_label("b").empty();
+        let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
+        let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
         let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.emit(), "c[idx] = (a[idx] + b[idx]);");
     }
