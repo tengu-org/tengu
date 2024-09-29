@@ -11,7 +11,7 @@ pub struct Probe {
 
 impl Probe {
     pub fn new<T>(tengu: &Arc<Tengu>, from: &Tensor<T>) -> Self {
-        let size = from.count().bytes();
+        let size = from.count().of::<T>();
         let buffer = tengu.device().buffer::<T>(BufferUsage::Staging).empty(size);
         Self {
             tengu: Arc::clone(tengu),

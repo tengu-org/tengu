@@ -1,7 +1,7 @@
 use std::ops::Deref;
 use wgpu::util::DeviceExt;
 
-use crate::{Device, Size};
+use crate::Device;
 
 #[derive(Copy, Clone, Debug)]
 pub enum BufferUsage {
@@ -68,10 +68,10 @@ impl<'a, 'device> BufferBuilder<'a, 'device> {
         self
     }
 
-    pub fn empty(self, size: Size) -> Buffer {
+    pub fn empty(self, size: usize) -> Buffer {
         let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
             label: self.label,
-            size: size.0 as u64,
+            size: size as u64,
             usage: self.usage.usage(),
             mapped_at_creation: false,
         });

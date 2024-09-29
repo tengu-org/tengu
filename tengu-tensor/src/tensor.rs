@@ -91,7 +91,7 @@ impl<T: WGSLType> TensorBuilder<T> {
     }
 
     pub fn empty(mut self) -> Tensor<T> {
-        let size = self.count.bytes();
+        let size = self.count.of::<T>();
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
         Tensor {
             label: self.label(),

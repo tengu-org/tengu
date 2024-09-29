@@ -14,7 +14,7 @@ pub use device::Device;
 pub use encoder::Encoder;
 pub use error::{Error, Result};
 pub use pipeline::Pipeline;
-pub use size::{ByteSize, Size};
+pub use size::ByteSize;
 pub use surface::BoundSurface;
 pub use surface::Surface;
 pub use wgpu::WGPU;
