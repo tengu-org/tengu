@@ -127,7 +127,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
-    async fn bilder_declaration() {
+    async fn builder_declaration() {
         let tengu = Tengu::new().await.unwrap();
         let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
         let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
@@ -141,7 +141,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn bilder_body() {
+    async fn builder_body() {
         let tengu = Tengu::new().await.unwrap();
         let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
         let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
