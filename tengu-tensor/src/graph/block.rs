@@ -82,7 +82,7 @@ impl<T: WGSLType> Block<T> {
             .device()
             .layout()
             .add_entries(buffers)
-            .pipeline()
+            .pipeline(self.label())
             .build(shader)
     }
 }

@@ -33,7 +33,6 @@ impl Deref for Pipeline {
 
 pub struct LayoutBuilder<'a, 'device> {
     device: &'device Device,
-    label: Option<String>,
     buffers: Vec<&'a Buffer>,
     layout_entries: Vec<wgpu::BindGroupLayoutEntry>,
     bind_entries: Vec<wgpu::BindGroupEntry<'a>>,
@@ -44,17 +43,11 @@ impl<'a, 'device> LayoutBuilder<'a, 'device> {
     pub fn new(device: &'device Device) -> Self {
         Self {
             device,
-            label: None,
             buffers: Vec::new(),
             layout_entries: Vec::new(),
             bind_entries: Vec::new(),
             counter: 0,
         }
-    }
-
-    pub fn with_label(mut self, label: impl Into<String>) -> Self {
-        self.label = Some(label.into());
-        self
     }
 
     pub fn add_entry(mut self, buffer: &'a Buffer) -> Self {
@@ -75,13 +68,13 @@ impl<'a, 'device> LayoutBuilder<'a, 'device> {
         self
     }
 
-    pub fn pipeline(self) -> PipelineBuilder<'device> {
+    pub fn pipeline(self, label: &str) -> PipelineBuilder<'device> {
         let bind_group_layout = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: self.label.as_deref(),
+            label: Some(label),
             entries: &self.layout_entries,
         });
         let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: None,
+            label: Some(label),
             layout: &bind_group_layout,
             entries: &self.bind_entries,
         });
