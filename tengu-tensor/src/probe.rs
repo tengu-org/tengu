@@ -19,6 +19,10 @@ impl Probe {
         }
     }
 
+    pub fn buffer(&self) -> &Buffer {
+        &self.buffer
+    }
+
     pub async fn retrieve<T: bytemuck::Pod>(&self) -> Result<Vec<T>> {
         let buffer_slice = self.buffer.slice(..);
         let (sender, receiver) = flume::bounded(1);

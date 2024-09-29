@@ -97,15 +97,13 @@ pub trait Compute {
 impl<T: 'static> Compute for Block<T> {
     fn compute(&self) {
         let pipeline = self.create_pipeline();
-        self.tengu.device().compute(|encoder| {
-            let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-                label: Some(self.label()),
-                timestamp_writes: None,
-            });
-            compute_pass.set_pipeline(&pipeline);
-            compute_pass.set_bind_group(0, pipeline.bind_group(), &[]);
-            compute_pass.dispatch_workgroups((self.count() as u32 / WORKGROUP_SIZE) + 1, 1, 1);
+        let mut encoder = self.tengu.device().compute(&self.label, |pass| {
+            pass.set_pipeline(&pipeline);
+            pass.set_bind_group(0, pipeline.bind_group(), &[]);
+            pass.dispatch_workgroups((self.count() as u32 / WORKGROUP_SIZE) + 1, 1, 1);
         });
+        self.nodes().for_each(|tensor| tensor.read(&mut encoder));
+        encoder.finish();
     }
 
     fn probe<'a>(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe> {

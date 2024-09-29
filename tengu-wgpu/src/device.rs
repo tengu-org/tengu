@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::{buffer::BufferBuilder, pipeline::LayoutBuilder, BufferUsage, Error};
+use crate::{buffer::BufferBuilder, pipeline::LayoutBuilder, BufferUsage, Encoder, Error};
 
 pub struct Device {
     device: wgpu::Device,
@@ -12,15 +12,11 @@ impl Device {
         Self { device, queue }
     }
 
-    pub fn compute<F>(&self, command: F)
+    pub fn compute<F>(&self, label: &str, commands: F) -> Encoder
     where
-        F: FnOnce(&mut wgpu::CommandEncoder),
+        F: FnOnce(&mut wgpu::ComputePass),
     {
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        command(&mut encoder);
-        self.queue.submit(Some(encoder.finish()));
+        Encoder::new(self).compute(label, commands)
     }
 
     pub fn buffer<T>(&self, buffer_kind: BufferUsage) -> BufferBuilder {
@@ -32,6 +28,10 @@ impl Device {
             label: None,
             source: wgpu::ShaderSource::Wgsl(source.into()),
         })
+    }
+
+    pub(crate) fn submit(&self, commands: wgpu::CommandBuffer) {
+        self.queue.submit(Some(commands));
     }
 
     pub fn layout(&self) -> LayoutBuilder {

@@ -1,6 +1,6 @@
 use random_string::charsets::ALPHA;
 use std::{cell::OnceCell, marker::PhantomData, ops::Add, sync::Arc};
-use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
+use tengu_wgpu::{Buffer, BufferUsage, ByteSize, Encoder};
 
 use crate::{Expression, Probe, Tengu};
 
@@ -41,6 +41,12 @@ impl<T> Tensor<T> {
 
     pub fn probe(&self) -> &Probe {
         self.probe.get_or_init(|| Probe::new(&self.tengu, self))
+    }
+
+    pub fn read(&self, encoder: &mut Encoder) {
+        if let Some(probe) = self.probe.get() {
+            encoder.copy_buffer(self.buffer(), probe.buffer());
+        }
     }
 
     pub fn declaration(&self, group: usize, binding: usize) -> String {
