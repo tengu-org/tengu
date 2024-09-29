@@ -68,15 +68,15 @@ mod tests {
         assert_eq!(declarations.len(), 3);
         assert_eq!(
             declarations.get("a").unwrap(),
-            "@group(1) @binding(0) var<storage, read_write> a: array<f32>"
+            "@group(1) @binding(0) var<storage, read_write> a: array<f32>;"
         );
         assert_eq!(
             declarations.get("b").unwrap(),
-            "@group(1) @binding(1) var<storage, read_write> b: array<f32>"
+            "@group(1) @binding(1) var<storage, read_write> b: array<f32>;"
         );
         assert_eq!(
             declarations.get("c").unwrap(),
-            "@group(1) @binding(2) var<storage, read_write> c: array<f32>"
+            "@group(1) @binding(2) var<storage, read_write> c: array<f32>;"
         );
     }
 
