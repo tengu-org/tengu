@@ -7,6 +7,7 @@ use crate::{Error, Result, Tengu, Tensor, WGSLType};
 pub struct Probe {
     buffer: Buffer,
     tengu: Arc<Tengu>,
+    on: bool,
 }
 
 impl Probe {
@@ -16,6 +17,7 @@ impl Probe {
         Self {
             tengu: Arc::clone(tengu),
             buffer,
+            on: true,
         }
     }
 
@@ -23,7 +25,18 @@ impl Probe {
         &self.buffer
     }
 
+    pub fn turn_off(&mut self) {
+        self.on = false;
+    }
+
+    pub fn turn_on(&mut self) {
+        self.on = true;
+    }
+
     pub async fn retrieve<T: WGSLType>(&self) -> Result<Vec<T>> {
+        if !self.on {
+            return Ok(Vec::new());
+        }
         let buffer_slice = self.buffer.slice(..);
         let (sender, receiver) = flume::bounded(1);
         buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
