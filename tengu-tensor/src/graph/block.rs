@@ -1,6 +1,6 @@
 use indoc::formatdoc;
 use itertools::Itertools;
-use std::{any::Any, sync::Arc};
+use std::{any::Any, cell::OnceCell, sync::Arc};
 use tengu_wgpu::Pipeline;
 
 use super::Computation;
@@ -14,6 +14,7 @@ pub struct Block<T> {
     tengu: Arc<Tengu>,
     label: String,
     computations: Vec<Computation<T>>,
+    pipeline: OnceCell<Pipeline>,
 }
 
 impl<T: WGSLType> Block<T> {
@@ -22,6 +23,7 @@ impl<T: WGSLType> Block<T> {
             tengu: Arc::clone(tengu),
             label: label.into(),
             computations: Vec::new(),
+            pipeline: OnceCell::new(),
         }
     }
 
@@ -75,36 +77,38 @@ impl<T: WGSLType> Block<T> {
         )
     }
 
-    fn create_pipeline(&self) -> Pipeline {
-        let shader = self.tengu.device().shader(self.label(), &self.emit());
-        let buffers = self.nodes().map(|t| t.buffer());
-        self.tengu
-            .device()
-            .layout()
-            .add_entries(buffers)
-            .pipeline(self.label())
-            .build(shader)
+    fn pipeline(&self) -> &Pipeline {
+        self.pipeline.get_or_init(|| {
+            let shader = self.tengu.device().shader(self.label(), &self.emit());
+            let buffers = self.nodes().map(|t| t.buffer());
+            self.tengu
+                .device()
+                .layout()
+                .add_entries(buffers)
+                .pipeline(self.label())
+                .build(shader)
+        })
     }
 }
 
 // Traits
 
 pub trait Compute {
-    fn compute(&self);
+    fn compute(&self) -> wgpu::CommandBuffer;
     fn probe<'a>(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe>;
     fn as_any(&mut self) -> &mut dyn Any;
 }
 
 impl<T: WGSLType + 'static> Compute for Block<T> {
-    fn compute(&self) {
-        let pipeline = self.create_pipeline();
+    fn compute(&self) -> wgpu::CommandBuffer {
+        let pipeline = self.pipeline();
         let mut encoder = self.tengu.device().compute(&self.label, |pass| {
-            pass.set_pipeline(&pipeline);
+            pass.set_pipeline(pipeline);
             pass.set_bind_group(0, pipeline.bind_group(), &[]);
             pass.dispatch_workgroups((self.count() as u32 / WORKGROUP_SIZE) + 1, 1, 1);
         });
         self.nodes().for_each(|tensor| tensor.read(&mut encoder));
-        encoder.finish();
+        encoder.finish()
     }
 
     fn probe<'a>(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe> {

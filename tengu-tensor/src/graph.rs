@@ -43,8 +43,7 @@ impl Graph {
     }
 
     pub fn step(&self) {
-        for block in &self.blocks {
-            block.compute();
-        }
+        let commands = self.blocks.iter().map(|block| block.compute());
+        self.tengu.device().submit(commands);
     }
 }

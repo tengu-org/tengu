@@ -1,14 +1,13 @@
 use crate::{Buffer, Device};
 
-pub struct Encoder<'device> {
-    device: &'device Device,
+pub struct Encoder {
     encoder: wgpu::CommandEncoder,
 }
 
-impl<'device> Encoder<'device> {
-    pub fn new(device: &'device Device) -> Self {
+impl Encoder {
+    pub fn new(device: &Device) -> Self {
         let encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        Self { device, encoder }
+        Self { encoder }
     }
 
     pub(crate) fn compute<F>(mut self, label: &str, commands: F) -> Self
@@ -28,8 +27,7 @@ impl<'device> Encoder<'device> {
         self.encoder.copy_buffer_to_buffer(source, 0, destination, 0, size);
     }
 
-    pub fn finish(self) {
-        let commands = self.encoder.finish();
-        self.device.submit(commands);
+    pub fn finish(self) -> wgpu::CommandBuffer {
+        self.encoder.finish()
     }
 }
