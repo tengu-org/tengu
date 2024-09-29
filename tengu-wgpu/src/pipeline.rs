@@ -51,7 +51,7 @@ impl<'a, 'device> LayoutBuilder<'a, 'device> {
     }
 
     pub fn add_entry(mut self, buffer: &'a Buffer) -> Self {
-        self.layout_entries.push(create_layout_entry(buffer));
+        self.layout_entries.push(create_layout_entry(buffer, self.counter));
         self.bind_entries.push(create_bind_entry(buffer, self.counter));
         self.buffers.push(buffer);
         self.counter += 1;
@@ -60,7 +60,7 @@ impl<'a, 'device> LayoutBuilder<'a, 'device> {
 
     pub fn add_entries(mut self, buffers: impl IntoIterator<Item = &'a Buffer>) -> Self {
         for buffer in buffers.into_iter() {
-            self.layout_entries.push(create_layout_entry(buffer));
+            self.layout_entries.push(create_layout_entry(buffer, self.counter));
             self.bind_entries.push(create_bind_entry(buffer, self.counter));
             self.buffers.push(buffer);
             self.counter += 1;
@@ -82,7 +82,7 @@ impl<'a, 'device> LayoutBuilder<'a, 'device> {
     }
 }
 
-fn create_layout_entry(buffer: &Buffer) -> wgpu::BindGroupLayoutEntry {
+fn create_layout_entry(buffer: &Buffer, idx: usize) -> wgpu::BindGroupLayoutEntry {
     let read_only = match buffer.usage() {
         BufferUsage::Read => true,
         BufferUsage::Write => false,
@@ -90,7 +90,7 @@ fn create_layout_entry(buffer: &Buffer) -> wgpu::BindGroupLayoutEntry {
         BufferUsage::Staging => panic!("staging buffers should not belong to a bind group"),
     };
     wgpu::BindGroupLayoutEntry {
-        binding: 0,
+        binding: idx as u32,
         visibility: wgpu::ShaderStages::COMPUTE,
         ty: wgpu::BindingType::Buffer {
             ty: wgpu::BufferBindingType::Storage { read_only },
