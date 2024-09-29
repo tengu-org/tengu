@@ -13,6 +13,6 @@ pub async fn main() {
 
     // Run and probe the result.
     let result = graph.probe("addition", "out").unwrap();
-    graph.compute();
+    graph.step();
     println!("{:?}", result.retrieve::<f32>().await.unwrap());
 }

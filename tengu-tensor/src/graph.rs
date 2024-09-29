@@ -42,7 +42,7 @@ impl Graph {
             .next()
     }
 
-    pub fn compute(&self) {
+    pub fn step(&self) {
         for block in &self.blocks {
             block.compute();
         }
