@@ -129,14 +129,14 @@ mod tests {
     #[tokio::test]
     async fn builder_declaration() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
-        let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
+        let a = tengu.tensor([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
+        let b = tengu.tensor([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
         let mut graph = tengu.graph();
         let block = graph.add_block("addition").add_computation("out", a + b);
         let declaration = block.declaration();
         let declaration = declaration.lines().collect::<Vec<_>>();
-        assert!(declaration.contains(&"@group(0) @binding(0) var<storage, read_write> a: array<f32>;"));
-        assert!(declaration.contains(&"@group(0) @binding(1) var<storage, read_write> b: array<f32>;"));
+        assert!(declaration.contains(&"@group(0) @binding(0) var<storage, read> a: array<f32>;"));
+        assert!(declaration.contains(&"@group(0) @binding(1) var<storage, read> b: array<f32>;"));
         assert!(declaration.contains(&"@group(0) @binding(2) var<storage, read_write> out: array<f32>;"));
     }
 

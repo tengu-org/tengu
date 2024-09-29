@@ -104,7 +104,7 @@ impl TensorBuilder {
 
     pub fn init<T: WGSLType>(mut self, data: &[T]) -> Tensor<T> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
-        let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).with_data(data);
+        let buffer = self.tengu.device().buffer::<T>(BufferUsage::Read).with_data(data);
         Tensor {
             label: self.label(),
             buffer,
