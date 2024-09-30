@@ -1,13 +1,14 @@
+use std::fmt::Display;
 use std::rc::Rc;
 
 use tengu_wgpu::{Device, WGPU};
 
 use crate::tensor::TensorBuilder;
-use crate::{Graph, Result};
+use crate::{Expression, Graph, Result};
 
 // Limit available underlying types.
 
-pub trait WGSLType: bytemuck::Pod {}
+pub trait WGSLType: bytemuck::Pod + Display {}
 
 impl WGSLType for f32 {}
 impl WGSLType for u32 {}
@@ -31,6 +32,10 @@ impl Tengu {
 
     pub fn tensor(self: &Rc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder {
         TensorBuilder::new(self, shape)
+    }
+
+    pub fn scalar<T: WGSLType>(self: &Rc<Self>, scalar: T) -> Expression<T> {
+        Expression::Scalar(scalar)
     }
 
     pub fn graph(self: &Rc<Self>) -> Graph {

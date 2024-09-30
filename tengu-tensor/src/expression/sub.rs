@@ -1,4 +1,4 @@
-use crate::Tensor;
+use crate::{Tensor, WGSLType};
 
 use super::Expression;
 
@@ -8,7 +8,7 @@ pub struct SubExpression<T> {
     rhs: Box<Expression<T>>,
 }
 
-impl<T> SubExpression<T> {
+impl<T: WGSLType> SubExpression<T> {
     pub fn new(lhs: Expression<T>, rhs: Expression<T>) -> Self {
         Self {
             lhs: Box::new(lhs),

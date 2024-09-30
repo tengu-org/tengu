@@ -12,8 +12,8 @@ pub async fn main() {
     let mut graph = tengu.graph();
     graph
         .add_block("main")
-        .add_computation("add", a.clone() + b.clone())
-        .add_computation("sub", b - a + c);
+        .add_computation("add", a.clone() + b.clone() + 1.0)
+        .add_computation("sub", b - a - c);
 
     // Set up probes.
     let add = graph.probe("main", "add").unwrap();
