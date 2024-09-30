@@ -12,12 +12,12 @@ pub async fn main() {
     let mut graph = tengu.graph();
     graph
         .add_block("main")
-        .add_computation("add", a.clone() + b.clone() + 1.0)
-        .add_computation("sub", b - a - c);
+        .add_computation("addmul", a.clone() * b.clone() + 1.0)
+        .add_computation("subdiv", tengu.scalar(2.0) * b - a / c);
 
     // Set up probes.
-    let add = graph.probe("main", "add").unwrap();
-    let sub = graph.probe("main", "sub").unwrap();
+    let add = graph.probe("main", "addmul").unwrap();
+    let sub = graph.probe("main", "subdiv").unwrap();
 
     // Run one step of computation and display the result.
     graph.step();

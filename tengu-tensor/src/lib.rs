@@ -1,7 +1,6 @@
 mod error;
 mod expression;
 mod graph;
-mod ops;
 mod probe;
 mod tengu;
 mod tensor;

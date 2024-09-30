@@ -1,17 +1,15 @@
-pub use add::AddExpression;
-pub use sub::SubExpression;
+use binary::Binary;
 
 use crate::{Tensor, WGSLType};
 
-mod add;
-mod sub;
+mod binary;
+mod ops;
 
 #[derive(Clone)]
 pub enum Expression<T> {
     Scalar(T),
     Tensor(Tensor<T>),
-    Add(AddExpression<T>),
-    Sub(SubExpression<T>),
+    Binary(Binary<T>),
 }
 
 impl<T: WGSLType> Expression<T> {
@@ -25,8 +23,17 @@ impl<T: WGSLType> Expression<T> {
         match self {
             Self::Scalar(_) => &[1],
             Self::Tensor(tensor) => tensor.shape(),
-            Self::Add(add) => add.shape(),
-            Self::Sub(sub) => sub.shape(),
+            Self::Binary(add) => add.shape(),
+        }
+    }
+
+    pub fn match_shape(&self, other: &Self) -> bool {
+        match self {
+            Self::Scalar(_) => true,
+            _ => match other {
+                Self::Scalar(_) => true,
+                _ => self.shape() == other.shape(),
+            },
         }
     }
 
@@ -34,8 +41,7 @@ impl<T: WGSLType> Expression<T> {
         match self {
             Self::Scalar(_) => 1,
             Self::Tensor(tensor) => tensor.count(),
-            Self::Add(add) => add.count(),
-            Self::Sub(sub) => sub.count(),
+            Self::Binary(add) => add.count(),
         }
     }
 
@@ -50,8 +56,7 @@ impl<T: WGSLType> Expression<T> {
         match self {
             Self::Scalar(scalar) => scalar.to_string(),
             Self::Tensor(tensor) => tensor.emit(),
-            Self::Add(add) => add.emit(),
-            Self::Sub(sub) => sub.emit(),
+            Self::Binary(add) => add.emit(),
         }
     }
 
@@ -59,8 +64,7 @@ impl<T: WGSLType> Expression<T> {
         match self {
             Self::Scalar(_) => {}
             Self::Tensor(tensor) => inputs.push(tensor),
-            Self::Add(add) => add.collect_inputs(inputs),
-            Self::Sub(sub) => sub.collect_inputs(inputs),
+            Self::Binary(add) => add.collect_inputs(inputs),
         }
     }
 }
