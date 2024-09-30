@@ -4,6 +4,7 @@ mod graph;
 mod probe;
 mod tengu;
 mod tensor;
+mod tensor_ops;
 
 pub use error::{Error, Result};
 pub use expression::Expression;

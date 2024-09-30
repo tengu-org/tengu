@@ -9,10 +9,17 @@ pub async fn main() {
 
     // Create computation graph.
     let mut graph = tengu.graph();
-    graph.add_block("addition").add_computation("out", a + b);
+    graph
+        .add_block("main")
+        .add_computation("add", a.clone() + b.clone())
+        .add_computation("sub", a - b);
 
-    // Run and probe the result.
-    let result = graph.probe("addition", "out").unwrap();
+    // Set up probes.
+    let add = graph.probe("main", "add").unwrap();
+    let sub = graph.probe("main", "sub").unwrap();
+
+    // Run one step of computation and display the result.
     graph.step();
-    println!("{:?}", result.retrieve::<f32>().await.unwrap());
+    println!("{:?}", add.retrieve::<f32>().await.unwrap());
+    println!("{:?}", sub.retrieve::<f32>().await.unwrap());
 }

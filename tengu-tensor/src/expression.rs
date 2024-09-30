@@ -1,12 +1,15 @@
 use add::AddExpression;
+use sub::SubExpression;
 
 use crate::Tensor;
 
 pub mod add;
+pub mod sub;
 
 pub enum Expression<T> {
     Tensor(Tensor<T>),
     Add(AddExpression<T>),
+    Sub(SubExpression<T>),
 }
 
 impl<T> Expression<T> {
@@ -20,6 +23,7 @@ impl<T> Expression<T> {
         match self {
             Self::Tensor(tensor) => tensor.shape(),
             Self::Add(add) => add.shape(),
+            Self::Sub(sub) => sub.shape(),
         }
     }
 
@@ -27,6 +31,7 @@ impl<T> Expression<T> {
         match self {
             Self::Tensor(tensor) => tensor.count(),
             Self::Add(add) => add.count(),
+            Self::Sub(sub) => sub.count(),
         }
     }
 
@@ -34,6 +39,7 @@ impl<T> Expression<T> {
         match self {
             Self::Tensor(tensor) => tensor.emit(),
             Self::Add(add) => add.emit(),
+            Self::Sub(sub) => sub.emit(),
         }
     }
 
@@ -41,6 +47,7 @@ impl<T> Expression<T> {
         match self {
             Self::Tensor(tensor) => inputs.push(tensor),
             Self::Add(add) => add.collect_inputs(inputs),
+            Self::Sub(sub) => sub.collect_inputs(inputs),
         }
     }
 }
@@ -57,5 +64,12 @@ impl<T> Expression<T> {
         let rhs = Self::tensor(rhs);
         let add_expression = AddExpression::new(lhs, rhs);
         Self::Add(add_expression)
+    }
+
+    pub fn sub(lhs: Tensor<T>, rhs: Tensor<T>) -> Self {
+        let lhs = Self::tensor(lhs);
+        let rhs = Self::tensor(rhs);
+        let sub_expression = SubExpression::new(lhs, rhs);
+        Self::Sub(sub_expression)
     }
 }

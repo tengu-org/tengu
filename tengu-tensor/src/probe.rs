@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
@@ -6,16 +6,16 @@ use crate::{Error, Result, Tengu, Tensor, WGSLType};
 
 pub struct Probe {
     buffer: Buffer,
-    tengu: Arc<Tengu>,
+    tengu: Rc<Tengu>,
     on: bool,
 }
 
 impl Probe {
-    pub fn new<T>(tengu: &Arc<Tengu>, from: &Tensor<T>) -> Self {
+    pub fn new<T>(tengu: &Rc<Tengu>, from: &Tensor<T>) -> Self {
         let size = from.count().of::<T>();
         let buffer = tengu.device().buffer::<T>(BufferUsage::Staging).empty(size);
         Self {
-            tengu: Arc::clone(tengu),
+            tengu: Rc::clone(tengu),
             buffer,
             on: true,
         }

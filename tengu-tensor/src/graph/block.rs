@@ -1,26 +1,27 @@
 use indoc::formatdoc;
 use itertools::Itertools;
-use std::{any::Any, cell::OnceCell, sync::Arc};
+use std::{any::Any, cell::OnceCell, rc::Rc};
 use tengu_wgpu::Pipeline;
 
 use super::Computation;
 use crate::{Expression, Probe, Tengu, Tensor, WGSLType};
 
 const WORKGROUP_SIZE: u32 = 64;
+const GROUP: usize = 0;
 
 // Block implementation
 
 pub struct Block<T> {
-    tengu: Arc<Tengu>,
+    tengu: Rc<Tengu>,
     label: String,
     computations: Vec<Computation<T>>,
     pipeline: OnceCell<Pipeline>,
 }
 
 impl<T: WGSLType> Block<T> {
-    pub fn new(tengu: &Arc<Tengu>, label: impl Into<String>) -> Self {
+    pub fn new(tengu: &Rc<Tengu>, label: impl Into<String>) -> Self {
         Self {
-            tengu: Arc::clone(tengu),
+            tengu: Rc::clone(tengu),
             label: label.into(),
             computations: Vec::new(),
             pipeline: OnceCell::new(),
@@ -55,12 +56,12 @@ impl<T: WGSLType> Block<T> {
     }
 
     fn declaration(&self) -> String {
-        let group = 0; // TODO: Should we increment this somewhere?
         self.computations
             .iter()
-            .map(|computation| computation.declarations(group))
-            .concat()
-            .values()
+            .flat_map(|computation| computation.nodes())
+            .unique_by(|tensor| tensor.label())
+            .enumerate()
+            .map(|(binding, tensor)| tensor.declaration(GROUP, binding))
             .join("\n")
     }
 
@@ -73,7 +74,7 @@ impl<T: WGSLType> Block<T> {
                 let idx = global_id.x;
                 {}
             }}",
-            self.computations.iter().map(|c| c.emit()).join("\n"),
+            self.computations.iter().map(|c| c.emit()).join("\n    "),
         )
     }
 

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 pub use block::Block;
 use block::Compute;
@@ -12,14 +12,14 @@ mod computation;
 // Graph implementation
 
 pub struct Graph {
-    tengu: Arc<Tengu>,
+    tengu: Rc<Tengu>,
     blocks: Vec<Box<dyn Compute>>,
 }
 
 impl Graph {
-    pub fn new(tengu: &Arc<Tengu>) -> Self {
+    pub fn new(tengu: &Rc<Tengu>) -> Self {
         Self {
-            tengu: Arc::clone(tengu),
+            tengu: Rc::clone(tengu),
             blocks: Vec::new(),
         }
     }

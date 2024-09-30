@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::rc::Rc;
 
 use tengu_wgpu::{Device, WGPU};
 
@@ -20,20 +20,20 @@ pub struct Tengu {
 }
 
 impl Tengu {
-    pub async fn new() -> Result<Arc<Self>> {
+    pub async fn new() -> Result<Rc<Self>> {
         let device = WGPU::default_context().await?;
-        Ok(Arc::new(Self { device }))
+        Ok(Rc::new(Self { device }))
     }
 
-    pub(crate) fn device<'a>(self: &'a Arc<Self>) -> &'a Device {
+    pub(crate) fn device<'a>(self: &'a Rc<Self>) -> &'a Device {
         &self.device
     }
 
-    pub fn tensor(self: &Arc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder {
+    pub fn tensor(self: &Rc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder {
         TensorBuilder::new(self, shape)
     }
 
-    pub fn graph(self: &Arc<Self>) -> Graph {
+    pub fn graph(self: &Rc<Self>) -> Graph {
         Graph::new(self)
     }
 }
