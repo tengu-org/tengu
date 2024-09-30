@@ -2,6 +2,7 @@ use crate::Tensor;
 
 use super::Expression;
 
+#[derive(Clone)]
 pub struct SubExpression<T> {
     lhs: Box<Expression<T>>,
     rhs: Box<Expression<T>>,
@@ -43,21 +44,19 @@ impl<T> SubExpression<T> {
 mod tests {
     use crate::Tengu;
 
-    use super::*;
-
     #[tokio::test]
-    async fn test_add_expression() {
+    async fn sub_expression() {
         let tengu = Tengu::new().await.unwrap();
-        let lhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_lhs").empty::<f32>());
-        let rhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_rhs").empty::<f32>());
-        let add = SubExpression::new(lhs, rhs);
-        assert_eq!(add.count(), 6);
-        assert_eq!(add.shape(), &[1, 2, 3]);
+        let lhs = tengu.tensor([1, 2, 3]).with_label("tz_lhs").empty::<f32>();
+        let rhs = tengu.tensor([1, 2, 3]).with_label("tz_rhs").empty::<f32>();
+        let sub = lhs - rhs;
+        assert_eq!(sub.count(), 6);
+        assert_eq!(sub.shape(), &[1, 2, 3]);
         let mut inputs = Vec::new();
-        add.collect_inputs(&mut inputs);
+        sub.collect_inputs(&mut inputs);
         assert_eq!(inputs.len(), 2);
         assert_eq!(inputs[0].shape(), &[1, 2, 3]);
         assert_eq!(inputs[1].shape(), &[1, 2, 3]);
-        assert_eq!(add.emit(), "(tz_lhs[idx] - tz_rhs[idx])");
+        assert_eq!(sub.emit(), "(tz_lhs[idx] - tz_rhs[idx])");
     }
 }

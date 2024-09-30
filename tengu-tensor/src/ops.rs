@@ -1,22 +1,25 @@
 use std::ops::{Add, Sub};
 
-use crate::{Expression, Tensor};
+use crate::{
+    expression::{AddExpression, SubExpression},
+    Expression,
+};
 
-impl<T> Add for Tensor<T> {
+impl<T> Add for Expression<T> {
     type Output = Expression<T>;
 
-    fn add(self, rhs: Tensor<T>) -> Self::Output {
+    fn add(self, rhs: Expression<T>) -> Self::Output {
         assert_eq!(self.shape(), rhs.shape(), "tensor shapes should match");
-        Expression::add(self, rhs)
+        Expression::Add(AddExpression::new(self, rhs))
     }
 }
 
-impl<T> Sub for Tensor<T> {
+impl<T> Sub for Expression<T> {
     type Output = Expression<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
         assert_eq!(self.shape(), rhs.shape(), "tensor shapes should match");
-        Expression::sub(self, rhs)
+        Expression::Sub(SubExpression::new(self, rhs))
     }
 }
 

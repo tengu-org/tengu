@@ -2,6 +2,7 @@ use crate::Tensor;
 
 use super::Expression;
 
+#[derive(Clone)]
 pub struct AddExpression<T> {
     lhs: Box<Expression<T>>,
     rhs: Box<Expression<T>>,
@@ -43,14 +44,12 @@ impl<T> AddExpression<T> {
 mod tests {
     use crate::Tengu;
 
-    use super::*;
-
     #[tokio::test]
-    async fn test_add_expression() {
+    async fn add_expression() {
         let tengu = Tengu::new().await.unwrap();
-        let lhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_lhs").empty::<f32>());
-        let rhs = Expression::tensor(tengu.tensor([1, 2, 3]).with_label("tz_rhs").empty::<f32>());
-        let add = AddExpression::new(lhs, rhs);
+        let lhs = tengu.tensor([1, 2, 3]).with_label("tz_lhs").empty::<f32>();
+        let rhs = tengu.tensor([1, 2, 3]).with_label("tz_rhs").empty::<f32>();
+        let add = lhs + rhs;
         assert_eq!(add.count(), 6);
         assert_eq!(add.shape(), &[1, 2, 3]);
         let mut inputs = Vec::new();

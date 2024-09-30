@@ -5,7 +5,7 @@ use crate::{Expression, Tengu, Tensor, WGSLType};
 
 pub struct Computation<T> {
     expression: Expression<T>,
-    output: Tensor<T>,
+    output: Expression<T>,
 }
 
 impl<T: WGSLType> Computation<T> {
@@ -18,7 +18,7 @@ impl<T: WGSLType> Computation<T> {
         self.expression
             .inputs()
             .into_iter()
-            .chain(std::iter::once(&self.output))
+            .chain(self.output.inputs())
             .unique_by(|t| t.label())
     }
 

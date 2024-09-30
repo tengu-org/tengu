@@ -2,7 +2,7 @@ use random_string::charsets::ALPHA;
 use std::{cell::OnceCell, marker::PhantomData, rc::Rc};
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize, Encoder};
 
-use crate::{Probe, Tengu, WGSLType};
+use crate::{Expression, Probe, Tengu, WGSLType};
 
 const LABEL_LENGTH: usize = 6;
 
@@ -104,10 +104,10 @@ impl TensorBuilder {
         self
     }
 
-    pub fn empty<T: WGSLType>(mut self) -> Tensor<T> {
+    pub fn empty<T: WGSLType>(mut self) -> Expression<T> {
         let size = self.count.of::<T>();
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
-        Tensor {
+        let tensor = Tensor {
             label: self.label(),
             buffer: buffer.into(),
             count: self.count,
@@ -115,13 +115,14 @@ impl TensorBuilder {
             tengu: self.tengu,
             probe: OnceCell::new(),
             phantom: PhantomData,
-        }
+        };
+        Expression::Tensor(tensor)
     }
 
-    pub fn init<T: WGSLType>(mut self, data: &[T]) -> Tensor<T> {
+    pub fn init<T: WGSLType>(mut self, data: &[T]) -> Expression<T> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::Read).with_data(data);
-        Tensor {
+        let tensor = Tensor {
             label: self.label(),
             buffer: buffer.into(),
             count: self.count,
@@ -129,7 +130,8 @@ impl TensorBuilder {
             tengu: self.tengu,
             probe: OnceCell::new(),
             phantom: PhantomData,
-        }
+        };
+        Expression::Tensor(tensor)
     }
 
     fn label(&mut self) -> String {
@@ -155,17 +157,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn tensor_declaration() {
-        let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).with_label("tz").empty::<i32>();
-        let declaration = tensor.declaration(1, 2);
-        assert_eq!(
-            declaration,
-            "@group(1) @binding(2) var<storage, read_write> tz: array<i32>;"
-        );
-    }
-
-    #[tokio::test]
     async fn tensor_label() {
         let tengu = Tengu::new().await.unwrap();
         let tensor = tengu.tensor([3, 3, 3]).empty::<i32>();
@@ -184,7 +175,7 @@ mod tests {
         assert_eq!(tensor.emit(), "tenzor[idx]");
 
         let tensor = tengu.tensor([3]).with_label("tenzor").init(&[1, 2, 3]);
-        assert_eq!(tensor.label.len(), LABEL_LENGTH);
-        assert!(tensor.label.chars().all(|c| c.is_alphabetic()));
+        assert_eq!(tensor.label().len(), LABEL_LENGTH);
+        assert!(tensor.label().chars().all(|c| c.is_alphabetic()));
     }
 }

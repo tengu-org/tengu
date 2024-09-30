@@ -1,10 +1,10 @@
 mod error;
 mod expression;
 mod graph;
+mod ops;
 mod probe;
 mod tengu;
 mod tensor;
-mod tensor_ops;
 
 pub use error::{Error, Result};
 pub use expression::Expression;
