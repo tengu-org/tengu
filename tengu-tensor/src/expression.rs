@@ -64,9 +64,14 @@ impl<T> Shape for Expression<T> {
     }
 }
 
-impl<T> Emit for Expression<T> {
+impl<T: Display> Emit for Expression<T> {
     fn emit(&self) -> String {
-        String::new()
+        match self {
+            Self::Scalar(scalar) => scalar.to_string(),
+            Self::Tensor(tensor) => tensor.emit(),
+            Self::Binary(binary) => binary.emit(),
+            Self::Cast(cast) => cast.emit(),
+        }
     }
 }
 
