@@ -5,12 +5,12 @@ pub struct Encoder {
 }
 
 impl Encoder {
-    pub fn new(device: &Device) -> Self {
-        let encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+    pub fn new(device: &Device, label: &str) -> Self {
+        let encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some(label) });
         Self { encoder }
     }
 
-    pub(crate) fn compute<F>(mut self, label: &str, commands: F) -> Self
+    pub fn pass<F>(mut self, label: &str, commands: F) -> Self
     where
         F: FnOnce(&mut wgpu::ComputePass),
     {

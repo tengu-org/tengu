@@ -73,13 +73,6 @@ fn access(usage: BufferUsage) -> &'static str {
     }
 }
 
-// fn name_of<T>() -> &'static str {
-//     match std::any::type_name::<T>() {
-//         "bool" => "u32",
-//         other => other,
-//     }
-// }
-
 // Cloning
 
 impl<T> Clone for Tensor<T> {
@@ -107,7 +100,7 @@ mod tests {
     #[tokio::test]
     async fn tensor_builder() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).empty::<i32>();
+        let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
         assert_eq!(tensor.count(), 27);
         assert_eq!(tensor.shape(), &[3, 3, 3]);
     }
@@ -115,7 +108,7 @@ mod tests {
     #[tokio::test]
     async fn tensor_label() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).empty::<i32>();
+        let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
         let label = tensor.label().unwrap();
         assert_eq!(label.len(), LABEL_LENGTH);
         assert!(label.chars().all(|c| c.is_alphabetic()));
@@ -129,10 +122,10 @@ mod tests {
     #[tokio::test]
     async fn tensor_emit() {
         let tengu = Tengu::new().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).with_label("tenzor").empty::<i32>();
+        let tensor = tengu.tensor([3, 3, 3]).label("tenzor").zero::<i32>();
         assert_eq!(tensor.emit(), "tenzor[idx]");
 
-        let tensor = tengu.tensor([3]).with_label("tenzor").init(&[1, 2, 3]);
+        let tensor = tengu.tensor([3]).label("tenzor").init(&[1, 2, 3]);
         let label = tensor.label().unwrap();
         assert_eq!(label, "tenzor");
     }

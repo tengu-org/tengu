@@ -1,43 +1,67 @@
-use std::{future::Future, rc::Rc};
+use std::cell::RefCell;
+use std::{collections::HashMap, future::Future, rc::Rc};
 
-use crate::{probe::Probe, Tengu};
+use crate::expression::traits::Source;
+use crate::probe::Probe;
+use crate::tengu::Tengu;
+use crate::{Error, Result};
 use block::Block;
+use link::Link;
 
 mod block;
 mod computation;
+mod link;
 
 // Graph implementation
 
 pub struct Graph<'a> {
     tengu: Rc<Tengu>,
-    blocks: Vec<Block<'a>>,
+    blocks: HashMap<String, Block<'a>>,
+    links: RefCell<Vec<Link<'a>>>,
 }
 
 impl<'a> Graph<'a> {
     pub fn new(tengu: &Rc<Tengu>) -> Self {
         Self {
             tengu: Rc::clone(tengu),
-            blocks: Vec::new(),
+            blocks: HashMap::new(),
+            links: Vec::new().into(),
         }
     }
 
-    pub fn add_block(&mut self, label: impl Into<String>) -> &mut Block<'a> {
-        self.blocks.push(Block::new(&self.tengu, label));
-        self.blocks
-            .last_mut()
-            .expect("Graph blocks should not be empty after inserting a new block")
+    pub fn add_block(&mut self, label: impl Into<String>) -> Result<&mut Block<'a>> {
+        let label = label.into();
+        if self.blocks.contains_key(&label) {
+            return Err(Error::BlockAlreadyExists(label));
+        }
+        Ok(self
+            .blocks
+            .entry(label.clone())
+            .or_insert(Block::new(&self.tengu, label.clone())))
     }
 
-    pub fn probe(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe> {
-        self.blocks
-            .iter()
-            .flat_map(|block| block.probe(block_label, tensor_label))
-            .next()
+    pub fn link_one(&'a self, from: &str, to: &str) -> Result<()> {
+        let from = self.get_source(from)?;
+        let to = self.get_source(to)?;
+        let link = Link::new(from, vec![to]);
+        self.links.borrow_mut().push(link);
+        Ok(())
+    }
+
+    pub fn probe(&'a self, path: &str) -> Result<&'a Probe> {
+        Ok(self.get_source(path)?.probe())
     }
 
     pub fn step(&'a self) {
-        let commands = self.blocks.iter().map(|block| block.compute());
-        self.tengu.device().submit(commands);
+        let block_commands = self.blocks.values().map(|block| block.compute());
+        let links_commands = self.tengu.device().compute("links", |encoder| {
+            for link in self.links.borrow().iter() {
+                link.compute(encoder);
+            }
+        });
+        self.tengu
+            .device()
+            .submit(block_commands.chain(std::iter::once(links_commands)));
     }
 
     pub fn compute(&'a self, times: usize) {
@@ -66,5 +90,16 @@ impl<'a> Graph<'a> {
                 break;
             }
         }
+    }
+
+    fn get_source(&'a self, path: &str) -> Result<&'a dyn Source> {
+        let (block, source) = path
+            .split_once('/')
+            .ok_or_else(|| Error::InvalidLinkPath(path.to_string()))?;
+        self.blocks
+            .get(block)
+            .ok_or_else(|| Error::BlockNotFound(block.to_string()))?
+            .source(source)
+            .ok_or_else(|| Error::SourceNotFound(source.to_string()))
     }
 }

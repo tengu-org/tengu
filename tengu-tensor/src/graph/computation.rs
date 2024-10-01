@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::expression::traits::{Emit, Node, Shape};
+use crate::expression::traits::{Emit, Node, Shape, Source};
 use crate::expression::Expression;
 use crate::visitor::Visitor;
 use crate::{IOType, Tengu};
@@ -12,7 +12,7 @@ pub struct Computation {
 
 impl Computation {
     pub fn new<T: IOType>(tengu: &Rc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
-        let output = tengu.tensor(expression.shape()).with_label(label).empty::<T>();
+        let output = tengu.tensor(expression.shape()).label(label).zero::<T>();
         Self {
             expression: Box::new(expression),
             output: Box::new(output),
@@ -47,6 +47,10 @@ impl Node for Computation {
     fn clone_box(&self) -> Box<dyn Node> {
         panic!("computations should not be exposed and thus should not be cloned")
     }
+
+    fn source(&self) -> Option<&dyn Source> {
+        self.output.source()
+    }
 }
 
 // Tests
@@ -68,8 +72,8 @@ mod tests {
     #[tokio::test]
     async fn computation_emit() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
-        let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
+        let a = tengu.tensor([2, 2]).label("a").zero::<f32>();
+        let b = tengu.tensor([2, 2]).label("b").zero::<f32>();
         let computation = Computation::new(&tengu, "c", a + b);
         assert_eq!(computation.emit(), "c[idx] = (a[idx] + b[idx]);");
     }

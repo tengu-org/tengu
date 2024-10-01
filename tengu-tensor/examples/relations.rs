@@ -9,10 +9,13 @@ pub async fn main() {
 
     // Create computation graph.
     let mut graph = tengu.graph();
-    graph.add_block("main").add_computation("rel", a.eq(b).cast::<u32>());
+    graph
+        .add_block("main")
+        .unwrap()
+        .add_computation("rel", a.eq(b).cast::<u32>());
 
     // Set up probes.
-    let probe = graph.probe("main", "rel").unwrap();
+    let probe = graph.probe("main/rel").unwrap();
 
     // Run one step of computation and display the result.
     graph.step();

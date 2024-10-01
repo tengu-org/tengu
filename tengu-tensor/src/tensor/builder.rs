@@ -26,16 +26,16 @@ impl TensorBuilder {
         }
     }
 
-    pub fn with_label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<String>) -> Self {
         self.label = Some(label.into());
         self
     }
 
-    pub fn empty<T: StorageType>(mut self) -> Expression<T> {
+    pub fn zero<T: StorageType>(mut self) -> Expression<T> {
         let size = self.count.of::<T>();
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
         let tensor = Tensor {
-            label: self.label(),
+            label: self.get_or_create_label(),
             buffer: buffer.into(),
             count: self.count,
             shape: self.shape,
@@ -50,7 +50,7 @@ impl TensorBuilder {
         assert_eq!(data.len(), self.count, "data length does not match shape");
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::Read).with_data(data);
         let tensor = Tensor {
-            label: self.label(),
+            label: self.get_or_create_label(),
             buffer: buffer.into(),
             count: self.count,
             shape: self.shape,
@@ -66,7 +66,7 @@ impl TensorBuilder {
         let data = data.iter().map(|v| *v as u32).collect::<Vec<_>>();
         let buffer = self.tengu.device().buffer::<u32>(BufferUsage::Read).with_data(&data);
         let tensor = Tensor {
-            label: self.label(),
+            label: self.get_or_create_label(),
             buffer: buffer.into(),
             count: self.count,
             shape: self.shape,
@@ -77,7 +77,7 @@ impl TensorBuilder {
         Expression::Tensor(tensor)
     }
 
-    fn label(&mut self) -> String {
+    fn get_or_create_label(&mut self) -> String {
         self.label
             .take()
             .unwrap_or_else(|| random_string::generate(LABEL_LENGTH, ALPHA))

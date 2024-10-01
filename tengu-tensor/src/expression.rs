@@ -88,6 +88,13 @@ impl<T: Clone + Display + 'static> Node for Expression<T> {
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
+
+    fn source(&self) -> Option<&dyn Source> {
+        match self {
+            Self::Tensor(tensor) => Some(tensor),
+            _ => None,
+        }
+    }
 }
 
 // Clone

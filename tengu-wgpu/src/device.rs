@@ -12,11 +12,17 @@ impl Device {
         Self { device, queue }
     }
 
-    pub fn compute<F>(&self, label: &str, commands: F) -> Encoder
+    pub fn encoder(&self, label: &str) -> Encoder {
+        Encoder::new(self, label)
+    }
+
+    pub fn compute<F>(&self, label: &str, commands: F) -> wgpu::CommandBuffer
     where
-        F: FnOnce(&mut wgpu::ComputePass),
+        F: FnOnce(&mut Encoder),
     {
-        Encoder::new(self).compute(label, commands)
+        let mut encoder = Encoder::new(self, label);
+        commands(&mut encoder);
+        encoder.finish()
     }
 
     pub fn buffer<T>(&self, buffer_kind: BufferUsage) -> BufferBuilder {

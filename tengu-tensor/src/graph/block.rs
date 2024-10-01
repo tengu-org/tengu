@@ -4,7 +4,7 @@ use std::{cell::OnceCell, rc::Rc};
 use tengu_wgpu::Pipeline;
 
 use super::computation::Computation;
-use crate::expression::traits::Node;
+use crate::expression::traits::{Node, Source};
 use crate::expression::Expression;
 use crate::probe::Probe;
 use crate::visitor::Visitor;
@@ -46,7 +46,7 @@ impl<'a> Block<'a> {
 
     pub fn compute(&'a self) -> wgpu::CommandBuffer {
         let pipeline = self.pipeline();
-        let mut encoder = self.tengu.device().compute(&self.label, |pass| {
+        let mut encoder = self.tengu.device().encoder(&self.label).pass(&self.label, |pass| {
             pass.set_pipeline(pipeline);
             pass.set_bind_group(0, pipeline.bind_group(), &[]);
             pass.dispatch_workgroups((self.count() as u32 / WORKGROUP_SIZE) + 1, 1, 1);
@@ -59,6 +59,10 @@ impl<'a> Block<'a> {
         (self.label() == block_label)
             .then(|| self.visitor().get(tensor_label).map(|tensor| tensor.probe()))
             .flatten()
+    }
+
+    pub fn source(&'a self, label: &str) -> Option<&'a dyn Source> {
+        self.visitor().get(label)
     }
 }
 
@@ -133,10 +137,10 @@ mod tests {
     #[tokio::test]
     async fn builder_declaration() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).with_label("a").init(&[1.0, 2.0, 3.0, 4.0]);
-        let b = tengu.tensor([2, 2]).with_label("b").init(&[5.0, 6.0, 7.0, 8.0]);
+        let a = tengu.tensor([2, 2]).label("a").init(&[1.0, 2.0, 3.0, 4.0]);
+        let b = tengu.tensor([2, 2]).label("b").init(&[5.0, 6.0, 7.0, 8.0]);
         let mut graph = tengu.graph();
-        let block = graph.add_block("addition").add_computation("out", a + b);
+        let block = graph.add_block("addition").unwrap().add_computation("out", a + b);
         let declaration = block.declaration();
         let declaration = declaration.lines().collect::<Vec<_>>();
         assert!(declaration.contains(&"@group(0) @binding(0) var<storage, read> a: array<f32>;"));
@@ -147,10 +151,10 @@ mod tests {
     #[tokio::test]
     async fn builder_body() {
         let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).with_label("a").empty::<f32>();
-        let b = tengu.tensor([2, 2]).with_label("b").empty::<f32>();
+        let a = tengu.tensor([2, 2]).label("a").zero::<f32>();
+        let b = tengu.tensor([2, 2]).label("b").zero::<f32>();
         let mut graph = tengu.graph();
-        let block = graph.add_block("addition").add_computation("out", a + b);
+        let block = graph.add_block("addition").unwrap().add_computation("out", a + b);
         assert_eq!(
             block.body(),
             indoc!(

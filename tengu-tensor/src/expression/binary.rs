@@ -81,6 +81,10 @@ impl<T: Clone + Display + 'static> Node for Binary<T> {
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
+
+    fn source(&self) -> Option<&dyn super::traits::Source> {
+        None
+    }
 }
 
 // Clone
@@ -132,8 +136,8 @@ mod tests {
     #[tokio::test]
     async fn add_expression() {
         let tengu = Tengu::new().await.unwrap();
-        let lhs = tengu.tensor([1, 2, 3]).with_label("tz_lhs").empty::<f32>();
-        let rhs = tengu.tensor([1, 2, 3]).with_label("tz_rhs").empty::<f32>();
+        let lhs = tengu.tensor([1, 2, 3]).label("tz_lhs").zero::<f32>();
+        let rhs = tengu.tensor([1, 2, 3]).label("tz_rhs").zero::<f32>();
         let add = lhs + rhs;
         assert_eq!(add.count(), 6);
         assert_eq!(add.shape(), &[1, 2, 3]);

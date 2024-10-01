@@ -12,18 +12,16 @@ pub async fn main() {
     let mut graph = tengu.graph();
     graph
         .add_block("main")
+        .unwrap()
         .add_computation("addmul", a.clone() * b.clone() + 1.0)
         .add_computation("subdiv", tengu.scalar(2.0) * b - a / c);
 
     // Set up probes.
-    let add = graph.probe("main", "addmul").unwrap();
-    let sub = graph.probe("main", "subdiv").unwrap();
+    let add = graph.probe("main/addmul").unwrap();
+    let sub = graph.probe("main/subdiv").unwrap();
 
     // Run the computation and display the result twice.
-    graph
-        .process(2, || async {
-            println!("{:?}", add.retrieve::<f32>().await.unwrap());
-            println!("{:?}", sub.retrieve::<f32>().await.unwrap());
-        })
-        .await;
+    graph.step();
+    println!("{:?}", add.retrieve::<f32>().await.unwrap());
+    println!("{:?}", sub.retrieve::<f32>().await.unwrap());
 }

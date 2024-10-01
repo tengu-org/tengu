@@ -27,4 +27,5 @@ pub trait Source: Shape + Emit + Datum {
 pub trait Node: Shape + Emit {
     fn visit<'a>(&'a self, visitor: &mut Visitor<'a>);
     fn clone_box(&self) -> Box<dyn Node>;
+    fn source(&self) -> Option<&dyn Source>;
 }

@@ -44,6 +44,10 @@ impl<T: Clone + Display + 'static> Node for Cast<T> {
     fn clone_box(&self) -> Box<dyn Node> {
         Box::new(self.clone())
     }
+
+    fn source(&self) -> Option<&dyn super::traits::Source> {
+        None
+    }
 }
 
 // Clone

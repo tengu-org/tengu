@@ -3,7 +3,11 @@ use std::rc::Rc;
 
 use tengu_wgpu::{Device, WGPU};
 
-use crate::{expression::Expression, graph::Graph, tensor::TensorBuilder, Result};
+use crate::expression::traits::Shape;
+use crate::expression::Expression;
+use crate::graph::Graph;
+use crate::tensor::TensorBuilder;
+use crate::Result;
 
 // Limit available underlying types.
 
@@ -38,6 +42,10 @@ impl Tengu {
 
     pub fn tensor(self: &Rc<Self>, shape: impl Into<Vec<usize>>) -> TensorBuilder {
         TensorBuilder::new(self, shape)
+    }
+
+    pub fn like<T>(self: &Rc<Self>, expr: &Expression<T>) -> TensorBuilder {
+        TensorBuilder::new(self, expr.shape())
     }
 
     pub fn scalar<T: IOType>(self: &Rc<Self>, scalar: T) -> Expression<T> {
