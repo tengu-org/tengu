@@ -1,67 +1,91 @@
 use indoc::formatdoc;
 use itertools::Itertools;
-use std::{any::Any, cell::OnceCell, rc::Rc};
+use std::{cell::OnceCell, rc::Rc};
 use tengu_wgpu::Pipeline;
 
-use super::Computation;
-use crate::{Expression, Probe, Tengu, Tensor, WGSLType};
+use super::computation::Computation;
+use crate::expression::traits::Node;
+use crate::expression::Expression;
+use crate::probe::Probe;
+use crate::visitor::Visitor;
+use crate::{Tengu, WGSLType};
 
 const WORKGROUP_SIZE: u32 = 64;
 const GROUP: usize = 0;
 
 // Block implementation
 
-pub struct Block<T> {
+pub struct Block<'a> {
     tengu: Rc<Tengu>,
     label: String,
-    computations: Vec<Computation<T>>,
+    computations: Vec<Box<dyn Node>>,
+    visitor: OnceCell<Visitor<'a>>,
     pipeline: OnceCell<Pipeline>,
+    shader: OnceCell<String>,
 }
 
-impl<T: WGSLType> Block<T> {
+// Public interface
+
+impl<'a> Block<'a> {
     pub fn new(tengu: &Rc<Tengu>, label: impl Into<String>) -> Self {
         Self {
             tengu: Rc::clone(tengu),
             label: label.into(),
             computations: Vec::new(),
+            visitor: OnceCell::new(),
             pipeline: OnceCell::new(),
+            shader: OnceCell::new(),
         }
     }
 
-    pub fn add_computation(&mut self, label: impl Into<String>, expression: Expression<T>) -> &mut Self {
-        let computation = Computation::new(&self.tengu, label, expression);
-        self.computations.push(computation);
+    pub fn add_computation<T: WGSLType>(&mut self, label: impl Into<String>, expr: Expression<T>) -> &mut Self {
+        let computation = Computation::new(&self.tengu, label, expr);
+        self.computations.push(Box::new(computation));
         self
     }
 
-    pub fn count(&self) -> usize {
+    pub fn compute(&'a self) -> wgpu::CommandBuffer {
+        let pipeline = self.pipeline();
+        let mut encoder = self.tengu.device().compute(&self.label, |pass| {
+            pass.set_pipeline(pipeline);
+            pass.set_bind_group(0, pipeline.bind_group(), &[]);
+            pass.dispatch_workgroups((self.count() as u32 / WORKGROUP_SIZE) + 1, 1, 1);
+        });
+        self.visitor().sources().for_each(|tensor| tensor.read(&mut encoder));
+        encoder.finish()
+    }
+
+    pub fn probe(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe> {
+        (self.label() == block_label)
+            .then(|| self.visitor().get(tensor_label).map(|tensor| tensor.probe()))
+            .flatten()
+    }
+}
+
+// Private methods
+
+impl<'a> Block<'a> {
+    fn count(&self) -> usize {
         self.computations.iter().map(|c| c.count()).max().unwrap_or_default()
     }
 
-    pub fn label(&self) -> &str {
+    fn label(&self) -> &str {
         &self.label
     }
 
-    pub(crate) fn nodes(&self) -> impl Iterator<Item = &Tensor<T>> {
-        self.computations
-            .iter()
-            .flat_map(|c| c.nodes())
-            .unique_by(|t| t.label())
+    fn shader(&'a self) -> &str {
+        self.shader.get_or_init(|| {
+            let declaration = self.declaration();
+            let body = self.body();
+            format!("{declaration}\n\n{body}")
+        })
     }
 
-    pub fn emit(&self) -> String {
-        let declaration = self.declaration();
-        let body = self.body();
-        format!("{declaration}\n\n{body}")
-    }
-
-    fn declaration(&self) -> String {
-        self.computations
-            .iter()
-            .flat_map(|computation| computation.nodes())
-            .unique_by(|tensor| tensor.label())
+    fn declaration(&'a self) -> String {
+        self.visitor()
+            .sources()
             .enumerate()
-            .map(|(binding, tensor)| tensor.declaration(GROUP, binding))
+            .map(|(binding, source)| source.declaration(GROUP, binding))
             .join("\n")
     }
 
@@ -74,14 +98,22 @@ impl<T: WGSLType> Block<T> {
                 let idx = global_id.x;
                 {}
             }}",
-            self.computations.iter().map(|c| c.emit()).join("\n    "),
+            self.computations.iter().map(|node| node.emit()).join("\n    "),
         )
     }
 
-    fn pipeline(&self) -> &Pipeline {
+    fn visitor(&'a self) -> &'a Visitor<'a> {
+        self.visitor.get_or_init(|| {
+            let mut visitor = Visitor::new();
+            self.computations.iter().for_each(|node| node.visit(&mut visitor));
+            visitor
+        })
+    }
+
+    fn pipeline(&'a self) -> &Pipeline {
         self.pipeline.get_or_init(|| {
-            let shader = self.tengu.device().shader(self.label(), &self.emit());
-            let buffers = self.nodes().map(|t| t.buffer());
+            let shader = self.tengu.device().shader(self.label(), self.shader());
+            let buffers = self.visitor().sources().map(|source| source.buffer());
             self.tengu
                 .device()
                 .layout()
@@ -89,39 +121,6 @@ impl<T: WGSLType> Block<T> {
                 .pipeline(self.label())
                 .build(shader)
         })
-    }
-}
-
-// Traits
-
-pub trait Compute {
-    fn compute(&self) -> wgpu::CommandBuffer;
-    fn probe<'a>(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe>;
-    fn as_any(&mut self) -> &mut dyn Any;
-}
-
-impl<T: WGSLType + 'static> Compute for Block<T> {
-    fn compute(&self) -> wgpu::CommandBuffer {
-        let pipeline = self.pipeline();
-        let mut encoder = self.tengu.device().compute(&self.label, |pass| {
-            pass.set_pipeline(pipeline);
-            pass.set_bind_group(0, pipeline.bind_group(), &[]);
-            pass.dispatch_workgroups((self.count() as u32 / WORKGROUP_SIZE) + 1, 1, 1);
-        });
-        self.nodes().for_each(|tensor| tensor.read(&mut encoder));
-        encoder.finish()
-    }
-
-    fn probe<'a>(&'a self, block_label: &str, tensor_label: &str) -> Option<&'a Probe> {
-        (self.label() == block_label).then(|| {
-            self.nodes()
-                .find(|tensor| tensor.label() == tensor_label)
-                .map(|tensor| tensor.probe())
-        })?
-    }
-
-    fn as_any(&mut self) -> &mut dyn Any {
-        self
     }
 }
 

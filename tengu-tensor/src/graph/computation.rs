@@ -1,33 +1,51 @@
-use itertools::Itertools;
 use std::rc::Rc;
 
-use crate::{Expression, Tengu, Tensor, WGSLType};
+use crate::expression::traits::{Emit, Node, Shape};
+use crate::expression::Expression;
+use crate::visitor::Visitor;
+use crate::{Tengu, WGSLType};
 
-pub struct Computation<T> {
-    expression: Expression<T>,
-    output: Expression<T>,
+pub struct Computation {
+    expression: Box<dyn Node>,
+    output: Box<dyn Node>,
 }
 
-impl<T: WGSLType> Computation<T> {
-    pub fn new(tengu: &Rc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
-        let output = tengu.tensor(expression.shape()).with_label(label).empty();
-        Self { expression, output }
+impl Computation {
+    pub fn new<T: WGSLType>(tengu: &Rc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
+        let output = tengu.tensor(expression.shape()).with_label(label).empty::<T>();
+        Self {
+            expression: Box::new(expression),
+            output: Box::new(output),
+        }
+    }
+}
+
+// Traits
+
+impl Shape for Computation {
+    fn shape(&self) -> &[usize] {
+        self.output.shape()
     }
 
-    pub(crate) fn nodes(&self) -> impl Iterator<Item = &Tensor<T>> {
-        self.expression
-            .inputs()
-            .into_iter()
-            .chain(self.output.inputs())
-            .unique_by(|t| t.label())
+    fn count(&self) -> usize {
+        self.output.count()
     }
+}
 
-    pub fn emit(&self) -> String {
+impl Emit for Computation {
+    fn emit(&self) -> String {
         format!("{} = {};", self.output.emit(), self.expression.emit())
     }
+}
 
-    pub fn count(&self) -> usize {
-        self.expression.count()
+impl Node for Computation {
+    fn visit<'a>(&'a self, visitor: &mut Visitor<'a>) {
+        self.expression.visit(visitor);
+        self.output.visit(visitor);
+    }
+
+    fn clone_box(&self) -> Box<dyn Node> {
+        panic!("computations should not be exposed and thus should not be cloned")
     }
 }
 
