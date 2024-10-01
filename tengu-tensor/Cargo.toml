@@ -14,7 +14,6 @@ anyhow = "1.0.89"
 random-string = "1.1.0"
 itertools = "0.13.0"
 indoc = "2.0.5"
-dyn-clone = "1.0.17"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
