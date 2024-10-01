@@ -1,11 +1,11 @@
 use std::ops::{Add, Div, Mul, Sub};
 
 use super::Binary;
-use crate::{expression::Expression, WGSLType};
+use crate::{expression::Expression, StorageType};
 
 // Add
 
-impl<T: WGSLType> Add for Expression<T> {
+impl<T: StorageType> Add for Expression<T> {
     type Output = Expression<T>;
 
     fn add(self, rhs: Expression<T>) -> Self::Output {
@@ -14,7 +14,7 @@ impl<T: WGSLType> Add for Expression<T> {
     }
 }
 
-impl<T: WGSLType> Add<T> for Expression<T> {
+impl<T: StorageType> Add<T> for Expression<T> {
     type Output = Expression<T>;
 
     fn add(self, rhs: T) -> Self::Output {
@@ -25,7 +25,7 @@ impl<T: WGSLType> Add<T> for Expression<T> {
 
 // Subtract
 
-impl<T: WGSLType> Sub for Expression<T> {
+impl<T: StorageType> Sub for Expression<T> {
     type Output = Expression<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -34,7 +34,7 @@ impl<T: WGSLType> Sub for Expression<T> {
     }
 }
 
-impl<T: WGSLType> Sub<T> for Expression<T> {
+impl<T: StorageType> Sub<T> for Expression<T> {
     type Output = Expression<T>;
 
     fn sub(self, rhs: T) -> Self::Output {
@@ -45,7 +45,7 @@ impl<T: WGSLType> Sub<T> for Expression<T> {
 
 // Multiply
 
-impl<T: WGSLType> Mul for Expression<T> {
+impl<T: StorageType> Mul for Expression<T> {
     type Output = Expression<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -54,7 +54,7 @@ impl<T: WGSLType> Mul for Expression<T> {
     }
 }
 
-impl<T: WGSLType> Mul<T> for Expression<T> {
+impl<T: StorageType> Mul<T> for Expression<T> {
     type Output = Expression<T>;
 
     fn mul(self, rhs: T) -> Self::Output {
@@ -65,7 +65,7 @@ impl<T: WGSLType> Mul<T> for Expression<T> {
 
 // Divide
 
-impl<T: WGSLType> Div for Expression<T> {
+impl<T: StorageType> Div for Expression<T> {
     type Output = Expression<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
@@ -74,7 +74,7 @@ impl<T: WGSLType> Div for Expression<T> {
     }
 }
 
-impl<T: WGSLType> Div<T> for Expression<T> {
+impl<T: StorageType> Div<T> for Expression<T> {
     type Output = Expression<T>;
 
     fn div(self, rhs: T) -> Self::Output {

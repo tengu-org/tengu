@@ -4,7 +4,7 @@ use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
 use crate::expression::traits::Shape;
 use crate::tensor::Tensor;
-use crate::{Error, PodType, Result, Tengu};
+use crate::{Error, IOType, Result, Tengu};
 
 pub struct Probe {
     buffer: Buffer,
@@ -35,7 +35,7 @@ impl Probe {
         self.on = true;
     }
 
-    pub async fn retrieve<T: PodType>(&self) -> Result<Vec<T>> {
+    pub async fn retrieve<T: IOType>(&self) -> Result<Vec<T>> {
         if !self.on {
             return Ok(Vec::new());
         }

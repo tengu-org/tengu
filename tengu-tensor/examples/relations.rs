@@ -9,7 +9,7 @@ pub async fn main() {
 
     // Create computation graph.
     let mut graph = tengu.graph();
-    graph.add_block("main").add_computation("rel", a.eq(b));
+    graph.add_block("main").add_computation("rel", a.eq(b).cast::<u32>());
 
     // Set up probes.
     let probe = graph.probe("main", "rel").unwrap();

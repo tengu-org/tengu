@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::expression::traits::{Emit, Node, Shape};
 use crate::expression::Expression;
 use crate::visitor::Visitor;
-use crate::{Tengu, WGSLType};
+use crate::{IOType, Tengu};
 
 pub struct Computation {
     expression: Box<dyn Node>,
@@ -11,7 +11,7 @@ pub struct Computation {
 }
 
 impl Computation {
-    pub fn new<T: WGSLType>(tengu: &Rc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
+    pub fn new<T: IOType>(tengu: &Rc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
         let output = tengu.tensor(expression.shape()).with_label(label).empty::<T>();
         Self {
             expression: Box::new(expression),

@@ -20,17 +20,6 @@ pub struct Tensor<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T> Tensor<T> {}
-
-fn access(usage: BufferUsage) -> &'static str {
-    match usage {
-        BufferUsage::Read => "read",
-        BufferUsage::Write => "write",
-        BufferUsage::ReadWrite => "read_write",
-        BufferUsage::Staging => panic!("cannot declare a staging buffer in a shader"),
-    }
-}
-
 // Node
 
 impl<T> Shape for Tensor<T> {
@@ -66,11 +55,30 @@ impl<T> Source for Tensor<T> {
 
     fn declaration(&self, group: usize, binding: usize) -> String {
         let label = &self.label;
+        // let type_name = name_of::<T>();
         let type_name = std::any::type_name::<T>();
         let access = access(self.buffer().usage());
         format!("@group({group}) @binding({binding}) var<storage, {access}> {label}: array<{type_name}>;")
     }
 }
+
+// Helpers
+
+fn access(usage: BufferUsage) -> &'static str {
+    match usage {
+        BufferUsage::Read => "read",
+        BufferUsage::Write => "write",
+        BufferUsage::ReadWrite => "read_write",
+        BufferUsage::Staging => panic!("cannot declare a staging buffer in a shader"),
+    }
+}
+
+// fn name_of<T>() -> &'static str {
+//     match std::any::type_name::<T>() {
+//         "bool" => "u32",
+//         other => other,
+//     }
+// }
 
 // Cloning
 

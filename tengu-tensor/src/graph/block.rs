@@ -8,7 +8,7 @@ use crate::expression::traits::Node;
 use crate::expression::Expression;
 use crate::probe::Probe;
 use crate::visitor::Visitor;
-use crate::{Tengu, WGSLType};
+use crate::{IOType, Tengu};
 
 const WORKGROUP_SIZE: u32 = 64;
 const GROUP: usize = 0;
@@ -38,7 +38,7 @@ impl<'a> Block<'a> {
         }
     }
 
-    pub fn add_computation<T: WGSLType>(&mut self, label: impl Into<String>, expr: Expression<T>) -> &mut Self {
+    pub fn add_computation<T: IOType>(&mut self, label: impl Into<String>, expr: Expression<T>) -> &mut Self {
         let computation = Computation::new(&self.tengu, label, expr);
         self.computations.push(Box::new(computation));
         self

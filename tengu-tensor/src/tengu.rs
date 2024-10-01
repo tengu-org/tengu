@@ -7,18 +7,18 @@ use crate::{expression::Expression, graph::Graph, tensor::TensorBuilder, Result}
 
 // Limit available underlying types.
 
-pub trait PodType: bytemuck::Pod + Display {}
+pub trait IOType: StorageType + bytemuck::Pod {}
 
-impl PodType for f32 {}
-impl PodType for u32 {}
-impl PodType for i32 {}
+impl IOType for f32 {}
+impl IOType for u32 {}
+impl IOType for i32 {}
 
-pub trait WGSLType: Display + Clone + 'static {}
+pub trait StorageType: Display + Clone + 'static {}
 
-impl WGSLType for f32 {}
-impl WGSLType for u32 {}
-impl WGSLType for i32 {}
-impl WGSLType for bool {}
+impl StorageType for f32 {}
+impl StorageType for u32 {}
+impl StorageType for i32 {}
+impl StorageType for bool {}
 
 // Tengu implementation.
 
@@ -40,7 +40,7 @@ impl Tengu {
         TensorBuilder::new(self, shape)
     }
 
-    pub fn scalar<T: PodType>(self: &Rc<Self>, scalar: T) -> Expression<T> {
+    pub fn scalar<T: IOType>(self: &Rc<Self>, scalar: T) -> Expression<T> {
         Expression::Scalar(scalar)
     }
 

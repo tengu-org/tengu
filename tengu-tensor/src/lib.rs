@@ -7,4 +7,4 @@ mod tensor;
 mod visitor;
 
 pub use error::{Error, Result};
-pub use tengu::{PodType, Tengu, WGSLType};
+pub use tengu::{IOType, StorageType, Tengu};

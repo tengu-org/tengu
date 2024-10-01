@@ -1,5 +1,5 @@
 use super::Tensor;
-use crate::{expression::Expression, PodType, Tengu, WGSLType};
+use crate::{expression::Expression, IOType, StorageType, Tengu};
 
 use random_string::charsets::ALPHA;
 use std::{cell::OnceCell, marker::PhantomData, rc::Rc};
@@ -31,7 +31,7 @@ impl TensorBuilder {
         self
     }
 
-    pub fn empty<T: WGSLType>(mut self) -> Expression<T> {
+    pub fn empty<T: StorageType>(mut self) -> Expression<T> {
         let size = self.count.of::<T>();
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
         let tensor = Tensor {
@@ -46,7 +46,7 @@ impl TensorBuilder {
         Expression::Tensor(tensor)
     }
 
-    pub fn init<T: PodType>(mut self, data: &[T]) -> Expression<T> {
+    pub fn init<T: IOType>(mut self, data: &[T]) -> Expression<T> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
         let buffer = self.tengu.device().buffer::<T>(BufferUsage::Read).with_data(data);
         let tensor = Tensor {
