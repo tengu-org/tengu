@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{future::Future, rc::Rc};
 
 use crate::{probe::Probe, Tengu};
 use block::Block;
@@ -38,5 +38,33 @@ impl<'a> Graph<'a> {
     pub fn step(&'a self) {
         let commands = self.blocks.iter().map(|block| block.compute());
         self.tengu.device().submit(commands);
+    }
+
+    pub fn compute(&'a self, times: usize) {
+        for _ in 0..times {
+            self.step();
+        }
+    }
+
+    pub async fn process<Fut>(&'a self, times: usize, call: impl Fn() -> Fut)
+    where
+        Fut: Future,
+    {
+        for _ in 0..times {
+            self.step();
+            call().await;
+        }
+    }
+
+    pub async fn process_while<Fut>(&'a self, times: usize, call: impl Fn() -> Fut)
+    where
+        Fut: Future<Output = bool>,
+    {
+        for _ in 0..times {
+            self.step();
+            if !call().await {
+                break;
+            }
+        }
     }
 }

@@ -19,8 +19,11 @@ pub async fn main() {
     let add = graph.probe("main", "addmul").unwrap();
     let sub = graph.probe("main", "subdiv").unwrap();
 
-    // Run one step of computation and display the result.
-    graph.step();
-    println!("{:?}", add.retrieve::<f32>().await.unwrap());
-    println!("{:?}", sub.retrieve::<f32>().await.unwrap());
+    // Run the computation and display the result twice.
+    graph
+        .process(2, || async {
+            println!("{:?}", add.retrieve::<f32>().await.unwrap());
+            println!("{:?}", sub.retrieve::<f32>().await.unwrap());
+        })
+        .await;
 }
