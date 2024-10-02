@@ -14,14 +14,17 @@ pub async fn main() {
         .add_block("main")
         .unwrap()
         .add_computation("addmul", a.clone() * b.clone() + 1.0)
-        .add_computation("subdiv", tengu.scalar(2.0) * b - a / c);
+        .add_computation("subdiv", tengu.scalar(2.0) * b.clone() - a.clone() / c)
+        .add_computation("explog", a.exp() + b.log());
 
     // Set up probes.
     let add = graph.probe("main/addmul").unwrap();
     let sub = graph.probe("main/subdiv").unwrap();
+    let exp = graph.probe("main/explog").unwrap();
 
     // Run the computation and display the result twice.
     graph.step();
     println!("{:?}", add.retrieve::<f32>().await.unwrap());
     println!("{:?}", sub.retrieve::<f32>().await.unwrap());
+    println!("{:?}", exp.retrieve::<f32>().await.unwrap());
 }
