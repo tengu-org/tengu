@@ -1,0 +1,10 @@
+[package]
+name = "tengu-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bytemuck = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+num = "0.4.3"

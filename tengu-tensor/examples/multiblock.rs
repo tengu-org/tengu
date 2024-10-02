@@ -1,9 +1,10 @@
+use pollster::FutureExt;
 use tengu_tensor::Tengu;
 
-#[tokio::main]
+#[pollster::main]
 pub async fn main() {
     // Initialize input tensors.
-    let tengu = Tengu::new().await.unwrap();
+    let tengu = Tengu::wgpu().await.unwrap();
     let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
     let b = tengu.like(&a).label("b").zero();
 
@@ -11,15 +12,14 @@ pub async fn main() {
     let mut graph = tengu.graph();
     graph.add_block("fst").unwrap().add_computation("out", a + 1.0);
     graph.add_block("snd").unwrap().add_computation("out", b + 1.0);
-    graph.link_one("fst/out", "snd/b").unwrap();
+    graph.link("fst/out", "snd/b").unwrap();
 
     // Set up probes.
-    let out = graph.probe("snd/out").unwrap();
+    let mut out = graph.probe::<f32>("snd/out").unwrap();
 
     // Run the computation and display the result twice.
-    graph
-        .process(2, || async {
-            println!("{:?}", out.retrieve::<f32>().await.unwrap());
-        })
-        .await;
+    graph.process(2, || {
+        let data = out.retrieve().block_on().unwrap();
+        println!("{:?}", data);
+    });
 }

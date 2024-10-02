@@ -10,15 +10,17 @@ impl Encoder {
         Self { encoder }
     }
 
-    pub fn pass<F>(mut self, label: &str, commands: F) -> Self
-    where
-        F: FnOnce(&mut wgpu::ComputePass),
-    {
-        let mut compute_pass = self.encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+    pub fn pass(mut self, label: &str, call: impl FnOnce(wgpu::ComputePass)) -> Self {
+        let compute_pass = self.encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some(label),
             timestamp_writes: None,
         });
-        commands(&mut compute_pass);
+        call(compute_pass);
+        self
+    }
+
+    pub fn readout(mut self, call: impl FnOnce(&mut Encoder)) -> Self {
+        call(&mut self);
         self
     }
 

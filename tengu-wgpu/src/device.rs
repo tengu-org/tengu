@@ -36,8 +36,8 @@ impl Device {
         })
     }
 
-    pub fn submit(&self, commands: impl Iterator<Item = wgpu::CommandBuffer>) {
-        self.queue.submit(commands);
+    pub fn submit(&self, commands: wgpu::CommandBuffer) {
+        self.queue.submit(std::iter::once(commands));
     }
 
     pub fn layout(&self) -> LayoutBuilder {

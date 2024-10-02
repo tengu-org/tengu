@@ -1,56 +1,45 @@
-use std::fmt::Display;
 use std::rc::Rc;
 
-use tengu_wgpu::{Device, WGPU};
-
-use crate::frontend::{Expression, Shape};
+use crate::builder::Builder;
+use crate::expression::{Expression, Shape};
 use crate::graph::Graph;
-use crate::{tensor, Result};
+use crate::Result;
+use crate::WGPUBackend;
+use tengu_backend::{Backend, IOType};
 
-// Limit available underlying types.
-
-pub trait IOType: StorageType + bytemuck::Pod {}
-
-impl IOType for f32 {}
-impl IOType for u32 {}
-impl IOType for i32 {}
-
-pub trait StorageType: Display + Clone + 'static {}
-
-impl StorageType for f32 {}
-impl StorageType for u32 {}
-impl StorageType for i32 {}
-impl StorageType for bool {}
-
-// Tengu implementation.
-
-pub struct Tengu {
-    device: Device,
+pub struct Tengu<B> {
+    backend: Rc<B>,
 }
 
-impl Tengu {
+impl<B: Backend + 'static> Tengu<B> {
     pub async fn new() -> Result<Rc<Self>> {
-        let device = WGPU::default_context().await?;
-        Ok(Rc::new(Self { device }))
+        let backend = B::new().await?;
+        Ok(Rc::new(Self { backend }))
     }
 
-    pub(crate) fn device<'a>(self: &'a Rc<Self>) -> &'a Device {
-        &self.device
+    pub fn backend(self: &Rc<Self>) -> &Rc<B> {
+        &self.backend
     }
 
-    pub fn tensor(self: &Rc<Self>, shape: impl Into<Vec<usize>>) -> tensor::Builder {
-        tensor::Builder::new(self, shape)
+    pub fn tensor(self: &Rc<Self>, shape: impl Into<Vec<usize>>) -> Builder<B> {
+        Builder::new(&self.backend, shape)
     }
 
-    pub fn like<T>(self: &Rc<Self>, expr: &Expression<T>) -> tensor::Builder {
-        tensor::Builder::new(self, expr.shape())
+    pub fn like<T: IOType>(self: &Rc<Self>, expr: &Expression<T, B>) -> Builder<B> {
+        Builder::new(&self.backend, expr.shape())
     }
 
-    pub fn scalar<T: IOType>(self: &Rc<Self>, scalar: T) -> Expression<T> {
+    pub fn scalar<T: IOType>(self: &Rc<Self>, scalar: T) -> Expression<T, B> {
         Expression::Scalar(scalar)
     }
 
-    pub fn graph<'a>(self: &'a Rc<Self>) -> Graph<'a> {
+    pub fn graph(self: &Rc<Self>) -> Graph<B> {
         Graph::new(self)
+    }
+}
+
+impl Tengu<WGPUBackend> {
+    pub async fn wgpu() -> Result<Rc<Self>> {
+        Tengu::new().await
     }
 }

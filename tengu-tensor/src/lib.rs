@@ -1,12 +1,13 @@
-mod backend;
+mod builder;
 mod error;
-mod frontend;
+mod expression;
 mod graph;
 mod probe;
 mod tengu;
 mod tensor;
 mod unify;
-mod visitor;
 
 pub use error::{Error, Result};
-pub use tengu::{IOType, StorageType, Tengu};
+pub use tengu::Tengu;
+pub use tengu_backend::StorageType;
+pub use tengu_backend_wgpu::Backend as WGPUBackend;

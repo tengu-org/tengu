@@ -1,20 +1,29 @@
-use tengu_wgpu::Encoder;
+use tengu_backend::Backend;
 
-use crate::frontend::Source;
+use super::Graph;
+use crate::expression::Source;
+use crate::{Error, Result};
 
-pub struct Link<'a> {
-    from: &'a dyn Source,
-    to: Vec<&'a dyn Source>,
+pub struct Link {
+    from: String,
+    to: String,
 }
 
-impl<'a> Link<'a> {
-    pub fn new(from: &'a dyn Source, to: Vec<&'a dyn Source>) -> Self {
-        Self { from, to }
+impl Link {
+    pub fn new<B: Backend + 'static>(graph: &Graph<B>, from: impl Into<String>, to: impl Into<String>) -> Result<Self> {
+        let from = from.into();
+        let to = to.into();
+        let from_source = graph.get_source(&from)?;
+        let to_source = graph.get_source(&to)?;
+        if !from_source.matches_with(to_source)? {
+            return Err(Error::ShapeMismatch);
+        }
+        Ok(Self { from, to })
     }
 
-    pub fn compute(&'a self, encoder: &mut Encoder) {
-        for to in &self.to {
-            encoder.copy_buffer(self.from.buffer(), to.buffer());
-        }
+    pub fn realize<'a, B: Backend + 'static>(&self, graph: &'a Graph<B>) -> (&'a dyn Source<B>, &'a dyn Source<B>) {
+        let from = graph.get_source(&self.from).expect("link from source should exist");
+        let to = graph.get_source(&self.to).expect("link to source should exist");
+        (from, to)
     }
 }

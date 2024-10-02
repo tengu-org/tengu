@@ -1,1 +1,10 @@
+# OS stuff
+.DS_Store
+
+# IDE stuff
+.vscode
+.zed
+.idea
+
+# Rust stuff
 /target

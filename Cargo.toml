@@ -1,6 +1,9 @@
 [workspace]
-members = ["tengu-wgpu", "tengu-tensor"]
+members = ["tengu-wgpu", "tengu-tensor", "tengu-backend", "tengu-backend-wgpu"]
 resolver = "2"
 
 [workspace.dependencies]
 wgpu = "22.1.0"
+bytemuck = "1.18.0"
+thiserror = "1.0.64"
+anyhow = "1.0.89"

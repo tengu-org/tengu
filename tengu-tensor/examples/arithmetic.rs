@@ -3,7 +3,7 @@ use tengu_tensor::Tengu;
 #[tokio::main]
 pub async fn main() {
     // Initialize input tensors.
-    let tengu = Tengu::new().await.unwrap();
+    let tengu = Tengu::wgpu().await.unwrap();
     let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
     let b = tengu.tensor([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
     let c = tengu.tensor([2, 2]).init(&[4.0, 3.0, 2.0, 1.0]);
@@ -18,13 +18,13 @@ pub async fn main() {
         .add_computation("explog", a.exp() + b.log());
 
     // Set up probes.
-    let add = graph.probe("main/addmul").unwrap();
-    let sub = graph.probe("main/subdiv").unwrap();
-    let exp = graph.probe("main/explog").unwrap();
+    let mut add = graph.probe::<f32>("main/addmul").unwrap();
+    let mut sub = graph.probe::<f32>("main/subdiv").unwrap();
+    let mut exp = graph.probe::<f32>("main/explog").unwrap();
 
     // Run the computation and display the result twice.
-    graph.step();
-    println!("{:?}", add.retrieve::<f32>().await.unwrap());
-    println!("{:?}", sub.retrieve::<f32>().await.unwrap());
-    println!("{:?}", exp.retrieve::<f32>().await.unwrap());
+    graph.compute(1);
+    println!("{:?}", add.retrieve().await.unwrap());
+    println!("{:?}", sub.retrieve().await.unwrap());
+    println!("{:?}", exp.retrieve().await.unwrap());
 }

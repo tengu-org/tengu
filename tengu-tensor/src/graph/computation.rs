@@ -1,55 +1,35 @@
-use std::rc::Rc;
+use tengu_backend::{Backend, Processor, StorageType};
 
-use crate::backend::Emit;
-use crate::frontend::{Expression, Node, Shape, Source};
-use crate::visitor::Visitor;
-use crate::{IOType, Tengu};
+use crate::expression::{Expression, Node, Shape, Source};
 
-pub struct Computation {
-    expression: Box<dyn Node>,
-    output: Box<dyn Node>,
+pub struct Computation<B> {
+    statement: Box<dyn Node<B>>,
 }
 
-impl Computation {
-    pub fn new<T: IOType>(tengu: &Rc<Tengu>, label: impl Into<String>, expression: Expression<T>) -> Self {
-        let output = tengu.tensor(expression.shape()).label(label).zero::<T>();
-        Self {
-            expression: Box::new(expression),
-            output: Box::new(output),
-        }
+impl<B: Backend + 'static> Computation<B> {
+    pub fn new<T: StorageType>(out: Expression<T, B>, expr: Expression<T, B>) -> Self {
+        let statement = Box::new(Expression::statement(out, expr));
+        Self { statement }
+    }
+
+    pub fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+        self.statement.visit(processor)
+    }
+
+    pub fn source(&self, label: &str) -> Option<&dyn Source<B>> {
+        self.statement.find(label)
     }
 }
 
 // Traits
 
-impl Shape for Computation {
+impl<B> Shape for Computation<B> {
     fn shape(&self) -> &[usize] {
-        self.output.shape()
+        self.statement.shape()
     }
 
     fn count(&self) -> usize {
-        self.output.count()
-    }
-}
-
-impl Emit for Computation {
-    fn emit(&self) -> String {
-        format!("{} = {};", self.output.emit(), self.expression.emit())
-    }
-}
-
-impl Node for Computation {
-    fn visit<'a>(&'a self, visitor: &mut Visitor<'a>) {
-        self.expression.visit(visitor);
-        self.output.visit(visitor);
-    }
-
-    fn clone_box(&self) -> Box<dyn Node> {
-        panic!("computations should not be exposed and thus should not be cloned")
-    }
-
-    fn source(&self) -> Option<&dyn Source> {
-        self.output.source()
+        self.statement.count()
     }
 }
 
@@ -57,24 +37,18 @@ impl Node for Computation {
 
 #[cfg(test)]
 mod tests {
+    use crate::Tengu;
+
     use super::*;
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
     async fn computation_builder() {
-        let tengu = Tengu::new().await.unwrap();
+        let tengu = Tengu::wgpu().await.unwrap();
         let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
         let b = tengu.tensor([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
-        let computation = Computation::new(&tengu, "c", a + b);
+        let c = tengu.tensor([2, 2]).zero();
+        let computation = Computation::new(c, a + b);
         assert_eq!(computation.count(), 4);
-    }
-
-    #[tokio::test]
-    async fn computation_emit() {
-        let tengu = Tengu::new().await.unwrap();
-        let a = tengu.tensor([2, 2]).label("a").zero::<f32>();
-        let b = tengu.tensor([2, 2]).label("b").zero::<f32>();
-        let computation = Computation::new(&tengu, "c", a + b);
-        assert_eq!(computation.emit(), "c[idx] = (a[idx] + b[idx]);");
     }
 }
