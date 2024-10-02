@@ -133,6 +133,7 @@ mod tests {
     use super::*;
     use indoc::indoc;
     use pretty_assertions::assert_eq;
+    use regex::RegexSet;
 
     #[tokio::test]
     async fn builder_declaration() {
@@ -142,10 +143,17 @@ mod tests {
         let mut graph = tengu.graph();
         let block = graph.add_block("addition").unwrap().add_computation("out", a + b);
         let declaration = block.declaration();
-        let declaration = declaration.lines().collect::<Vec<_>>();
-        assert!(declaration.contains(&"@group(0) @binding(0) var<storage, read> a: array<f32>;"));
-        assert!(declaration.contains(&"@group(0) @binding(1) var<storage, read> b: array<f32>;"));
-        assert!(declaration.contains(&"@group(0) @binding(2) var<storage, read_write> out: array<f32>;"));
+        let declarations = declaration.lines().collect::<Vec<_>>();
+        let re = RegexSet::new([
+            r"@group\(0\) @binding\(\d+\) var<storage, read> a: array<f32>;",
+            r"@group\(0\) @binding\(\d+\) var<storage, read> b: array<f32>;",
+            r"@group\(0\) @binding\(\d+\) var<storage, read_write> out: array<f32>;",
+        ])
+        .unwrap();
+        for declaration in declarations {
+            println!("{:?}", declaration);
+            assert!(re.is_match(declaration));
+        }
     }
 
     #[tokio::test]

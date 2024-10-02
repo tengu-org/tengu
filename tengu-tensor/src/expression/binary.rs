@@ -2,6 +2,7 @@ use std::{fmt::Display, marker::PhantomData};
 
 use super::traits::{Emit, Node, Shape};
 use super::Expression;
+use crate::unify::Unify;
 use crate::visitor::Visitor;
 
 // Operator
@@ -33,6 +34,8 @@ impl Operator {
 
 pub struct Binary<T> {
     operator: Operator,
+    shape: Vec<usize>,
+    count: usize,
     lhs: Box<dyn Node>,
     rhs: Box<dyn Node>,
     phantom: PhantomData<T>,
@@ -40,8 +43,12 @@ pub struct Binary<T> {
 
 impl<T> Binary<T> {
     fn new<S: Clone + Display + 'static>(operator: Operator, lhs: Expression<S>, rhs: Expression<S>) -> Self {
+        let shape = lhs.shape().unify(rhs.shape()).expect("Shapes don't match");
+        let count = shape.iter().product();
         Self {
             operator,
+            shape,
+            count,
             lhs: Box::new(lhs),
             rhs: Box::new(rhs),
             phantom: PhantomData,
@@ -51,15 +58,11 @@ impl<T> Binary<T> {
 
 impl<T> Shape for Binary<T> {
     fn count(&self) -> usize {
-        self.lhs.count().max(self.rhs.count())
+        self.count
     }
 
     fn shape(&self) -> &[usize] {
-        if self.lhs.count() > self.rhs.count() {
-            self.lhs.shape()
-        } else {
-            self.rhs.shape()
-        }
+        &self.shape
     }
 }
 
@@ -93,6 +96,8 @@ impl<T: Clone + 'static> Clone for Binary<T> {
     fn clone(&self) -> Self {
         Self {
             operator: self.operator,
+            shape: self.shape.clone(),
+            count: self.count,
             lhs: self.lhs.clone_box(),
             rhs: self.rhs.clone_box(),
             phantom: PhantomData,
@@ -142,5 +147,15 @@ mod tests {
         assert_eq!(add.count(), 6);
         assert_eq!(add.shape(), &[1, 2, 3]);
         assert_eq!(add.emit(), "(tz_lhs[idx] + tz_rhs[idx])");
+    }
+
+    #[tokio::test]
+    async fn propagation() {
+        let tengu = Tengu::new().await.unwrap();
+        let lhs = tengu.tensor([4, 1, 3]).zero::<f32>();
+        let rhs = tengu.tensor([2, 3]).zero::<f32>();
+        let add = lhs + rhs;
+        assert_eq!(add.shape(), &[4, 2, 3]);
+        assert_eq!(add.count(), 24);
     }
 }

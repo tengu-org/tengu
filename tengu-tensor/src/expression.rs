@@ -43,14 +43,6 @@ impl<T: Clone + Display + 'static> Expression<T> {
     pub fn exp(self) -> Expression<T> {
         Self::UnaryFn(UnaryFn::new(unary_fn::Function::Exp, self))
     }
-
-    pub(crate) fn unify<'a>(&'a self, other: &'a Self) -> Option<&'a [usize]> {
-        match (self, other) {
-            (Self::Scalar(_), _) => Some(other.shape()),
-            (_, Self::Scalar(_)) => Some(self.shape()),
-            _ => (self.shape() == other.shape()).then(|| self.shape()),
-        }
-    }
 }
 
 // Node implementation

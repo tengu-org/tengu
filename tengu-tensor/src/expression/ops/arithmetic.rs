@@ -9,7 +9,6 @@ impl<T: StorageType> Add for Expression<T> {
     type Output = Expression<T>;
 
     fn add(self, rhs: Expression<T>) -> Self::Output {
-        assert!(self.unify(&rhs).is_some(), "tensor shapes should match");
         Binary::add(self, rhs)
     }
 }
@@ -29,7 +28,6 @@ impl<T: StorageType> Sub for Expression<T> {
     type Output = Expression<T>;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        assert!(self.unify(&rhs).is_some(), "tensor shapes should match");
         Binary::sub(self, rhs)
     }
 }
@@ -49,7 +47,6 @@ impl<T: StorageType> Mul for Expression<T> {
     type Output = Expression<T>;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        assert!(self.unify(&rhs).is_some(), "tensor shapes should match");
         Binary::mul(self, rhs)
     }
 }
@@ -69,7 +66,6 @@ impl<T: StorageType> Div for Expression<T> {
     type Output = Expression<T>;
 
     fn div(self, rhs: Self) -> Self::Output {
-        assert!(self.unify(&rhs).is_some(), "tensor shapes should match");
         Binary::div(self, rhs)
     }
 }
@@ -112,8 +108,8 @@ mod tests {
     #[should_panic]
     async fn shape_mismatch() {
         let tengu = Tengu::new().await.unwrap();
-        let lhs = tengu.tensor([1, 2, 3]).zero::<i32>();
-        let rhs = tengu.tensor([3, 2, 1]).zero::<i32>();
+        let lhs = tengu.tensor([2, 3]).zero::<i32>();
+        let rhs = tengu.tensor([4]).zero::<i32>();
         let _ = lhs.clone() + rhs.clone();
         let _ = lhs.clone() - rhs.clone();
         let _ = lhs.clone() * rhs.clone();
