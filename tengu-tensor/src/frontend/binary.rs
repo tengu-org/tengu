@@ -1,7 +1,7 @@
 use std::{fmt::Display, marker::PhantomData};
 
-use super::traits::{Emit, Node, Shape};
-use super::Expression;
+use super::{Emit, Node, Shape};
+use super::{Expression, Source};
 use crate::unify::Unify;
 use crate::visitor::Visitor;
 
@@ -85,7 +85,7 @@ impl<T: Clone + Display + 'static> Node for Binary<T> {
         Box::new(self.clone())
     }
 
-    fn source(&self) -> Option<&dyn super::traits::Source> {
+    fn source(&self) -> Option<&dyn Source> {
         None
     }
 }
@@ -135,7 +135,8 @@ impl<T: Clone + Display + 'static> Binary<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::backend::Emit;
+    use crate::frontend::Shape;
     use crate::Tengu;
 
     #[tokio::test]

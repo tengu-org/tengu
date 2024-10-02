@@ -1,5 +1,5 @@
 use super::Tensor;
-use crate::{expression::Expression, IOType, StorageType, Tengu};
+use crate::{frontend::Expression, IOType, StorageType, Tengu};
 
 use random_string::charsets::ALPHA;
 use std::{cell::OnceCell, marker::PhantomData, rc::Rc};
@@ -7,14 +7,14 @@ use tengu_wgpu::{BufferUsage, ByteSize};
 
 pub const LABEL_LENGTH: usize = 6;
 
-pub struct TensorBuilder {
+pub struct Builder {
     shape: Vec<usize>,
     count: usize,
     label: Option<String>,
     tengu: Rc<Tengu>,
 }
 
-impl TensorBuilder {
+impl Builder {
     pub fn new(tengu: &Rc<Tengu>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();

@@ -1,10 +1,11 @@
 use std::{cell::OnceCell, marker::PhantomData, rc::Rc};
 use tengu_wgpu::{Buffer, BufferUsage};
 
-use crate::expression::traits::{Datum, Emit, Shape, Source};
+use crate::backend::{Datum, Emit};
+use crate::frontend::{Shape, Source};
 use crate::{probe::Probe, Tengu};
 
-pub use builder::TensorBuilder;
+pub use builder::Builder;
 
 mod builder;
 

@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use crate::expression::traits::{Emit, Node, Shape, Source};
-use crate::expression::Expression;
+use crate::backend::Emit;
+use crate::frontend::{Expression, Node, Shape, Source};
 use crate::visitor::Visitor;
 use crate::{IOType, Tengu};
 

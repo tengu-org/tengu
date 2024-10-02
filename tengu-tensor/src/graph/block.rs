@@ -4,8 +4,7 @@ use std::{cell::OnceCell, rc::Rc};
 use tengu_wgpu::Pipeline;
 
 use super::computation::Computation;
-use crate::expression::traits::{Node, Source};
-use crate::expression::Expression;
+use crate::frontend::{Expression, Node, Source};
 use crate::probe::Probe;
 use crate::visitor::Visitor;
 use crate::{IOType, Tengu};

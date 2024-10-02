@@ -1,7 +1,7 @@
 use std::{fmt::Display, marker::PhantomData};
 
-use super::traits::{Emit, Node, Shape};
-use super::Expression;
+use super::{Emit, Node, Shape};
+use super::{Expression, Source};
 use crate::visitor::Visitor;
 
 // Function
@@ -27,13 +27,21 @@ pub struct UnaryFn<T> {
     phantom: PhantomData<T>,
 }
 
-impl<T> UnaryFn<T> {
-    pub fn new<S: Clone + Display + 'static>(function: Function, expr: Expression<S>) -> Self {
+impl<T: Clone + Display + 'static> UnaryFn<T> {
+    pub fn new(function: Function, expr: Expression<T>) -> Self {
         Self {
             function,
             expr: Box::new(expr),
             phantom: PhantomData,
         }
+    }
+
+    pub fn exp(expr: Expression<T>) -> Self {
+        Self::new(Function::Exp, expr)
+    }
+
+    pub fn log(expr: Expression<T>) -> Self {
+        Self::new(Function::Log, expr)
     }
 }
 
@@ -64,7 +72,7 @@ impl<T: Clone + Display + 'static> Node for UnaryFn<T> {
         Box::new(self.clone())
     }
 
-    fn source(&self) -> Option<&dyn super::traits::Source> {
+    fn source(&self) -> Option<&dyn Source> {
         None
     }
 }

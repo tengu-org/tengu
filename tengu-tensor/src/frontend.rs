@@ -1,22 +1,19 @@
-use tengu_wgpu::{Buffer, Encoder};
+mod binary;
+mod cast;
+mod expression;
+mod ops;
+mod unary_fn;
 
-use crate::{probe::Probe, visitor::Visitor};
+pub use expression::Expression;
+
+use crate::{
+    backend::{Datum, Emit},
+    visitor::Visitor,
+};
 
 pub trait Shape {
     fn shape(&self) -> &[usize];
     fn count(&self) -> usize;
-}
-
-pub trait Emit {
-    fn emit(&self) -> String;
-}
-
-pub trait Datum {
-    fn buffer(&self) -> &Buffer;
-    fn probe(&self) -> &Probe;
-    fn read(&self, encoder: &mut Encoder) {
-        encoder.copy_buffer(self.buffer(), self.probe().buffer());
-    }
 }
 
 pub trait Source: Shape + Emit + Datum {

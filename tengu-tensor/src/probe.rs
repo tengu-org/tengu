@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize};
 
-use crate::expression::traits::Shape;
+use crate::frontend::Shape;
 use crate::tensor::Tensor;
 use crate::{Error, IOType, Result, Tengu};
 

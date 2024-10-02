@@ -3,16 +3,10 @@ use std::fmt::Display;
 use crate::tensor::Tensor;
 use crate::visitor::Visitor;
 
-use binary::Binary;
-use cast::Cast;
-use traits::{Emit, Node, Shape, Source};
-use unary_fn::UnaryFn;
-
-mod binary;
-mod cast;
-mod ops;
-pub mod traits;
-mod unary_fn;
+use super::binary::Binary;
+use super::cast::Cast;
+use super::unary_fn::UnaryFn;
+use super::{Emit, Node, Shape, Source};
 
 // Expression
 
@@ -37,11 +31,11 @@ impl<T: Clone + Display + 'static> Expression<T> {
     }
 
     pub fn log(self) -> Expression<T> {
-        Self::UnaryFn(UnaryFn::new(unary_fn::Function::Exp, self))
+        Self::UnaryFn(UnaryFn::log(self))
     }
 
     pub fn exp(self) -> Expression<T> {
-        Self::UnaryFn(UnaryFn::new(unary_fn::Function::Exp, self))
+        Self::UnaryFn(UnaryFn::exp(self))
     }
 }
 

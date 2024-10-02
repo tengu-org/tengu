@@ -1,5 +1,5 @@
-use super::Binary;
-use crate::{expression::Expression, StorageType};
+use super::{Binary, Expression};
+use crate::StorageType;
 
 impl<T: StorageType> Expression<T> {
     pub fn eq(self, rhs: Self) -> Expression<bool> {

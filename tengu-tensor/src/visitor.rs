@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::expression::traits::Source;
+use crate::frontend::Source;
 use crate::tensor::Tensor;
 
 pub struct Visitor<'a> {

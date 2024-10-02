@@ -1,7 +1,7 @@
 use std::ops::{Add, Div, Mul, Sub};
 
-use super::Binary;
-use crate::{expression::Expression, StorageType};
+use super::{Binary, Expression};
+use crate::StorageType;
 
 // Add
 

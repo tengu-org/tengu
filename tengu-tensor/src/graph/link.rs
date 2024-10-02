@@ -1,6 +1,6 @@
 use tengu_wgpu::Encoder;
 
-use crate::expression::traits::Source;
+use crate::frontend::Source;
 
 pub struct Link<'a> {
     from: &'a dyn Source,

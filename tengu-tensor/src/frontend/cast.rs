@@ -1,7 +1,7 @@
 use std::{fmt::Display, marker::PhantomData};
 
-use super::traits::{Emit, Node, Shape};
-use super::Expression;
+use super::{Emit, Node, Shape};
+use super::{Expression, Source};
 use crate::visitor::Visitor;
 
 pub struct Cast<T> {
@@ -45,7 +45,7 @@ impl<T: Clone + Display + 'static> Node for Cast<T> {
         Box::new(self.clone())
     }
 
-    fn source(&self) -> Option<&dyn super::traits::Source> {
+    fn source(&self) -> Option<&dyn Source> {
         None
     }
 }

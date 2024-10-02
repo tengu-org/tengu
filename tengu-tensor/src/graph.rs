@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::{collections::HashMap, future::Future, rc::Rc};
 
-use crate::expression::traits::Source;
+use crate::frontend::Source;
 use crate::probe::Probe;
 use crate::tengu::Tengu;
 use crate::{Error, Result};
