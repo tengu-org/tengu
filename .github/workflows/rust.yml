@@ -18,7 +18,7 @@ env:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       # Use checkout action for all steps.
       - name: Checkout
@@ -27,6 +27,12 @@ jobs:
       # Install Just to make CI identical to developer experience.
       - name: Setup Just
         uses: extractions/setup-just@v2
+
+      # Show information for debugging
+      - name: Show information
+        run: |
+          rustc --version
+          cargo --version
 
       # Run checks and lints on all projects, tests, and examples.
       - name: Verify code
