@@ -24,6 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Set up latest Rust toolchain
+      - name: Set up Rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
       # Install Just to make CI identical to developer experience.
       - name: Setup Just
         uses: extractions/setup-just@v2
@@ -33,6 +37,7 @@ jobs:
         run: |
           rustc --version
           cargo --version
+          rustup --version
 
       # Run checks and lints on all projects, tests, and examples.
       - name: Verify code
