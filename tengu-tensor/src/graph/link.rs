@@ -15,7 +15,7 @@ impl Link {
         let to = to.into();
         let from_source = graph.get_source(&from)?;
         let to_source = graph.get_source(&to)?;
-        if !from_source.matches_with(to_source)? {
+        if !from_source.matches_to(to_source)? {
             return Err(Error::ShapeMismatch);
         }
         Ok(Self { from, to })

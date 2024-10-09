@@ -42,7 +42,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
 // Node
 
 impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
-    fn matches_with(&self, other: &dyn Source<B>) -> Result<bool> {
+    fn matches_to(&self, other: &dyn Source<B>) -> Result<bool> {
         let other = other.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
         Ok(self.shape() == other.shape())
     }
