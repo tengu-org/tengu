@@ -1,10 +1,17 @@
 name: Rust
 
 on:
+  # Run automatically on pushes to these branches, but not main.
   push:
-    branches: [ "feature", "bugfix" ]
+    branches:
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'release/**'
+
+  # Run on main only after pull request. 
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - 'main'
 
 env:
   CARGO_TERM_COLOR: always
@@ -13,14 +20,18 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Check
-      run: |
-        cargo check
-        cargo clippy
-        cargo check --tests
-        cargo clippy --tests
-        cargo check --examples
-        cargo clippy --examples
-    - name: Run tests
-      run: cargo test
+      # Use checkout action for all steps.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install Just to make CI identical to developer experience.
+      - name: Setup Just
+        uses: extractions/setup-just@v2
+
+      # Run checks and lints on all projects, tests, and examples.
+      - name: Verify code
+        run: just check
+
+      # Run tests, does not rely on Just to avoid dependency on nextest.
+      - name: Run tests
+        run: cargo test
