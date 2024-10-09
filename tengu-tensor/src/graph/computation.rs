@@ -43,12 +43,13 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[tokio::test]
-    async fn computation_builder() {
+    async fn computation_shape_and_count() {
         let tengu = Tengu::wgpu().await.unwrap();
         let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
         let b = tengu.tensor([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
         let c = tengu.tensor([2, 2]).zero();
         let computation = Computation::new(c, a + b);
+        assert_eq!(computation.shape(), [2, 2]);
         assert_eq!(computation.count(), 4);
     }
 }

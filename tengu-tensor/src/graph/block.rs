@@ -55,3 +55,18 @@ impl<B: Backend + 'static> Block<B> {
         processor
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn add_computation() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let mut graph = tengu.graph();
+        let block = graph.add_block("main").unwrap();
+        assert_eq!(block.computations.len(), 0);
+        block.add_computation("one", tengu.scalar(1));
+        assert_eq!(block.computations.len(), 1);
+    }
+}
