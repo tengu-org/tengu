@@ -34,3 +34,40 @@ impl Unify for &[usize] {
         Some(shape)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn unify_same_length_fails() {
+        let a = &[1, 2, 3, 6];
+        let b = &[3, 3, 3, 6];
+        a.unify(b).unwrap();
+    }
+
+    #[test]
+    #[should_panic]
+    fn unify_different_lengths_fails() {
+        let a = &[2, 4, 3, 6];
+        let b = &[3, 1, 1];
+        a.unify(b).unwrap();
+    }
+
+    #[test]
+    fn unify_same_length() {
+        let a = &[1, 2, 3, 6];
+        let b = &[3, 1, 3, 1];
+        let c = a.unify(b).unwrap();
+        assert_eq!(c, vec![3, 2, 3, 6]);
+    }
+
+    #[test]
+    fn unify_different_lengths() {
+        let a = &[2, 4, 1, 6];
+        let b = &[1, 3, 1];
+        let c = a.unify(b).unwrap();
+        assert_eq!(c, vec![2, 4, 3, 6]);
+    }
+}
