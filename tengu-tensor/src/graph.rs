@@ -38,10 +38,10 @@ impl<B: Backend + 'static> Graph<B> {
         Ok(self.blocks.entry(label).or_insert(Block::new(&self.tengu)))
     }
 
-    pub fn link(&mut self, from: impl Into<String>, to: impl Into<String>) -> Result<()> {
+    pub fn link(&mut self, from: impl Into<String>, to: impl Into<String>) -> Result<&Link> {
         let link = Link::new(self, from, to)?;
         self.links.push(link);
-        Ok(())
+        Ok(self.links.last().expect("should have the last link"))
     }
 
     pub fn probe<T: StorageType>(&self, path: &str) -> Result<Probe<T, B>> {
@@ -130,5 +130,36 @@ impl<B: Backend + 'static> Graph<B> {
         for (from, to) in links {
             from.copy_link(*to, linker).expect("link endpoints should match");
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Tengu;
+
+    #[tokio::test]
+    async fn links() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap().add_computation("c", a + b);
+        let link = graph.link("main/c", "main/a").unwrap();
+        assert_eq!(link.from(), "main/c");
+        assert_eq!(link.to(), "main/a");
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn link_type_mismatch() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph
+            .add_block("main")
+            .unwrap()
+            .add_computation("c", (a + b).cast::<f32>());
+        graph.link("main/c", "main/a").unwrap();
     }
 }
