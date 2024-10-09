@@ -15,7 +15,7 @@ pub async fn main() {
     graph.link("fst/out", "snd/b").unwrap();
 
     // Set up probes.
-    let mut out = graph.probe::<f32>("snd/out").unwrap();
+    let mut out = graph.get_probe::<f32>("snd/out").unwrap();
 
     // Run the computation and display the result twice.
     graph.process(2, || {

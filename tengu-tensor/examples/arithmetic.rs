@@ -18,9 +18,9 @@ pub async fn main() {
         .add_computation("explog", a.exp() + b.log());
 
     // Set up probes.
-    let mut add = graph.probe::<f32>("main/addmul").unwrap();
-    let mut sub = graph.probe::<f32>("main/subdiv").unwrap();
-    let mut exp = graph.probe::<f32>("main/explog").unwrap();
+    let mut add = graph.get_probe::<f32>("main/addmul").unwrap();
+    let mut sub = graph.get_probe::<f32>("main/subdiv").unwrap();
+    let mut exp = graph.get_probe::<f32>("main/explog").unwrap();
 
     // Run the computation and display the result twice.
     graph.compute(1);

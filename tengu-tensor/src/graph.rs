@@ -63,7 +63,7 @@ impl<B: Backend + 'static> Graph<B> {
         Ok(self.links.last().expect("should have the last link"))
     }
 
-    pub fn probe<T: StorageType>(&self, path: &str) -> Result<Probe<T, B>> {
+    pub fn get_probe<T: StorageType>(&self, path: &str) -> Result<Probe<T, B>> {
         let source = self
             .get_source(path)?
             .downcast_ref::<Tensor<T, B>>()
@@ -198,5 +198,29 @@ mod tests {
         let mut graph = tengu.graph();
         graph.add_block("main").unwrap();
         graph.add_block("main").unwrap();
+    }
+
+    #[tokio::test]
+    async fn get_probe() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap().add_computation("c", a + b);
+        graph.get_probe::<u32>("main/c").unwrap();
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn get_probe_type_mismatch() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph
+            .add_block("main")
+            .unwrap()
+            .add_computation("c", (a + b).cast::<f32>());
+        graph.get_probe::<u32>("main/c").unwrap();
     }
 }

@@ -15,7 +15,7 @@ pub async fn main() {
         .add_computation("rel", a.eq(b).cast::<f32>());
 
     // Set up probes.
-    let mut probe = graph.probe::<f32>("main/rel").unwrap();
+    let mut probe = graph.get_probe::<f32>("main/rel").unwrap();
 
     // Run one step of computation and display the result.
     graph.compute(1);
