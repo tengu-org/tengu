@@ -114,7 +114,46 @@ mod tests {
     use tengu_backend::{Backend, Processor};
 
     #[tokio::test]
-    async fn emit() {
+    async fn scalar() {
+        let mut processor = ShaderEmitProcessor::new();
+        let scalar = processor.scalar(2.37);
+        assert_eq!(scalar, "2.37");
+    }
+
+    #[tokio::test]
+    async fn cast() {
+        let backend = WGPUBackend::new().await.unwrap();
+        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let mut processor = ShaderEmitProcessor::new();
+        let a = processor.var(&a);
+        let cast_a = processor.cast(a, "f32");
+        assert_eq!(cast_a, "f32(a[idx])");
+    }
+
+    #[tokio::test]
+    async fn unary_fn() {
+        let backend = WGPUBackend::new().await.unwrap();
+        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let mut processor = ShaderEmitProcessor::new();
+        let a = processor.var(&a);
+        let cast_a = processor.unary_fn(a, "exp");
+        assert_eq!(cast_a, "exp(a[idx])");
+    }
+
+    #[tokio::test]
+    async fn binary() {
+        let backend = WGPUBackend::new().await.unwrap();
+        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let b = backend.tensor("b", &[5, 6, 7, 8]);
+        let mut processor = ShaderEmitProcessor::new();
+        let a = processor.var(&a);
+        let b = processor.var(&b);
+        let a_add_b = processor.binary(a, b, "*");
+        assert_eq!(a_add_b, "(a[idx] * b[idx])");
+    }
+
+    #[tokio::test]
+    async fn statement() {
         let backend = WGPUBackend::new().await.unwrap();
         let a = backend.tensor("a", &[1, 2, 3, 4]);
         let b = backend.tensor("b", &[5, 6, 7, 8]);
