@@ -35,7 +35,26 @@ impl<B: Backend + 'static> Graph<B> {
         if self.blocks.contains_key(&label) {
             return Err(Error::BlockAlreadyExists(label));
         }
-        Ok(self.blocks.entry(label).or_insert(Block::new(&self.tengu)))
+        Ok(self
+            .blocks
+            .entry(label.clone())
+            .or_insert(Block::new(&self.tengu, label)))
+    }
+
+    pub fn get_block(&self, label: &str) -> Result<&Block<B>> {
+        let block = self
+            .blocks
+            .get(label)
+            .ok_or_else(|| Error::BlockNotFound(label.to_string()))?;
+        Ok(block)
+    }
+
+    pub fn get_block_mut(&mut self, label: &str) -> Result<&mut Block<B>> {
+        let block = self
+            .blocks
+            .get_mut(label)
+            .ok_or_else(|| Error::BlockNotFound(label.to_string()))?;
+        Ok(block)
     }
 
     pub fn link(&mut self, from: impl Into<String>, to: impl Into<String>) -> Result<&Link> {
@@ -161,5 +180,23 @@ mod tests {
             .unwrap()
             .add_computation("c", (a + b).cast::<f32>());
         graph.link("main/c", "main/a").unwrap();
+    }
+
+    #[tokio::test]
+    async fn add_block() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap();
+        let block = graph.get_block("main").unwrap();
+        assert_eq!(block.label(), "main");
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn add_block_again() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap();
+        graph.add_block("main").unwrap();
     }
 }

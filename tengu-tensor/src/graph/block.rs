@@ -9,15 +9,21 @@ use crate::Tengu;
 
 pub struct Block<B: Backend> {
     tengu: Rc<Tengu<B>>,
+    label: String,
     computations: Vec<Computation<B>>,
 }
 
 impl<B: Backend + 'static> Block<B> {
-    pub fn new(tengu: &Rc<Tengu<B>>) -> Self {
+    pub fn new(tengu: &Rc<Tengu<B>>, label: impl Into<String>) -> Self {
         Self {
             tengu: Rc::clone(tengu),
+            label: label.into(),
             computations: Vec::new(),
         }
+    }
+
+    pub fn label(&self) -> &str {
+        &self.label
     }
 
     pub fn add_computation<T: StorageType>(&mut self, label: impl Into<String>, expr: Expression<T, B>) -> &mut Self {
