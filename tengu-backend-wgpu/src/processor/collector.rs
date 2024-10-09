@@ -51,3 +51,23 @@ impl<'a> tengu_backend::Processor<'a> for CollectingProcessor<'a> {
 
     fn block(&mut self, _exprs: impl Iterator<Item = Self::Repr>) {}
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Backend as WGPUBackend;
+    use tengu_backend::{Backend, Processor};
+
+    #[tokio::test]
+    async fn cast() {
+        let backend = WGPUBackend::new().await.unwrap();
+        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let b = backend.tensor("b", &[5, 6, 7]);
+        let c = backend.tensor("c", &[1, 2]);
+        let mut processor = CollectingProcessor::new();
+        processor.var(&a);
+        processor.var(&b);
+        processor.var(&c);
+        assert_eq!(processor.count(), 4);
+    }
+}
