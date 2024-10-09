@@ -116,9 +116,9 @@ mod tests {
     #[tokio::test]
     async fn emit() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("b", &[1, 2, 3, 4]);
-        let b = backend.tensor("c", &[5, 6, 7, 8]);
-        let c = backend.zero::<u32>("a", 4);
+        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let b = backend.tensor("b", &[5, 6, 7, 8]);
+        let c = backend.zero::<f32>("c", 4);
         let mut processor = ShaderEmitProcessor::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
@@ -133,7 +133,7 @@ mod tests {
         let backend = WGPUBackend::new().await.unwrap();
         let a = backend.tensor("a", &[1.0, 2.0, 3.0, 4.0]);
         let b = backend.tensor("b", &[5.0, 6.0, 7.0, 8.0]);
-        let c = backend.zero::<u32>("a", 4);
+        let c = backend.zero::<f32>("c", 4);
         let mut processor = ShaderEmitProcessor::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
@@ -145,7 +145,7 @@ mod tests {
         let re = RegexSet::new([
             r"@group\(0\) @binding\(\d+\) var<storage, read> a: array<f32>;",
             r"@group\(0\) @binding\(\d+\) var<storage, read> b: array<f32>;",
-            r"@group\(0\) @binding\(\d+\) var<storage, read_write> out: array<f32>;",
+            r"@group\(0\) @binding\(\d+\) var<storage, read_write> c: array<f32>;",
         ])
         .unwrap();
         for declaration in declarations {
@@ -157,9 +157,9 @@ mod tests {
     #[tokio::test]
     async fn body() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("b", &[1, 2, 3, 4]);
-        let b = backend.tensor("c", &[5, 6, 7, 8]);
-        let c = backend.zero::<u32>("a", 4);
+        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let b = backend.tensor("b", &[5, 6, 7, 8]);
+        let c = backend.zero::<f32>("c", 4);
         let mut processor = ShaderEmitProcessor::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
@@ -175,7 +175,7 @@ mod tests {
                 @workgroup_size(64)
                 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
                     let idx = global_id.x;
-                    out[idx] = (a[idx] + b[idx]);
+                    c[idx] = (a[idx] + b[idx]);
                 }"
             )
         );
