@@ -89,11 +89,10 @@ impl<B: Backend + 'static> Graph<B> {
     pub fn compute(&self, times: usize) {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        let mut linker = self.tengu.backend().linker();
         for _ in 0..times {
             self.compute_blocks(&processors);
             self.compute_readout(&processors);
-            self.compute_links(&mut linker, &links);
+            self.compute_links(&links);
         }
     }
 
@@ -103,11 +102,10 @@ impl<B: Backend + 'static> Graph<B> {
     {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        let mut linker = self.tengu.backend().linker();
         for _ in 0..times {
             self.compute_blocks(&processors);
             self.compute_readout(&processors);
-            self.compute_links(&mut linker, &links);
+            self.compute_links(&links);
             call();
         }
     }
@@ -118,11 +116,10 @@ impl<B: Backend + 'static> Graph<B> {
     {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        let mut linker = self.tengu.backend().linker();
         for _ in 0..times {
             self.compute_blocks(&processors);
             self.compute_readout(&processors);
-            self.compute_links(&mut linker, &links);
+            self.compute_links(&links);
             if !call() {
                 break;
             }
@@ -145,10 +142,12 @@ impl<B: Backend + 'static> Graph<B> {
         });
     }
 
-    fn compute_links(&self, linker: &mut B::Linker, links: &Vec<(&dyn Source<B>, &dyn Source<B>)>) {
-        for (from, to) in links {
-            from.copy_link(*to, linker).expect("link endpoints should match");
-        }
+    fn compute_links(&self, links: &Vec<(&dyn Source<B>, &dyn Source<B>)>) {
+        self.tengu.backend().propagate(|mut linker| {
+            for (from, to) in links {
+                from.copy_link(*to, &mut linker).expect("link endpoints should match");
+            }
+        });
     }
 }
 

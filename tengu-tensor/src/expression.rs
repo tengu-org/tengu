@@ -18,7 +18,7 @@ mod unary_fn;
 
 pub trait Source<B: Backend>: AsAny {
     fn matches_to(&self, other: &dyn Source<B>) -> Result<bool>;
-    fn copy_link(&self, to: &dyn Source<B>, linker: &mut B::Linker) -> Result<()>;
+    fn copy_link(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()>;
 }
 
 pub trait Shape {

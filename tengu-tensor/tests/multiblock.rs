@@ -1,8 +1,8 @@
-use pollster::FutureExt;
+use pretty_assertions::assert_eq;
 use tengu_tensor::Tengu;
 
-#[pollster::main]
-pub async fn main() {
+#[tokio::test]
+async fn main() {
     // Initialize input tensors.
     let tengu = Tengu::wgpu().await.unwrap();
     let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
@@ -18,8 +18,6 @@ pub async fn main() {
     let mut out = graph.get_probe::<f32>("snd/out").unwrap();
 
     // Run the computation and display the result twice.
-    graph.process(2, || {
-        let data = out.retrieve().block_on().unwrap();
-        println!("{:?}", data);
-    });
+    graph.compute(2);
+    assert_eq!(out.retrieve().await.unwrap(), [3.0, 4.0, 5.0, 6.0]);
 }

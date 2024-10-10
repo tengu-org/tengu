@@ -47,7 +47,7 @@ impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
         Ok(self.shape() == other.shape())
     }
 
-    fn copy_link(&self, to: &dyn Source<B>, linker: &mut B::Linker) -> Result<()> {
+    fn copy_link(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()> {
         let to = to.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
         linker.copy_link(self.raw_tensor(), to.raw_tensor());
         Ok(())

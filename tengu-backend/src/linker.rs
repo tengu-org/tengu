@@ -1,6 +1,6 @@
 use crate::{Backend, StorageType};
 
-pub trait Linker {
+pub trait Linker<'a> {
     /// Type of the backend.
     type Backend: Backend;
 
@@ -12,6 +12,4 @@ pub trait Linker {
         from: &<Self::Backend as Backend>::Tensor<T>,
         to: &<Self::Backend as Backend>::Tensor<T>,
     );
-
-    fn finish(self) -> Self::Output;
 }
