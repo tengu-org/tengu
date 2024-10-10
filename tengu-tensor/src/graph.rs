@@ -35,16 +35,35 @@ impl<B: Backend + 'static> Graph<B> {
         if self.blocks.contains_key(&label) {
             return Err(Error::BlockAlreadyExists(label));
         }
-        Ok(self.blocks.entry(label).or_insert(Block::new(&self.tengu)))
+        Ok(self
+            .blocks
+            .entry(label.clone())
+            .or_insert(Block::new(&self.tengu, label)))
     }
 
-    pub fn link(&mut self, from: impl Into<String>, to: impl Into<String>) -> Result<()> {
+    pub fn get_block(&self, label: &str) -> Result<&Block<B>> {
+        let block = self
+            .blocks
+            .get(label)
+            .ok_or_else(|| Error::BlockNotFound(label.to_string()))?;
+        Ok(block)
+    }
+
+    pub fn get_block_mut(&mut self, label: &str) -> Result<&mut Block<B>> {
+        let block = self
+            .blocks
+            .get_mut(label)
+            .ok_or_else(|| Error::BlockNotFound(label.to_string()))?;
+        Ok(block)
+    }
+
+    pub fn link(&mut self, from: impl Into<String>, to: impl Into<String>) -> Result<&Link> {
         let link = Link::new(self, from, to)?;
         self.links.push(link);
-        Ok(())
+        Ok(self.links.last().expect("should have the last link"))
     }
 
-    pub fn probe<T: StorageType>(&self, path: &str) -> Result<Probe<T, B>> {
+    pub fn get_probe<T: StorageType>(&self, path: &str) -> Result<Probe<T, B>> {
         let source = self
             .get_source(path)?
             .downcast_ref::<Tensor<T, B>>()
@@ -70,11 +89,10 @@ impl<B: Backend + 'static> Graph<B> {
     pub fn compute(&self, times: usize) {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        let mut linker = self.tengu.backend().linker();
         for _ in 0..times {
             self.compute_blocks(&processors);
             self.compute_readout(&processors);
-            self.compute_links(&mut linker, &links);
+            self.compute_links(&links);
         }
     }
 
@@ -84,11 +102,10 @@ impl<B: Backend + 'static> Graph<B> {
     {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        let mut linker = self.tengu.backend().linker();
         for _ in 0..times {
             self.compute_blocks(&processors);
             self.compute_readout(&processors);
-            self.compute_links(&mut linker, &links);
+            self.compute_links(&links);
             call();
         }
     }
@@ -99,11 +116,10 @@ impl<B: Backend + 'static> Graph<B> {
     {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        let mut linker = self.tengu.backend().linker();
         for _ in 0..times {
             self.compute_blocks(&processors);
             self.compute_readout(&processors);
-            self.compute_links(&mut linker, &links);
+            self.compute_links(&links);
             if !call() {
                 break;
             }
@@ -126,9 +142,84 @@ impl<B: Backend + 'static> Graph<B> {
         });
     }
 
-    fn compute_links(&self, linker: &mut B::Linker, links: &Vec<(&dyn Source<B>, &dyn Source<B>)>) {
-        for (from, to) in links {
-            from.copy_link(*to, linker).expect("link endpoints should match");
-        }
+    fn compute_links(&self, links: &Vec<(&dyn Source<B>, &dyn Source<B>)>) {
+        self.tengu.backend().propagate(|mut linker| {
+            for (from, to) in links {
+                from.copy_link(*to, &mut linker).expect("link endpoints should match");
+            }
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Tengu;
+
+    #[tokio::test]
+    async fn links() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap().add_computation("c", a + b);
+        let link = graph.link("main/c", "main/a").unwrap();
+        assert_eq!(link.from(), "main/c");
+        assert_eq!(link.to(), "main/a");
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn link_type_mismatch() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph
+            .add_block("main")
+            .unwrap()
+            .add_computation("c", (a + b).cast::<f32>());
+        graph.link("main/c", "main/a").unwrap();
+    }
+
+    #[tokio::test]
+    async fn add_block() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap();
+        let block = graph.get_block("main").unwrap();
+        assert_eq!(block.label(), "main");
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn add_block_again() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap();
+        graph.add_block("main").unwrap();
+    }
+
+    #[tokio::test]
+    async fn get_probe() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph.add_block("main").unwrap().add_computation("c", a + b);
+        graph.get_probe::<u32>("main/c").unwrap();
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn get_probe_type_mismatch() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let a = tengu.tensor([1, 2, 3]).label("a").zero::<u32>();
+        let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
+        let mut graph = tengu.graph();
+        graph
+            .add_block("main")
+            .unwrap()
+            .add_computation("c", (a + b).cast::<f32>());
+        graph.get_probe::<u32>("main/c").unwrap();
     }
 }

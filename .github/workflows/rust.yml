@@ -1,13 +1,6 @@
 name: Rust
 
 on:
-  # Run automatically on pushes to these branches, but not main.
-  push:
-    branches:
-      - 'feature/**'
-      - 'bugfix/**'
-      - 'release/**'
-
   # Run on main only after pull request. 
   pull_request:
     branches:
@@ -18,15 +11,26 @@ env:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       # Use checkout action for all steps.
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Set up latest Rust toolchain
+      - name: Set up Rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
       # Install Just to make CI identical to developer experience.
       - name: Setup Just
         uses: extractions/setup-just@v2
+
+      # Show information for debugging
+      - name: Show information
+        run: |
+          rustc --version
+          cargo --version
+          rustup --version
 
       # Run checks and lints on all projects, tests, and examples.
       - name: Verify code

@@ -17,8 +17,8 @@ mod unary_fn;
 // Node traits
 
 pub trait Source<B: Backend>: AsAny {
-    fn matches_with(&self, other: &dyn Source<B>) -> Result<bool>;
-    fn copy_link(&self, to: &dyn Source<B>, linker: &mut B::Linker) -> Result<()>;
+    fn matches_to(&self, other: &dyn Source<B>) -> Result<bool>;
+    fn copy_link(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()>;
 }
 
 pub trait Shape {

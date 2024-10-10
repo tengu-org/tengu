@@ -24,7 +24,7 @@ impl tengu_backend::Backend for Backend {
     type Tensor<T: StorageType> = WGPUTensor<T>;
     type Compute<'a> = WGPUCompute<'a>;
     type Processor<'a> = WGPUProcessor<'a>;
-    type Linker = WGPULinker;
+    type Linker<'a> = WGPULinker<'a>;
     type Readout<'a> = WGPUReadout<'a>;
 
     async fn new() -> Result<Rc<Self>> {
@@ -36,9 +36,10 @@ impl tengu_backend::Backend for Backend {
         WGPUProcessor::new()
     }
 
-    fn linker(&self) -> Self::Linker {
-        let encoder = self.device.encoder("linker");
-        WGPULinker::new(encoder)
+    fn propagate(&self, call: impl FnOnce(Self::Linker<'_>)) {
+        let mut encoder = self.device.encoder("linker");
+        call(WGPULinker::new(&mut encoder));
+        self.device.submit(encoder.finish());
     }
 
     fn compute(&self, label: &str, call: impl FnOnce(Self::Compute<'_>)) {

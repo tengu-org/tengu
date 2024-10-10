@@ -9,15 +9,21 @@ use crate::Tengu;
 
 pub struct Block<B: Backend> {
     tengu: Rc<Tengu<B>>,
+    label: String,
     computations: Vec<Computation<B>>,
 }
 
 impl<B: Backend + 'static> Block<B> {
-    pub fn new(tengu: &Rc<Tengu<B>>) -> Self {
+    pub fn new(tengu: &Rc<Tengu<B>>, label: impl Into<String>) -> Self {
         Self {
             tengu: Rc::clone(tengu),
+            label: label.into(),
             computations: Vec::new(),
         }
+    }
+
+    pub fn label(&self) -> &str {
+        &self.label
     }
 
     pub fn add_computation<T: StorageType>(&mut self, label: impl Into<String>, expr: Expression<T, B>) -> &mut Self {
@@ -47,5 +53,20 @@ impl<B: Backend + 'static> Block<B> {
         }
         processor.block(statements.into_iter());
         processor
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn add_computation() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let mut graph = tengu.graph();
+        let block = graph.add_block("main").unwrap();
+        assert_eq!(block.computations.len(), 0);
+        block.add_computation("one", tengu.scalar(1));
+        assert_eq!(block.computations.len(), 1);
     }
 }

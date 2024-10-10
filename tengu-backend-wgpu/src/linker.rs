@@ -4,17 +4,17 @@ use tengu_wgpu::Encoder;
 use crate::source::Source;
 use crate::Backend as WGPUBackend;
 
-pub struct Linker {
-    encoder: Encoder,
+pub struct Linker<'a> {
+    encoder: &'a mut Encoder,
 }
 
-impl Linker {
-    pub fn new(encoder: Encoder) -> Self {
+impl<'a> Linker<'a> {
+    pub fn new(encoder: &'a mut Encoder) -> Self {
         Self { encoder }
     }
 }
 
-impl tengu_backend::Linker for Linker {
+impl<'a> tengu_backend::Linker<'a> for Linker<'a> {
     type Backend = WGPUBackend;
     type Output = wgpu::CommandBuffer;
 
@@ -24,9 +24,5 @@ impl tengu_backend::Linker for Linker {
         to: &<Self::Backend as Backend>::Tensor<T>,
     ) {
         self.encoder.copy_buffer(from.buffer(), to.buffer());
-    }
-
-    fn finish(self) -> Self::Output {
-        self.encoder.finish()
     }
 }

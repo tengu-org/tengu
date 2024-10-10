@@ -19,7 +19,7 @@ pub trait Backend {
         Self: 'a;
 
     /// The underlying linker type.
-    type Linker: Linker<Backend = Self>;
+    type Linker<'a>: Linker<'a, Backend = Self>;
 
     /// The underlying readout type.
     type Readout<'a>: Readout<'a, Backend = Self>;
@@ -30,8 +30,8 @@ pub trait Backend {
     /// Create interpreter to perform recursive computation.
     fn processor(&self) -> Self::Processor<'_>;
 
-    /// Create linker to copy buffers through between tensors.
-    fn linker(&self) -> Self::Linker;
+    /// Propagate buffers through links.
+    fn propagate(&self, call: impl FnOnce(Self::Linker<'_>));
 
     /// Read out probes.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
