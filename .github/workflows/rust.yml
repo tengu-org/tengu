@@ -1,13 +1,6 @@
 name: Rust
 
 on:
-  # Run automatically on pushes to these branches, but not main.
-  push:
-    branches:
-      - 'feature/**'
-      - 'bugfix/**'
-      - 'release/**'
-
   # Run on main only after pull request. 
   pull_request:
     branches:
