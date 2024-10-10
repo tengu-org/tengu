@@ -4,9 +4,9 @@ use tengu_tensor::Tengu;
 pub async fn main() {
     // Initialize input tensors.
     let tengu = Tengu::wgpu().await.unwrap();
-    let a = tengu.tensor([2, 2]).init(&[1.0, 2.0, 3.0, 4.0]);
-    let b = tengu.tensor([2, 2]).init(&[5.0, 6.0, 7.0, 8.0]);
-    let c = tengu.tensor([2, 2]).init(&[4.0, 3.0, 2.0, 1.0]);
+    let a = tengu.tensor([2, 2]).label("a").init(&[1.0, 2.0, 3.0, 4.0]);
+    let b = tengu.tensor([2, 2]).label("b").init(&[5.0, 6.0, 7.0, 8.0]);
+    let c = tengu.tensor([2, 2]).label("c").init(&[4.0, 3.0, 2.0, 1.0]);
 
     // Create computation graph.
     let mut graph = tengu.graph();
