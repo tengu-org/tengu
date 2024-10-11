@@ -6,5 +6,9 @@ check:
     cargo check --examples --all-features
     cargo clippy --examples --all-features
 
-test: check
+docs:
+    cargo test --doc
+
+test: check docs
     cargo nextest run
+
