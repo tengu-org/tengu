@@ -1,7 +1,7 @@
 //! This module defines the `Processor` trait, which is used for processing the abstract syntax tree (AST)
 //! of tensor expressions in a final tagless style. Implementations of the `Processor` trait are responsible
 //! for transforming or evaluating the AST nodes according to specific backend requirements.
-//!
+
 use crate::{Backend, StorageType};
 
 /// The `Processor` trait defines a set of operations for processing tensor expressions.

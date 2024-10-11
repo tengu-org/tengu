@@ -11,7 +11,7 @@
 //! # Related Traits
 //!
 //! - `Backend`: A trait representing the backend where computations are performed.
-//!
+
 use crate::Backend;
 
 /// A trait for handling readout operations in the Tengu backend.

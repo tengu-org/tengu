@@ -18,7 +18,7 @@
 //! - `u32`
 //! - `i32`
 //! - `bool` (only for `StorageType`, with `u32` as the associated `IOType`)
-//!
+
 use num::Zero;
 use std::fmt::Display;
 

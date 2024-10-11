@@ -1,6 +1,6 @@
 //! This module defines the `Linker` trait, which is used for linking tensor data between different parts
 //! of a computation graph. The trait provides an interface for copying tensor data on a specified backend.
-//!
+
 use crate::{Backend, StorageType};
 
 /// The `Linker` trait defines a set of operations for linking tensor data within a computation graph.

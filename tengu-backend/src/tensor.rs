@@ -13,7 +13,7 @@
 //!
 //! - `StorageType`: A trait representing types that can be stored on the GPU.
 //! - `Probe`: A trait representing probes that can be bound to tensors.
-//!
+
 use crate::{Probe, StorageType};
 
 /// A trait for representing tensors in the Tengu backend.

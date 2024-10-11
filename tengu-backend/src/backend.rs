@@ -1,14 +1,22 @@
+//! This module defines the `Backend` trait, which serves as an interface for tensor computation backends.
+//! The trait provides various methods and associated types for creating and manipulating tensors, processors,
+//! compute instances, linkers, and readouts within a backend.
+
 #![allow(async_fn_in_trait)]
 
 use std::rc::Rc;
 
-use crate::{linker::Linker, readout::Readout, Compute, IOType, Processor, Result, StorageType, Tensor};
+use crate::linker::Linker;
+use crate::readout::Readout;
+use crate::{Compute, IOType, Processor, Result, StorageType, Tensor};
 
+/// The `Backend` trait provides an interface for tensor computation backends. It defines various associated
+/// types and methods for creating and managing tensors, processors, compute instances, linkers, and readouts.
 pub trait Backend {
     /// The underlying raw tensor type.
     type Tensor<T: StorageType>: Tensor<T>;
 
-    /// The type of the node processor that will construction computation object.
+    /// The type of the node processor that will construct computation objects.
     type Processor<'a>: Processor<'a, Backend = Self>
     where
         Self: 'a;
@@ -24,27 +32,64 @@ pub trait Backend {
     /// The underlying readout type.
     type Readout<'a>: Readout<'a, Backend = Self>;
 
-    /// Create a new backend instance.
+    /// Asynchronously creates a new backend instance.
+    ///
+    /// # Returns
+    /// A result wrapping an `Rc` to the new backend instance.
     async fn new() -> Result<Rc<Self>>;
 
-    /// Create interpreter to perform recursive computation.
+    /// Creates a processor to perform recursive computation of tensor expression ASTs.
+    ///
+    /// # Returns
+    /// A processor instance for the backend.
     fn processor(&self) -> Self::Processor<'_>;
 
-    /// Propagate buffers through links.
+    /// Propagates buffers through links using the provided callback.
+    ///
+    /// # Parameters
+    /// - `call`: A callback function that takes the linker as an argument.
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>));
 
-    /// Read out probes.
+    /// Reads out probes using the provided callback.
+    ///
+    /// # Parameters
+    /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
+    /// - `call`: A callback function that takes the readout as an argument.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
 
-    /// Compute the specified function on the backend.
+    /// Computes the specified function on the backend using the provided callback.
+    ///
+    /// # Parameters
+    /// - `label`: A label for the computation, to be used by backend for debugging purposes.
+    /// - `call`: A callback function that takes the compute instance as an argument.
     fn compute(&self, label: &str, call: impl FnOnce(Self::Compute<'_>));
 
-    /// Create a new zero-initialized tensor with the specified label and size.
+    /// Creates a new zero-initialized tensor with the specified label and element count.
+    ///
+    /// # Parameters
+    /// - `label`: A label for the tensor.
+    /// - `count`: Total number of elements in the tensor.
+    ///
+    /// # Returns
+    /// A new zero-initialized tensor.
     fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T>;
 
-    /// Create a new tensor with the specified label and data.
+    /// Creates a new tensor with the specified label and data.
+    ///
+    /// # Parameters
+    /// - `label`: A label for the tensor.
+    /// - `data`: A slice of data to initialize the tensor.
+    ///
+    /// # Returns
+    /// A new tensor initialized with the given data.
     fn tensor<T: IOType>(self: &Rc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T>;
 
-    /// Create a new probe with the specified label and size.
+    /// Creates a new probe with the specified label and size.
+    ///
+    /// # Parameters
+    /// - `count`: The number of elements returned by the probe.
+    ///
+    /// # Returns
+    /// A new probe instance.
     fn probe<T: StorageType>(self: &Rc<Self>, count: usize) -> <Self::Tensor<T> as Tensor<T>>::Probe;
 }

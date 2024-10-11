@@ -1,7 +1,7 @@
 //! This module defines the `Probe` trait, which is used for retrieving data in an asynchronous manner
 //! from different types that implement the `IOType` trait. The `Probe` trait provides an interface for
 //! extracting data from a tensor buffer.
-//!
+
 #![allow(async_fn_in_trait)]
 
 use crate::{IOType, Result};
