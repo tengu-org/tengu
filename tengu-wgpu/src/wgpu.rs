@@ -7,8 +7,7 @@ use bon::bon;
 use crate::adapter::AdapterBuilder;
 use crate::{Device, Result, Surface};
 
-/// The `WGPU` struct represents an instance of the WGPU backend. It is responsible for
-/// creating GPU instances, surfaces, and adapters.
+/// The `WGPU` struct represents an instance of the WGPU backend. It is responsible for creating GPU instances, surfaces, and adapters.
 pub struct WGPU {
     instance: wgpu::Instance,
 }

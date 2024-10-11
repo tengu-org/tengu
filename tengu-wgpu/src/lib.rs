@@ -1,12 +1,70 @@
-mod adapter;
-mod buffer;
-mod device;
-mod encoder;
-mod error;
-mod pipeline;
-mod size;
-mod surface;
-mod wgpu;
+//! # Tengu WGPU Library
+//!
+//! This crate provides a high-level abstraction over the WGPU graphics API, focusing on ease of use and integration with Tengu
+//! projects. It includes a set of utilities and wrappers to facilitate the creation and management of GPU resources, shaders, and
+//! pipelines.
+//!
+//! ## Modules
+//!
+//! - `adapter`: Manages GPU adapters and provides functionality to request adapters compatible with specific surfaces.
+//! - `buffer`: Contains utilities for creating and managing GPU buffers.
+//! - `device`: Wraps the WGPU device and queue, providing methods for creating encoders, buffers, and shaders.
+//! - `encoder`: Manages command encoders for recording commands.
+//! - `error`: Defines error types and results used across the crate.
+//! - `pipeline`: Provides utilities for creating and managing GPU pipelines.
+//! - `size`: Contains utilities for working with sizes and byte sizes.
+//! - `surface`: Manages GPU surfaces and their configurations.
+//! - `wgpu`: Contains the main entry point for creating WGPU instances and requesting default contexts.
+//!
+//! ## Integration with WGPU
+//!
+//! This crate is built on top of WGPU, providing a more ergonomic interface for common tasks while leveraging the power of WGPU's API.
+//! It abstracts away much of the boilerplate code required to set up GPU resources, making it easier to create complex graphics and
+//! compute applications.
+//!
+//! ## Example
+//!
+//! Below is a complete example demonstrating the workflow:
+//!
+//! ```rust
+//! use tengu_wgpu::{WGPU, BufferUsage};
+//! use wgpu::Backends;
+//!
+//! async fn compute_example(window: &Window) {
+//!     let wgpu_instance = WGPU::new(Backends::PRIMARY);
+//!     let surface = wgpu_instance.create_surface(window).unwrap();
+//!     let adapter = wgpu_instance.adapter().with_surface(&surface).request().await.unwrap();
+//!     let device = adapter.device().request().await.unwrap();
+//!     
+//!     let shader_source = r#"
+//!     @compute @workgroup_size(64)
+//!     fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+//!         // Compute shader code
+//!     }
+//!     "#;
+//!     let shader = device.shader("compute_shader", shader_source);
+//!     let buffer = device.buffer(BufferUsage::Storage).build(&[0u32; 64]);
+//!     let pipeline_layout = device.layout().add_entry(&buffer).pipeline("compute_pipeline").build(shader);
+//!     let command_buffer = device.compute("compute_pass", |encoder| {
+//!         encoder.dispatch(pipeline_layout, &buffer, 64, 1, 1);
+//!     });
+//!     
+//!     device.submit(command_buffer);
+//! }
+//! ```
+//!
+//! This example demonstrates how to set up a compute shader using the `tengu-wgpu` crate, providing a clear and concise workflow for
+//! GPU compute operations.
+
+pub mod adapter;
+pub mod buffer;
+pub mod device;
+pub mod encoder;
+pub mod error;
+pub mod pipeline;
+pub mod size;
+pub mod surface;
+pub mod wgpu;
 
 pub use adapter::Adapter;
 pub use buffer::{Buffer, BufferUsage};
