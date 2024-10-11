@@ -1,4 +1,15 @@
+//! This module provides functionality for calculating the byte size of various types. It defines
+//! the `ByteSize` trait and implements it for several primitive types using a macro.
+
+/// The `ByteSize` trait provides a method for calculating the byte size of a given type.
 pub trait ByteSize {
+    /// Returns the byte size of the given type `T` multiplied by the value of the implementing type.
+    ///
+    /// # Parameters
+    /// - `self`: The value of the implementing type.
+    ///
+    /// # Returns
+    /// The byte size of the type `T` multiplied by the value of the implementing type.
     fn of<T>(self) -> usize;
 }
 
