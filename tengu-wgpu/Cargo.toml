@@ -8,3 +8,6 @@ wgpu = { workspace = true }
 thiserror = "1.0.63"
 bon = "2.3.0"
 bytemuck = "1.18.0"
+
+[dev-dependencies]
+winit = { version = "0.30.5", features = ["rwh_05"] }

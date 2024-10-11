@@ -11,13 +11,6 @@
 //!
 //! This module provides a `BufferBuilder` which allows for a more natural and idiomatic way to create buffers in Rust.
 //! The builder pattern is used to configure and create buffers with ease, allowing for better readability and maintainability of code.
-//! Here's an example of how to create a buffer using the builder pattern:
-//!
-//! ```rust
-//! let buffer = BufferBuilder::new(&device, BufferUsage::ReadWrite)
-//!     .with_label("MyBuffer")
-//!     .with_data(&[1, 2, 3, 4]);
-//! ```
 //!
 //! ## Buffer Usage Variants
 //!

@@ -73,10 +73,7 @@ impl Device {
     ///
     /// # Returns
     /// A `wgpu::CommandBuffer` containing the encoded commands.
-    pub fn compute<F>(&self, label: &str, commands: F) -> wgpu::CommandBuffer
-    where
-        F: FnOnce(&mut Encoder),
-    {
+    pub fn compute(&self, label: &str, commands: impl FnOnce(&mut Encoder)) -> wgpu::CommandBuffer {
         let mut encoder = Encoder::new(self, label);
         commands(&mut encoder);
         encoder.finish()

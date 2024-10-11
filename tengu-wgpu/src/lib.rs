@@ -29,9 +29,15 @@
 //! ```rust
 //! use tengu_wgpu::{WGPU, BufferUsage};
 //! use wgpu::Backends;
+//! use winit::event_loop::EventLoop;
+//! use winit::window::Window;
 //!
+//! #[allow(deprecated)]
 //! async fn compute_example(window: &Window) {
-//!     let wgpu_instance = WGPU::new(Backends::PRIMARY);
+//!     let event_loop = EventLoop::new().unwrap();
+//!     let window = event_loop.create_window(Window::default_attributes()).unwrap();
+//!
+//!     let wgpu_instance = WGPU::builder().backends(Backends::PRIMARY).build();
 //!     let surface = wgpu_instance.create_surface(window).unwrap();
 //!     let adapter = wgpu_instance.adapter().with_surface(&surface).request().await.unwrap();
 //!     let device = adapter.device().request().await.unwrap();
@@ -43,11 +49,16 @@
 //!     }
 //!     "#;
 //!     let shader = device.shader("compute_shader", shader_source);
-//!     let buffer = device.buffer(BufferUsage::Storage).build(&[0u32; 64]);
-//!     let pipeline_layout = device.layout().add_entry(&buffer).pipeline("compute_pipeline").build(shader);
-//!     let command_buffer = device.compute("compute_pass", |encoder| {
-//!         encoder.dispatch(pipeline_layout, &buffer, 64, 1, 1);
-//!     });
+//!     let buffer = device.buffer::<u32>(BufferUsage::ReadWrite).with_data(&[0; 64]);
+//!     let pipeline = device.layout().add_entry(&buffer).pipeline("compute_pipeline").build(shader);
+//!     let command_buffer = device
+//!         .encoder("encoder")
+//!         .pass("pass", |mut pass| {
+//!             pass.set_pipeline(&pipeline);
+//!             pass.set_bind_group(0, pipeline.bind_group(), &[]);
+//!             pass.dispatch_workgroups(64, 1, 1);
+//!         })
+//!         .finish();
 //!     
 //!     device.submit(command_buffer);
 //! }
