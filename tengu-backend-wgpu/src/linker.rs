@@ -16,7 +16,6 @@ impl<'a> Linker<'a> {
 
 impl<'a> tengu_backend::Linker<'a> for Linker<'a> {
     type Backend = WGPUBackend;
-    type Output = wgpu::CommandBuffer;
 
     fn copy_link<T: tengu_backend::StorageType>(
         &mut self,
