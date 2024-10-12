@@ -1,33 +1,76 @@
+//! Module for defining and managing computations in the Tengu tensor computation framework.
+//!
+//! This module defines the `Computation` struct and associated methods for creating, managing, and processing
+//! computational expressions within the Tengu framework. A computation is a statement executed
+//! within a block. It has direct access to all other tensors used inside a block and create a new
+//! tensor as a result.
+
 use tengu_backend::{Backend, Processor, StorageType};
 
 use crate::expression::{Expression, Node, Shape, Source};
 
+/// A struct representing a computation in the Tengu framework.
+///
+/// The `Computation` struct holds a computational statement and provides methods to visit and find sources within the statement.
 pub struct Computation<B> {
     statement: Box<dyn Node<B>>,
 }
 
 impl<B: Backend + 'static> Computation<B> {
+    /// Creates a new `Computation` instance with the specified output and expression.
+    ///
+    /// # Type Parameters
+    /// - `T`: The storage type of the expression.
+    ///
+    /// # Parameters
+    /// - `out`: The output expression.
+    /// - `expr`: The input expression.
+    ///
+    /// # Returns
+    /// A new `Computation` instance.
     pub fn new<T: StorageType>(out: Expression<T, B>, expr: Expression<T, B>) -> Self {
         let statement = Box::new(Expression::statement(out, expr));
         Self { statement }
     }
 
+    /// Visits the computation with a processor.
+    ///
+    /// # Parameters
+    /// - `processor`: A mutable reference to the processor.
+    ///
+    /// # Returns
+    /// The inner representation used by the processor.
     pub fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
         self.statement.visit(processor)
     }
 
-    pub fn source(&self, label: &str) -> Option<&dyn Source<B>> {
+    /// Finds a source within the computation by its label.
+    ///
+    /// # Parameters
+    /// - `label`: The label of the source to find.
+    ///
+    /// # Returns
+    /// An optional reference to the source.
+    pub(crate) fn source(&self, label: &str) -> Option<&dyn Source<B>> {
         self.statement.find(label)
     }
 }
 
-// Traits
+// NOTE: Shape trait implementation.
 
 impl<B> Shape for Computation<B> {
+    /// Returns the shape of the computation.
+    ///
+    /// # Returns
+    /// A slice representing the shape of the computation.
     fn shape(&self) -> &[usize] {
         self.statement.shape()
     }
 
+    /// Returns the number of elements in the computation.
+    ///
+    /// # Returns
+    /// The count of elements.
     fn count(&self) -> usize {
         self.statement.count()
     }
