@@ -1,8 +1,43 @@
+//! Module for unifying the dimensions of tensors.
+//!
+//! This module provides the `Unify` trait which includes methods for obtaining dimensions and
+//! unifying two sets of dimensions into one. It contains an implementation of the trait for
+//! slices of `usize` values, representing the dimensions of tensors.
+//!
+//! The module also includes unit tests to verify the correctness of the unification logic.
+
 use itertools::{EitherOrBoth, Itertools};
 
+/// Trait for unifying dimensions of tensors.
+///
+/// This trait defines methods for obtaining dimensions and unifying two sets of dimensions into one.
 pub trait Unify {
+    /// The output type after unification.
     type Output;
+
+    /// Get the dimensions of the tensor.
+    ///
+    /// # Returns
+    /// A slice representing the dimensions of the tensor.
     fn dimensions(&self) -> &[usize];
+
+    /// Unify the dimensions with another tensor.
+    ///
+    /// # Parameters
+    /// - `other`: Another tensor with dimensions to unify.
+    ///
+    /// # Returns
+    /// An `Option` containing the unified dimensions if unification is possible, otherwise `None`.
+    ///
+    /// # Algorithm
+    /// The unification algorithm works by iterating through the dimensions of both tensors from
+    /// the last dimension to the first. It checks the dimensions pairwise and applies the following rules:
+    /// - If a dimension in one tensor is 1, it takes the corresponding dimension from the other tensor.
+    /// - If both dimensions are equal, it takes that dimension.
+    /// - If neither of the above conditions is met, unification fails.
+    ///
+    /// If the tensors have a different number of dimensions, it continues processing until all dimensions are handled,
+    /// taking dimensions from the longer tensor where necessary. The process results in a unified shape if successful.
     fn unify(self, other: Self) -> Option<Self::Output>
     where
         Self: Sized;
@@ -11,10 +46,21 @@ pub trait Unify {
 impl Unify for &[usize] {
     type Output = Vec<usize>;
 
+    /// Get the dimensions of the tensor.
+    ///
+    /// # Returns
+    /// A slice representing the dimensions of the tensor.
     fn dimensions(&self) -> &[usize] {
         self
     }
 
+    /// Unify the dimensions with another tensor.
+    ///
+    /// # Parameters
+    /// - `other`: Another tensor with dimensions to unify.
+    ///
+    /// # Returns
+    /// An `Option` containing the unified dimensions if unification is possible, otherwise `None`.
     fn unify(self, other: Self) -> Option<Self::Output> {
         let shape = self
             .dimensions()
