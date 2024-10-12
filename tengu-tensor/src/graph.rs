@@ -145,7 +145,7 @@ impl<B: Backend + 'static> Graph<B> {
     fn compute_links(&self, links: &Vec<(&dyn Source<B>, &dyn Source<B>)>) {
         self.tengu.backend().propagate(|mut linker| {
             for (from, to) in links {
-                from.copy_link(*to, &mut linker).expect("link endpoints should match");
+                from.copy(*to, &mut linker).expect("link endpoints should match");
             }
         });
     }
