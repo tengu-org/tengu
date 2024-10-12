@@ -180,7 +180,7 @@ where
     /// Returns the shape of the expression.
     ///
     /// # Returns
-    /// A slice representing the shape of the expression. Scalars have shae [1].
+    /// A slice representing the shape of the expression. Scalars have shape of `[1]`.
     fn shape(&self) -> &[usize] {
         match self {
             Self::Scalar(_) => &[1],
