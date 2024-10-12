@@ -89,6 +89,8 @@ impl<B: Backend + 'static> Node<B> for Statement<B> {
     }
 }
 
+// NOTE: Clone implementation.
+
 impl<B: Backend> Clone for Statement<B> {
     /// Creates a clone of the `Statement` instance.
     ///

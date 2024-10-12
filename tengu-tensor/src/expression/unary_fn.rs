@@ -131,6 +131,8 @@ impl<B: Backend + 'static> Node<B> for UnaryFn<B> {
     }
 }
 
+// NOTE: Clone implementation.
+
 impl<B: Backend> Clone for UnaryFn<B> {
     /// Creates a clone of the `UnaryFn` instance.
     ///
