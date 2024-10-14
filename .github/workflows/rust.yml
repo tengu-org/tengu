@@ -13,7 +13,7 @@ jobs:
   check:
     runs-on: self-hosted
     steps:
-      # Use checkout action for all steps.
+      # Checkout the code.
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -21,12 +21,22 @@ jobs:
       - name: Set up Rust toolchain
         run: rustup toolchain install stable --profile minimal
 
+      # Set up smart Rust caching
+      - name: Smart caching
+        uses: Swatinem/rust-cache@v2
+
+      # Install cargo-nextest
+      - name: Install cargo-nextest
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-nextest
+
       # Install Just to make CI identical to developer experience.
-      - name: Setup Just
+      - name: Install Just
         uses: extractions/setup-just@v2
 
-      # Show information for debugging
-      - name: Show information
+      # Show toolchain infromation (useful for CI debugging)
+      - name: Show toolchain information
         run: |
           rustc --version
           cargo --version
@@ -36,6 +46,6 @@ jobs:
       - name: Verify code
         run: just check
 
-      # Run tests, does not rely on Just to avoid dependency on nextest.
+      # Run tests
       - name: Run tests
-        run: cargo test
+        run: just test

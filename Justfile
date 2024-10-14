@@ -9,6 +9,6 @@ check:
 docs:
     cargo test --doc
 
-test: check docs
+test: docs
     cargo nextest run
 
