@@ -23,14 +23,13 @@ jobs:
 
       # Set up smart Rust caching
       - name: Smart caching
-      - uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@v2
 
       # Install cargo-nextest
       - name: Install cargo-nextest
-        uses: baptiste0928/cargo-install@v1
+        uses: baptiste0928/cargo-install@v3
         with:
           crate: cargo-nextest
-          locked: true
 
       # Install Just to make CI identical to developer experience.
       - name: Install Just
