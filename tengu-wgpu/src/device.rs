@@ -155,10 +155,14 @@ impl DeviceBuilder {
     /// # Returns
     /// A new `DeviceBuilder` instance.
     pub fn new(adapter: wgpu::Adapter) -> Self {
+        let max_storage_buffers_per_shader_stage = adapter.limits().max_storage_buffers_per_shader_stage;
         DeviceBuilder {
             adapter,
             features: wgpu::Features::default(),
-            limits: wgpu::Limits::default(),
+            limits: wgpu::Limits {
+                max_storage_buffers_per_shader_stage,
+                ..Default::default()
+            },
         }
     }
 
