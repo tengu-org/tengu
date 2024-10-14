@@ -1,3 +1,9 @@
+//! This module defines the `Emitter` struct and associated functions for generating
+//! shader code in a WGPU-based tensor computation framework.
+//!
+//! The `Emitter` struct is used to create and manage expressions and statements
+//! for use in compute shaders, in the tensor body, not in the variable declaration part.
+
 use indoc::formatdoc;
 use itertools::Itertools;
 use tengu_backend::StorageType;
@@ -9,13 +15,22 @@ pub struct Emitter {
     expression: String,
 }
 
+/// A struct for generating shader code expressions and statements.
 impl Emitter {
+    /// Creates a new `Emitter`.
+    ///
+    /// # Returns
+    /// A new instance of `Emitter`.
     pub fn new() -> Self {
         Self {
             expression: String::new(),
         }
     }
 
+    /// Generates the body of the compute shader.
+    ///
+    /// # Returns
+    /// A `String` containing the shader body with all expressions.
     pub fn body(&self) -> String {
         formatdoc!(
             r"
@@ -30,41 +45,96 @@ impl Emitter {
     }
 }
 
-// Processing interface
+// NOTE: Processing interface
 
 impl Emitter {
+    /// Returns a string representation of the tensor variable.
+    ///
+    /// # Parameters
+    /// - `tensor`: The tensor to declare as a variable.
+    ///
+    /// # Returns
+    /// A `String` representing the variable declaration.
     pub fn var<T: StorageType>(&mut self, tensor: &Tensor<T>) -> String {
         format!("{}[idx]", tensor.label())
     }
 
+    /// Return a string representation of a scalar literal.
+    ///
+    /// # Parameters
+    /// - `value`: The scalar value.
+    ///
+    /// # Returns
+    /// A `String` representing the scalar value.
     pub fn scalar<T: StorageType>(&mut self, value: T) -> String {
         value.to_string()
     }
 
+    /// Returns a string representation of unary function expression.
+    ///
+    /// # Parameters
+    /// - `inner`: The inner expression.
+    /// - `symbol`: The unary function symbol.
+    ///
+    /// # Returns
+    /// A `String` representing the unary function application.
     pub fn unary_fn(&mut self, inner: String, symbol: &str) -> String {
         format!("{symbol}({inner})")
     }
 
+    /// Returns a string representation of a binary expression.
+    ///
+    /// # Parameters
+    /// - `lhs`: The left-hand side expression.
+    /// - `rhs`: The right-hand side expression.
+    /// - `symbol`: The binary operator symbol.
+    ///
+    /// # Returns
+    /// A `String` representing the binary operation.
     pub fn binary(&mut self, lhs: String, rhs: String, symbol: &str) -> String {
         format!("({lhs} {symbol} {rhs})")
     }
 
+    /// Returns a string representation of a cast expression.
+    ///
+    /// # Parameters
+    /// - `inner`: The inner expression.
+    /// - `ty`: The target type.
+    ///
+    /// # Returns
+    /// A `String` representing the casted expression.
     pub fn cast(&mut self, inner: String, ty: &str) -> String {
         format!("{ty}({inner})")
     }
 
+    /// Return a string representation of a statement.
+    ///
+    /// # Parameters
+    /// - `out`: The output variable.
+    /// - `expr`: The expression to assign to the output.
+    ///
+    /// # Returns
+    /// A `String` representing the statement.
     pub fn statement(&mut self, out: String, expr: String) -> String {
         format!("{out} = {expr};")
     }
 
+    /// Processes a block of expressions. The final representation is stored inside the emitter.
+    ///
+    /// # Parameters
+    /// - `exprs`: An iterator over expressions to include in the block.
     pub fn block(&mut self, exprs: impl Iterator<Item = String>) {
         self.expression = exprs.into_iter().join("\n    ");
     }
 }
 
-// Default implementation
+// NOTE: Default implementation
 
 impl Default for Emitter {
+    /// Creates a new `Emitter` using the default implementation.
+    ///
+    /// # Returns
+    /// A new instance of `Emitter`.
     fn default() -> Self {
         Emitter::new()
     }

@@ -1,6 +1,11 @@
-use std::collections::HashMap;
+//! This module defines the `Declarator` struct and associated functions for managing
+//! shader variable declarations in a WGPU-based tensor computation framework.
+//!
+//! The `Declarator` struct is used to create and manage storage variable declarations
+//! for tensors, which are then used in shader programs.
 
 use itertools::Itertools;
+use std::collections::HashMap;
 use tengu_backend::StorageType;
 use tengu_wgpu::BufferUsage;
 
@@ -9,23 +14,40 @@ use crate::tensor::Tensor;
 
 const GROUP: usize = 0;
 
+/// A struct for declaring shader storage variables.
 pub struct Declarator<'a> {
     declarations: HashMap<&'a str, String>,
 }
 
 impl Declarator<'_> {
+    /// Creates a new `Declarator`.
+    ///
+    /// # Returns
+    /// A new instance of `Declarator`.
     pub fn new() -> Self {
         Self {
             declarations: HashMap::new(),
         }
     }
 
+    /// Generates a header string containing all the declarations.
+    ///
+    /// # Returns
+    /// A `String` containing the header with all declarations.
     pub fn header(&self) -> String {
         self.declarations.values().join("\n")
     }
 }
 
+// NOTE: Processing interface
+
 impl<'a> Declarator<'a> {
+    /// Processes a variable by adding it to the list of tensor declarations.
+    /// not there yet.
+    ///
+    /// # Parameters
+    /// - `binding`: The binding index for the shader variable.
+    /// - `tensor`: The tensor to declare as a shader variable.
     pub fn var<T: StorageType>(&mut self, binding: usize, tensor: &'a Tensor<T>) {
         self.declarations
             .entry(tensor.label())
@@ -33,6 +55,14 @@ impl<'a> Declarator<'a> {
     }
 }
 
+/// Generates a declaration string for a tensor.
+///
+/// # Parameters
+/// - `binding`: The binding index for the shader variable.
+/// - `tensor`: The tensor to declare as a shader variable.
+///
+/// # Returns
+/// A `String` containing the declaration for the tensor.
 fn declaration<T: StorageType>(binding: usize, tensor: &Tensor<T>) -> String {
     let label = tensor.label();
     let access = access(tensor.buffer().usage());
@@ -40,6 +70,13 @@ fn declaration<T: StorageType>(binding: usize, tensor: &Tensor<T>) -> String {
     format!("@group({GROUP}) @binding({binding}) var<storage, {access}> {label}: array<{ty}>;")
 }
 
+/// Determines the access type for a buffer based on its usage.
+///
+/// # Parameters
+/// - `usage`: The buffer usage type.
+///
+/// # Returns
+/// A static string representing the access type.
 fn access(usage: BufferUsage) -> &'static str {
     match usage {
         BufferUsage::Read => "read",
@@ -49,9 +86,13 @@ fn access(usage: BufferUsage) -> &'static str {
     }
 }
 
-// Default implementation
+// NOTE: Default implementation
 
 impl Default for Declarator<'_> {
+    /// Creates a new `Declarator` using the default implementation.
+    ///
+    /// # Returns
+    /// A new instance of `Declarator`.
     fn default() -> Self {
         Declarator::new()
     }
