@@ -47,6 +47,6 @@ jobs:
       - name: Verify code
         run: just check
 
-      # Run tests, does not rely on Just to avoid dependency on nextest.
+      # Run tests
       - name: Run tests
-        run: cargo test
+        run: just test
