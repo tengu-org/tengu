@@ -59,8 +59,8 @@ impl<T: IOType> tengu_backend::Probe<T> for Probe<T> {
         receiver
             .recv_async()
             .await
-            .map_err(|e| Error::WGPUBackendError(e.into()))?
-            .map_err(|e| Error::WGPUBackendError(e.into()))?;
+            .map_err(|e| Error::WGPUError(e.into()))?
+            .map_err(|e| Error::WGPUError(e.into()))?;
         let data = buffer_slice.get_mapped_range();
         *buffer = bytemuck::cast_slice(&data).to_vec();
         drop(data);

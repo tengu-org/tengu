@@ -24,7 +24,7 @@ async fn main() {
     let mut exp = graph.get_probe::<u32>("main/explog").unwrap();
 
     // Run the computation and display the result twice.
-    graph.compute(1);
+    graph.compute(1).unwrap();
     assert_eq!(add.retrieve().await.unwrap(), [6.0, 13.0, 22.0, 33.0]);
     assert_eq!(sub.retrieve().await.unwrap(), [9.8, 11.0, 12.5, 15.0]);
     assert_eq!(exp.retrieve().await.unwrap(), [4, 9, 22, 56]);

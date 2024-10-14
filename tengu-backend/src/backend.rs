@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use crate::linker::Linker;
 use crate::readout::Readout;
-use crate::{Compute, IOType, Processor, Result, StorageType, Tensor};
+use crate::{Compute, IOType, Limits, Processor, Result, StorageType, Tensor};
 
 /// The `Backend` trait provides an interface for tensor computation backends. It defines various associated
 /// types and methods for creating and managing tensors, processors, compute instances, linkers, and readouts.
@@ -32,11 +32,19 @@ pub trait Backend {
     /// The underlying readout type.
     type Readout<'a>: Readout<'a, Backend = Self>;
 
+    type Limits: Limits<Backend = Self>;
+
     /// Asynchronously creates a new backend instance.
     ///
     /// # Returns
     /// A result wrapping an `Rc` to the new backend instance.
     async fn new() -> Result<Rc<Self>>;
+
+    /// Returns the limits of the backend.
+    ///
+    /// # Returns
+    /// The limits of the backend.
+    fn limits(&self) -> Self::Limits;
 
     /// Creates a processor to perform recursive computation of tensor expression ASTs.
     ///
@@ -62,7 +70,9 @@ pub trait Backend {
     /// # Parameters
     /// - `label`: A label for the computation, to be used by backend for debugging purposes.
     /// - `call`: A callback function that takes the compute instance as an argument.
-    fn compute(&self, label: &str, call: impl FnOnce(Self::Compute<'_>));
+    fn compute<F>(&self, label: &str, call: F) -> Result<()>
+    where
+        F: FnOnce(Self::Compute<'_>) -> Result<()>;
 
     /// Creates a new zero-initialized tensor with the specified label and element count.
     ///

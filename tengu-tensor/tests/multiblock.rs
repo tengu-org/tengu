@@ -18,6 +18,6 @@ async fn main() {
     let mut out = graph.get_probe::<f32>("snd/out").unwrap();
 
     // Run the computation and display the result twice.
-    graph.compute(2);
+    graph.compute(2).unwrap();
     assert_eq!(out.retrieve().await.unwrap(), [3.0, 4.0, 5.0, 6.0]);
 }

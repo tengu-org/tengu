@@ -152,14 +152,15 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Parameters
     /// - `times`: The number of iterations to perform.
-    pub fn compute(&self, times: usize) {
+    pub fn compute(&self, times: usize) -> Result<()> {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
         for _ in 0..times {
-            self.compute_blocks(&processors);
+            self.compute_blocks(&processors)?;
             self.compute_readout(&processors);
             self.compute_links(&links);
         }
+        Ok(())
     }
 
     /// Processes the graph for a specified number of iterations with a user-defined callback.
@@ -167,18 +168,19 @@ impl<B: Backend + 'static> Graph<B> {
     /// # Parameters
     /// - `times`: The number of iterations to perform.
     /// - `call`: A callback function to call after each iteration.
-    pub fn process<F>(&self, times: usize, mut call: F)
+    pub fn process<F>(&self, times: usize, mut call: F) -> Result<()>
     where
         F: FnMut(),
     {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
         for _ in 0..times {
-            self.compute_blocks(&processors);
+            self.compute_blocks(&processors)?;
             self.compute_readout(&processors);
             self.compute_links(&links);
             call();
         }
+        Ok(())
     }
 
     /// Processes the graph for a specified number of iterations with a user-defined callback that determines whether to continue.
@@ -186,32 +188,37 @@ impl<B: Backend + 'static> Graph<B> {
     /// # Parameters
     /// - `times`: The number of iterations to perform.
     /// - `call`: A callback function that returns a boolean indicating whether to continue processing.
-    pub fn process_while<F>(&self, times: usize, mut call: F)
+    pub fn process_while<F>(&self, times: usize, mut call: F) -> Result<()>
     where
         F: FnMut() -> bool,
     {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
         for _ in 0..times {
-            self.compute_blocks(&processors);
+            self.compute_blocks(&processors)?;
             self.compute_readout(&processors);
             self.compute_links(&links);
             if !call() {
                 break;
             }
         }
+        Ok(())
     }
 
     /// Computes the blocks in the graph.
     ///
     /// # Parameters
     /// - `processors`: A vector of processors for the blocks, one processor for each block.
-    fn compute_blocks(&self, processors: &Vec<B::Processor<'_>>) {
-        self.tengu.backend().compute("compute", |mut compute| {
-            for (block, processor) in self.blocks.values().zip(processors) {
-                block.compute(&mut compute, processor);
-            }
-        });
+    fn compute_blocks(&self, processors: &Vec<B::Processor<'_>>) -> Result<()> {
+        self.tengu
+            .backend()
+            .compute("compute", |mut compute| {
+                for (block, processor) in self.blocks.values().zip(processors) {
+                    block.compute(&mut compute, processor)?;
+                }
+                Ok(())
+            })
+            .map_err(Error::BackendError)
     }
 
     /// Reads out the results from the blocks in the graph.

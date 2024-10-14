@@ -2,8 +2,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("WGPU backend error: {0}")]
-    WGPUBackendError(#[source] anyhow::Error),
+    #[error("WGPU error: {0}")]
+    WGPUError(#[source] anyhow::Error),
+    #[error("Storage buffer limit reached: {0} buffers used")]
+    BufferLimitReached(usize),
 }
 
 pub type Result<T> = std::result::Result<T, self::Error>;

@@ -4,8 +4,6 @@ use thiserror::Error;
 pub enum Error {
     #[error("WGPU error: {0}")]
     BackendError(#[from] tengu_backend::Error),
-    #[error("Internal error: {0}")]
-    InternalError(#[source] anyhow::Error),
     #[error("Cannot find source with label {0}")]
     SourceNotFound(String),
     #[error("Link path {0} does not contain '/'")]
@@ -21,3 +19,4 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, self::Error>;
+

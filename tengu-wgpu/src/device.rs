@@ -120,6 +120,14 @@ impl Device {
     pub fn layout(&self) -> LayoutBuilder {
         LayoutBuilder::new(self)
     }
+
+    /// Returns the limits of the device.
+    ///
+    /// # Returns
+    /// The device limits.
+    pub fn limits(&self) -> wgpu::Limits {
+        self.device.limits()
+    }
 }
 
 impl Deref for Device {
@@ -147,10 +155,14 @@ impl DeviceBuilder {
     /// # Returns
     /// A new `DeviceBuilder` instance.
     pub fn new(adapter: wgpu::Adapter) -> Self {
+        let max_storage_buffers_per_shader_stage = adapter.limits().max_storage_buffers_per_shader_stage;
         DeviceBuilder {
             adapter,
             features: wgpu::Features::default(),
-            limits: wgpu::Limits::default(),
+            limits: wgpu::Limits {
+                max_storage_buffers_per_shader_stage,
+                ..Default::default()
+            },
         }
     }
 

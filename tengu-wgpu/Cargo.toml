@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 wgpu = { workspace = true }
+anyhow = { workspace = true }
 thiserror = "1.0.63"
 bon = "2.3.0"
 bytemuck = "1.18.0"
