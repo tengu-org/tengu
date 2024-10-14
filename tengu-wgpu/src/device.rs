@@ -120,6 +120,14 @@ impl Device {
     pub fn layout(&self) -> LayoutBuilder {
         LayoutBuilder::new(self)
     }
+
+    /// Returns the limits of the device.
+    ///
+    /// # Returns
+    /// The device limits.
+    pub fn limits(&self) -> wgpu::Limits {
+        self.device.limits()
+    }
 }
 
 impl Deref for Device {

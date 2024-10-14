@@ -72,8 +72,11 @@ impl<B: Backend + 'static> Block<B> {
     /// # Parameters
     /// - `compute`: A mutable reference to the compute object.
     /// - `processor`: A reference to the processor.
-    pub fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) {
-        compute.commit(processor);
+    ///
+    /// # Returns
+    /// A `Result` indicating whether the computation was successful or an error occurred.
+    pub fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) -> tengu_backend::Result<()> {
+        compute.commit(processor)
     }
 
     /// Executes the tensor readout operation for all tensors in the block which have a probe

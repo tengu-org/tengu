@@ -25,7 +25,7 @@
 //!   - `copy_buffer`: Copies data from a source buffer to a destination buffer.
 //!   - `finish`: Finalizes the command buffer and returns it for submission to the GPU.
 
-use crate::{Buffer, Device};
+use crate::{Buffer, Device, Error, Result};
 
 /// Represents a command encoder in the WGPU backend.
 pub struct Encoder {
@@ -54,13 +54,16 @@ impl Encoder {
     ///
     /// # Returns
     /// The updated `Encoder` instance.
-    pub fn pass(mut self, label: &str, call: impl FnOnce(wgpu::ComputePass)) -> Self {
+    pub fn pass<F>(mut self, label: &str, call: F) -> Result<Self>
+    where
+        F: FnOnce(wgpu::ComputePass) -> anyhow::Result<()>,
+    {
         let compute_pass = self.encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: Some(label),
             timestamp_writes: None,
         });
-        call(compute_pass);
-        self
+        call(compute_pass).map_err(Error::ComputeError)?;
+        Ok(self)
     }
 
     /// Executes the provided callback for readout operations.

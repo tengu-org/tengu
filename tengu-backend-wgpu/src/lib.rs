@@ -6,7 +6,6 @@
 //!
 //! - `backend`: Defines the main `Backend` struct that manages the WGPU device and provides methods to manipulate GPU resources.
 //! - `compute`: Implements the `Compute` struct, which is used to manage and execute compute passes on the GPU.
-//! - `error`: Contains error handling utilities and custom error types used throughout the crate.
 //! - `linker`: Implements the `Linker` struct, which handles copying data between GPU buffers.
 //! - `probe`: Defines the `Probe` struct for reading back data from the GPU to the CPU.
 //! - `processor`: Implements the `Processor` struct, which sets up and manages shader programs and their associated resources.
@@ -16,7 +15,6 @@
 
 pub mod backend;
 pub mod compute;
-pub mod error;
 pub mod linker;
 pub mod probe;
 pub mod processor;
@@ -25,4 +23,3 @@ pub mod source;
 pub mod tensor;
 
 pub use backend::Backend;
-pub use error::*;

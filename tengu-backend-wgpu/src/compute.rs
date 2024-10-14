@@ -15,7 +15,7 @@
 //!    pipeline. It binds the resources required for the compute operations.
 //! 3. **Dispatch Workgroups**: The `commit` method dispatches the workgroups to execute the compute operations on the GPU.
 
-use tengu_backend::Backend;
+use tengu_backend::{Backend, Error, Result};
 use tengu_wgpu::{Device, Pipeline};
 
 use crate::processor::Processor;
@@ -51,15 +51,22 @@ impl<'a> Compute<'a> {
     /// - `processor`: A reference to the `Processor` object which provides shader and buffer information.
     ///
     /// # Returns
-    /// A `Pipeline` object representing the pipeline for compute operations.
-    fn pipeline(&self, processor: &Processor<'_>) -> Pipeline {
+    /// A `Result` containing the `Pipeline` object if the pipeline creation is successful, or an `Error` if
+    /// the buffer limit is reached.
+    fn pipeline(&self, processor: &Processor<'_>) -> Result<Pipeline> {
         let shader = self.device.shader(self.label, processor.shader());
-        let buffers = processor.sources().map(|source| source.buffer());
-        self.device
+        let buffers = processor.sources().map(|source| source.buffer()).collect::<Vec<_>>();
+        let max_buffers = self.device.limits().max_storage_buffers_per_shader_stage as usize;
+        if buffers.len() > max_buffers {
+            return Err(Error::BufferLimitReached(max_buffers));
+        }
+        let pipeline = self
+            .device
             .layout()
             .add_entries(buffers)
             .pipeline(self.label)
-            .build(shader)
+            .build(shader);
+        Ok(pipeline)
     }
 }
 
@@ -70,11 +77,15 @@ impl<'a> tengu_backend::Compute for Compute<'a> {
     ///
     /// # Parameters
     /// - `processor`: A reference to the processor which provides the necessary data for the compute operations.
-    fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) {
-        let pipeline = self.pipeline(processor);
+    ///
+    /// # Returns
+    /// A `Result` indicating whether the compute operations were successful or an error occurred.
+    fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> tengu_backend::Result<()> {
+        let pipeline = self.pipeline(processor)?;
         let workgroup_count = processor.element_count() as u32 / WORKGROUP_SIZE + 1;
         self.pass.set_pipeline(&pipeline);
         self.pass.set_bind_group(0, pipeline.bind_group(), &[]);
         self.pass.dispatch_workgroups(workgroup_count, 1, 1);
+        Ok(())
     }
 }

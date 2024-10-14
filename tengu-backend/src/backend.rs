@@ -62,7 +62,9 @@ pub trait Backend {
     /// # Parameters
     /// - `label`: A label for the computation, to be used by backend for debugging purposes.
     /// - `call`: A callback function that takes the compute instance as an argument.
-    fn compute(&self, label: &str, call: impl FnOnce(Self::Compute<'_>));
+    fn compute<F>(&self, label: &str, call: F) -> Result<()>
+    where
+        F: FnOnce(Self::Compute<'_>) -> Result<()>;
 
     /// Creates a new zero-initialized tensor with the specified label and element count.
     ///

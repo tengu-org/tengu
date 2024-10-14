@@ -19,6 +19,6 @@ async fn main() {
     let mut probe = graph.get_probe::<u32>("main/rel").unwrap();
 
     // Run one step of computation and display the result.
-    graph.compute(1);
+    graph.compute(1).unwrap();
     assert_eq!(probe.retrieve().await.unwrap(), [1, 0, 1, 0]);
 }

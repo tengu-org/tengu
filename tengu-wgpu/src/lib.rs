@@ -57,7 +57,9 @@
 //!             pass.set_pipeline(&pipeline);
 //!             pass.set_bind_group(0, pipeline.bind_group(), &[]);
 //!             pass.dispatch_workgroups(64, 1, 1);
+//!             Ok(())
 //!         })
+//!         .unwrap()
 //!         .finish();
 //!     
 //!     device.submit(command_buffer);

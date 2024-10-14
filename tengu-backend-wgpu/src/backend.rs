@@ -6,7 +6,7 @@
 //! from the GPU.
 
 use std::rc::Rc;
-use tengu_backend::{IOType, Result, StorageType, Tensor};
+use tengu_backend::{Error, IOType, Result, StorageType, Tensor};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 
 use crate::compute::Compute as WGPUCompute;
@@ -15,7 +15,6 @@ use crate::probe::Probe;
 use crate::processor::Processor as WGPUProcessor;
 use crate::readout::Readout as WGPUReadout;
 use crate::tensor::Tensor as WGPUTensor;
-use crate::Error;
 
 /// The `Backend` struct is responsible for managing the WGPU device and providing methods to create and manipulate GPU resources.
 pub struct Backend {
@@ -43,8 +42,8 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Returns
     /// A result containing a reference-counted `Backend` instance or an error.
-    async fn new() -> Result<Rc<Self>> {
-        let device = WGPU::default_context().await.map_err(|e| Error::wgpu_error(e.into()))?;
+    async fn new() -> tengu_backend::Result<Rc<Self>> {
+        let device = WGPU::default_context().await.map_err(|e| Error::WGPUError(e.into()))?;
         Ok(Rc::new(Self { device }))
     }
 
@@ -71,13 +70,20 @@ impl tengu_backend::Backend for Backend {
     /// # Parameters
     /// - `label`: A label for the compute operations.
     /// - `call`: A function that takes a `Compute` and performs compute operations.
-    fn compute(&self, label: &str, call: impl FnOnce(Self::Compute<'_>)) {
+    fn compute<F>(&self, label: &str, call: F) -> Result<()>
+    where
+        F: FnOnce(Self::Compute<'_>) -> Result<()>,
+    {
         let commands = self
             .device
             .encoder(label)
-            .pass(label, |pass| call(WGPUCompute::new(&self.device, label, pass)))
+            .pass(label, |pass| {
+                call(WGPUCompute::new(&self.device, label, pass)).map_err(Into::into)
+            })
+            .map_err(|e| Error::WGPUError(e.into()))?
             .finish();
         self.device.submit(commands);
+        Ok(())
     }
 
     /// Reads out data using the provided readout function.
