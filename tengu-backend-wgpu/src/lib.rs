@@ -10,11 +10,12 @@
 //! - `probe`: Defines the `Probe` struct for reading back data from the GPU to the CPU.
 //! - `processor`: Implements the `Processor` struct, which sets up and manages shader programs and their associated resources.
 //! - `readout`: Implements the `Readout` struct, which is responsible for reading out data from the GPU.
-//! - `source`: Contains utilities for managing data sources and their buffers.
 //! - `tensor`: Defines the `Tensor` struct, which represents a tensor stored on the GPU and provides methods for tensor operations.
+//! - `limits`: Defines the `Limits` struct, which holds information about the limits of the WGPU device.
 
 pub mod backend;
 pub mod compute;
+pub mod limits;
 pub mod linker;
 pub mod probe;
 pub mod processor;

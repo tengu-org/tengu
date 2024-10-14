@@ -10,6 +10,7 @@ use tengu_backend::{Error, IOType, Result, StorageType, Tensor};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 
 use crate::compute::Compute as WGPUCompute;
+use crate::limits::Limits as WGPULimits;
 use crate::linker::Linker as WGPULinker;
 use crate::probe::Probe;
 use crate::processor::Processor as WGPUProcessor;
@@ -31,12 +32,28 @@ impl Backend {
     }
 }
 
+impl Backend {
+    /// Creates a new `Backend` instance with the provided `Device`.
+    ///
+    /// # Parameters
+    /// - `device`: The `Device` object to use for GPU operations.
+    ///
+    /// # Returns
+    /// A new instance of `Backend`.
+    pub fn from_device(device: Device) -> Rc<Self> {
+        Rc::new(Self { device })
+    }
+}
+
+// NOTE: tengu_backend::Backend implementation
+
 impl tengu_backend::Backend for Backend {
     type Tensor<T: StorageType> = WGPUTensor<T>;
     type Compute<'a> = WGPUCompute<'a>;
     type Processor<'a> = WGPUProcessor<'a>;
     type Linker<'a> = WGPULinker<'a>;
     type Readout<'a> = WGPUReadout<'a>;
+    type Limits = WGPULimits;
 
     /// Creates a new `Backend` instance asynchronously.
     ///
@@ -45,6 +62,14 @@ impl tengu_backend::Backend for Backend {
     async fn new() -> tengu_backend::Result<Rc<Self>> {
         let device = WGPU::default_context().await.map_err(|e| Error::WGPUError(e.into()))?;
         Ok(Rc::new(Self { device }))
+    }
+
+    /// Returns the limits of the backend.
+    ///
+    /// # Returns
+    /// The limits of the backend.
+    fn limits(&self) -> Self::Limits {
+        WGPULimits::new(self)
     }
 
     /// Creates a new `Processor` instance.

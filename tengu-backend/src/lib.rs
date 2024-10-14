@@ -28,6 +28,9 @@
 //! - `readout`: Defines the `Readout` trait, which provides an interface for reading out tensor data
 //!   from a computation graph.
 //!
+//! - `limits`: Defines the `Limits` struct, which represents the limits of the backend in terms of
+//!   max tensor count and other properties.
+//!
 //! - `tensor`: Defines the `Tensor` trait, which represents a tensor in the computation framework.
 //!   It includes methods for manipulating tensor data.
 //!
@@ -58,6 +61,7 @@
 pub mod backend;
 pub mod compute;
 pub mod error;
+pub mod limits;
 pub mod linker;
 pub mod probe;
 pub mod processor;
@@ -68,6 +72,7 @@ pub mod types;
 pub use backend::Backend;
 pub use compute::Compute;
 pub use error::{Error, Result};
+pub use limits::Limits;
 pub use linker::Linker;
 pub use probe::Probe;
 pub use processor::Processor;

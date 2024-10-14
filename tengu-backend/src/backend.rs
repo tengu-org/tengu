@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use crate::linker::Linker;
 use crate::readout::Readout;
-use crate::{Compute, IOType, Processor, Result, StorageType, Tensor};
+use crate::{Compute, IOType, Limits, Processor, Result, StorageType, Tensor};
 
 /// The `Backend` trait provides an interface for tensor computation backends. It defines various associated
 /// types and methods for creating and managing tensors, processors, compute instances, linkers, and readouts.
@@ -32,11 +32,19 @@ pub trait Backend {
     /// The underlying readout type.
     type Readout<'a>: Readout<'a, Backend = Self>;
 
+    type Limits: Limits<Backend = Self>;
+
     /// Asynchronously creates a new backend instance.
     ///
     /// # Returns
     /// A result wrapping an `Rc` to the new backend instance.
     async fn new() -> Result<Rc<Self>>;
+
+    /// Returns the limits of the backend.
+    ///
+    /// # Returns
+    /// The limits of the backend.
+    fn limits(&self) -> Self::Limits;
 
     /// Creates a processor to perform recursive computation of tensor expression ASTs.
     ///
