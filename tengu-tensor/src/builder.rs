@@ -3,13 +3,20 @@
 //! This module defines the `Builder` struct and associated methods for creating tensors with various initializations.
 //! It provides an interface to set the shape, label, and initial values of tensors.
 
+use num::Float;
+use rand::distributions::uniform::SampleUniform;
+use rand::distributions::Uniform;
+use rand::Rng;
+use rand_distr::Distribution;
+use rand_distr::Normal;
+use rand_distr::StandardNormal;
 use random_string::charsets::ALPHA;
 use std::rc::Rc;
 use tengu_backend::{Backend, IOType};
 
 use crate::expression::Expression;
 use crate::tensor::Tensor;
-use crate::StorageType;
+use crate::{Error, Result, StorageType};
 
 /// The length of the label generated for tensors if no label is provided.
 pub(crate) const LABEL_LENGTH: usize = 6;
@@ -88,6 +95,74 @@ impl<B: Backend> Builder<B> {
         let tensor = self.backend.tensor(label, data);
         let tensor = Tensor::new(&self.backend, self.shape, self.count, tensor);
         Expression::Tensor(tensor)
+    }
+
+    /// Creates a tensor initialized with random data. This is the most general method if you need
+    /// to create a random tensor with specific Rng and distribution. You can use `uniform` or
+    /// `normal` for most popular distributions.
+    ///
+    /// # Type Parameters
+    /// - `T`: The I/O type of the tensor.
+    /// - `D`: The distribution type for generating random data.
+    /// - `R`: The random number generator type.
+    ///
+    /// # Parameters
+    /// - `rng`: The random number generator instance.
+    /// - `distr`: The distribution for generating random data.
+    ///
+    /// # Returns
+    /// An expression representing the tensor initialized with random data.
+    pub fn random<T, D, R>(mut self, rng: R, distr: D) -> Expression<T, B>
+    where
+        T: IOType,
+        D: Distribution<T>,
+        R: Rng,
+    {
+        let label = self.get_or_create_label();
+        let data = rng.sample_iter(distr).take(self.count).collect::<Vec<_>>();
+        let tensor = self.backend.tensor(label, &data);
+        let tensor = Tensor::new(&self.backend, self.shape, self.count, tensor);
+        Expression::Tensor(tensor)
+    }
+
+    /// Creates a tensor initialized with random data drawn from a uniform distribution.
+    /// The data will be drawn from the range `[low, high)`.
+    ///
+    /// # Type Parameters
+    /// - `T`: The I/O type of the tensor.
+    ///
+    /// # Parameters
+    /// - `low`: The lower bound of the uniform distribution.
+    /// - `high`: The upper bound of the uniform distribution.
+    ///
+    /// # Returns
+    /// An expression representing the tensor initialized with random data drawn from a uniform distribution.
+    pub fn uniform<T: IOType + SampleUniform>(self, low: T, high: T) -> Expression<T, B> {
+        let rng = rand::thread_rng();
+        self.random(rng, Uniform::new(low, high))
+    }
+
+    /// Creates a tensor initialized with random data drawn from a normal distribution.
+    /// The data will be drawn from the distribution with the specified mean and standard deviation.
+    ///
+    /// # Type Parameters
+    /// - `T`: The I/O type of the tensor.
+    ///
+    /// # Parameters
+    /// - `mean`: The mean of the normal distribution.
+    /// - `std_dev`: The standard deviation of the normal distribution.
+    ///
+    /// # Returns
+    /// An expression representing the tensor initialized with random data drawn from a normal distribution.
+    /// If the standard normal distribution is incorrent (e.g. is infinite), an error will be returned.
+    pub fn normal<T>(self, mean: T, std_dev: T) -> Result<Expression<T, B>>
+    where
+        T: IOType + Float,
+        StandardNormal: Distribution<T>,
+    {
+        let rng = rand::thread_rng();
+        let distr = Normal::new(mean, std_dev).map_err(|e| Error::ParameterError(e.into()))?;
+        Ok(self.random(rng, distr))
     }
 
     /// Creates a tensor initialized with the specified boolean data. The resulting tensor will
