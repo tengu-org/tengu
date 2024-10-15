@@ -16,7 +16,8 @@ pub enum Error {
     TypeMismatch,
     #[error("Shapes don't match")]
     ShapeMismatch,
+    #[error("Invalid method paramter: {0}")]
+    ParameterError(#[from] anyhow::Error),
 }
 
 pub type Result<T> = std::result::Result<T, self::Error>;
-
