@@ -2012,6 +2012,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tengu-backend-cpu"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "pretty_assertions",
+ "tengu-backend",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "tengu-backend-wgpu"
 version = "0.1.0"
 dependencies = [
