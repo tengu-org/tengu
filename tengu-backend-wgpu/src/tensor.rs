@@ -37,10 +37,10 @@ impl<T: StorageType> Tensor<T> {
     ///
     /// # Returns
     /// A new instance of `Tensor`.
-    pub fn new(backend: &Rc<WGPUBackend>, label: impl Into<String>, count: usize, buffer: Buffer) -> Self {
+    pub fn new(backend: &Rc<WGPUBackend>, label: String, count: usize, buffer: Buffer) -> Self {
         Self {
             backend: Rc::clone(backend),
-            label: label.into(),
+            label,
             count,
             probe: OnceCell::new(),
             buffer: buffer.into(),

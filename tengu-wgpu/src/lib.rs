@@ -49,7 +49,7 @@
 //!     }
 //!     "#;
 //!     let shader = device.shader("compute_shader", shader_source);
-//!     let buffer = device.buffer::<u32>(BufferUsage::ReadWrite).with_data(&[0; 64]);
+//!     let buffer = device.buffer::<u32>("buf", BufferUsage::ReadWrite).with_data(&[0; 64]);
 //!     let pipeline = device.layout().add_entry(&buffer).pipeline("compute_pipeline").build(shader);
 //!     let command_buffer = device
 //!         .encoder("encoder")

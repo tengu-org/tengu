@@ -30,6 +30,8 @@
 
 use std::ops::Deref;
 
+use tracing::trace;
+
 use crate::buffer::BufferBuilder;
 use crate::pipeline::LayoutBuilder;
 use crate::{BufferUsage, Encoder, Error};
@@ -74,6 +76,7 @@ impl Device {
     /// # Returns
     /// A `wgpu::CommandBuffer` containing the encoded commands.
     pub fn compute(&self, label: &str, commands: impl FnOnce(&mut Encoder)) -> wgpu::CommandBuffer {
+        trace!("Execute computation '{label}' on the device");
         let mut encoder = Encoder::new(self, label);
         commands(&mut encoder);
         encoder.finish()
@@ -86,8 +89,8 @@ impl Device {
     ///
     /// # Returns
     /// A `BufferBuilder` instance.
-    pub fn buffer<T>(&self, buffer_kind: BufferUsage) -> BufferBuilder {
-        BufferBuilder::new(self, buffer_kind)
+    pub fn buffer<'a, T>(&self, label: &'a str, buffer_kind: BufferUsage) -> BufferBuilder<'a, '_> {
+        BufferBuilder::new(self, label, buffer_kind)
     }
 
     /// Creates a new shader module from the specified WGSL source code.
@@ -99,6 +102,7 @@ impl Device {
     /// # Returns
     /// A `wgpu::ShaderModule` instance.
     pub fn shader(&self, label: &str, source: &str) -> wgpu::ShaderModule {
+        trace!("Creating shader module '{label}'...");
         self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(label),
             source: wgpu::ShaderSource::Wgsl(source.into()),
@@ -110,6 +114,7 @@ impl Device {
     /// # Parameters
     /// - `commands`: The command buffer to submit.
     pub fn submit(&self, commands: wgpu::CommandBuffer) {
+        trace!("Submitting commands...");
         self.queue.submit(std::iter::once(commands));
     }
 
@@ -183,6 +188,7 @@ impl DeviceBuilder {
                 None, // Trace path
             )
             .await?;
+        trace!("Requested device and queue");
         Ok(Device::new(device, queue))
     }
 
@@ -215,6 +221,7 @@ impl DeviceBuilder {
     /// # Returns
     /// The updated `DeviceBuilder`.
     pub fn with_webgl_limits(mut self) -> Self {
+        trace!("Using WebGL2 limits");
         self.limits = wgpu::Limits::downlevel_webgl2_defaults();
         self
     }

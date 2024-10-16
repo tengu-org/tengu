@@ -14,6 +14,7 @@
 
 use std::collections::{BTreeMap, HashSet};
 use tengu_backend::{Backend, StorageType};
+use tracing::trace;
 
 use crate::{source::Source, Backend as WGPUBackend};
 use declarator::Declarator;
@@ -188,6 +189,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
             .expect("block should have at least one computation");
         let header = self.declarator.header();
         let body = self.emitter.body();
+        trace!("Emitting shader for a block");
         self.shader = format!("{}\n\n{}", header, body);
     }
 }

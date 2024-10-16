@@ -28,6 +28,8 @@
 
 use std::ops::Deref;
 
+use tracing::trace;
+
 use crate::{Adapter, Device, Error, Result};
 
 // NOTE: Surface implementation.
@@ -110,6 +112,11 @@ impl<'window> ConfigBuilder<'window> {
             .first()
             .copied()
             .ok_or(Error::CreateAdapterError)?;
+        trace!(
+            "Surface format: {:?}, alpha mode: {:?}",
+            self.config.format,
+            self.config.alpha_mode
+        );
         Ok(self)
     }
 
@@ -122,6 +129,7 @@ impl<'window> ConfigBuilder<'window> {
     /// A `BoundSurface` instance.
     pub fn bind_device(self, device: &Device) -> BoundSurface<'window> {
         self.surface.configure(device, &self.config);
+        trace!("Bound surface to the device");
         BoundSurface {
             surface: self.surface,
             config: self.config,
@@ -137,6 +145,7 @@ impl<'window> ConfigBuilder<'window> {
     /// The updated `ConfigBuilder`.
     pub fn with_presentation_mode(mut self, mode: wgpu::PresentMode) -> Self {
         self.config.present_mode = mode;
+        trace!("Presentation mode set to {:?}", mode);
         self
     }
 
@@ -149,6 +158,7 @@ impl<'window> ConfigBuilder<'window> {
     /// The updated `ConfigBuilder`.
     pub fn with_maximum_frame_latency(mut self, latency: u32) -> Self {
         self.config.desired_maximum_frame_latency = latency;
+        trace!("Frame latency set to {:?}", latency);
         self
     }
 }

@@ -12,3 +12,5 @@ docs:
 test: docs
     cargo nextest run
 
+mnist level="error":
+    RUST_LOG="none,tengu_wgpu={{level}},tengu_backend_wgpu={{level}}" cargo run --example mnist

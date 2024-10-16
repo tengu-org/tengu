@@ -8,6 +8,7 @@ tengu-backend = { path = "../tengu-backend" }
 tengu-backend-wgpu = { path = "../tengu-backend-wgpu" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+tracing = { workspace = true }
 random-string = "1.1.0"
 indoc = "2.0.5"
 itertools = "0.13.0"
@@ -21,3 +22,4 @@ rand_distr = "0.4.3"
 pretty_assertions = "1.4.1"
 pollster = { version = "0.3.0", features = ["macro"] }
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

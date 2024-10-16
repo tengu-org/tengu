@@ -17,6 +17,7 @@
 
 use tengu_backend::{Backend, Error, Result};
 use tengu_wgpu::{Device, Pipeline};
+use tracing::trace;
 
 use crate::processor::Processor;
 use crate::Backend as WGPUBackend;
@@ -54,9 +55,11 @@ impl<'a> Compute<'a> {
     /// A `Result` containing the `Pipeline` object if the pipeline creation is successful, or an `Error` if
     /// the buffer limit is reached.
     fn pipeline(&self, processor: &Processor<'_>) -> Result<Pipeline> {
+        trace!("Creating pipeline...");
         let shader = self.device.shader(self.label, processor.shader());
         let buffers = processor.sources().map(|source| source.buffer()).collect::<Vec<_>>();
         let max_buffers = self.device.limits().max_storage_buffers_per_shader_stage as usize;
+        trace!("Max buffer limit: {max_buffers}");
         if buffers.len() > max_buffers {
             return Err(Error::BufferLimitReached(max_buffers));
         }
