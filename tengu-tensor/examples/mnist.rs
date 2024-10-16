@@ -5,9 +5,16 @@
 // and then using the result to predict output.
 
 use tengu_tensor::Tengu;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[pollster::main]
 pub async fn main() {
+    // Initialize tracing.
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .init();
+
     // Initialize input tensors.
     let tengu = Tengu::wgpu().await.unwrap();
     let w1 = tengu.tensor([2, 2]).label("w1").init(&[1.0, 2.0, 3.0, 4.0]);

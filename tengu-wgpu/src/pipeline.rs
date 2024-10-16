@@ -40,6 +40,8 @@
 
 use std::ops::Deref;
 
+use tracing::trace;
+
 use crate::{Buffer, BufferUsage, Device};
 
 const ENTRY: &str = "main";
@@ -148,17 +150,19 @@ impl<'a, 'device> LayoutBuilder<'a, 'device> {
     ///
     /// # Returns
     /// A `PipelineBuilder` instance.
-    pub fn pipeline(self, label: &str) -> PipelineBuilder<'device> {
+    pub fn pipeline<'b>(self, label: &'b str) -> PipelineBuilder<'b, 'device> {
         let bind_group_layout = self.device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some(label),
             entries: &self.layout_entries,
         });
+        trace!("Created bind group layout '{label}'");
         let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some(label),
             layout: &bind_group_layout,
             entries: &self.bind_entries,
         });
-        PipelineBuilder::new(self.device, bind_group, bind_group_layout)
+        trace!("Created bind group '{label}'");
+        PipelineBuilder::new(self.device, label, bind_group, bind_group_layout)
     }
 }
 
@@ -206,14 +210,14 @@ fn create_bind_entry(buffer: &Buffer, idx: usize) -> wgpu::BindGroupEntry {
 // NOTE: PipelineBuilder implementation
 
 /// Builder for creating and configuring a compute pipeline.
-pub struct PipelineBuilder<'device> {
+pub struct PipelineBuilder<'a, 'device> {
     device: &'device Device,
-    label: Option<String>,
+    label: &'a str,
     layout: wgpu::PipelineLayout,
     bind_group: wgpu::BindGroup,
 }
 
-impl<'device> PipelineBuilder<'device> {
+impl<'a, 'device> PipelineBuilder<'a, 'device> {
     /// Creates a new `PipelineBuilder` instance.
     ///
     /// # Parameters
@@ -223,30 +227,24 @@ impl<'device> PipelineBuilder<'device> {
     ///
     /// # Returns
     /// A new `PipelineBuilder` instance.
-    pub fn new(device: &'device Device, bind_group: wgpu::BindGroup, bind_group_layout: wgpu::BindGroupLayout) -> Self {
+    pub fn new(
+        device: &'device Device,
+        label: &'a str,
+        bind_group: wgpu::BindGroup,
+        bind_group_layout: wgpu::BindGroupLayout,
+    ) -> Self {
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         });
+        trace!("Created pipeline layout");
         Self {
             device,
-            label: None,
+            label,
             layout: pipeline_layout,
             bind_group,
         }
-    }
-
-    /// Sets a label for the compute pipeline.
-    ///
-    /// # Parameters
-    /// - `label`: The label to set.
-    ///
-    /// # Returns
-    /// The updated `PipelineBuilder`.
-    pub fn with_label(mut self, label: impl Into<String>) -> Self {
-        self.label = Some(label.into());
-        self
     }
 
     /// Builds the compute pipeline with the specified shader module.
@@ -258,13 +256,14 @@ impl<'device> PipelineBuilder<'device> {
     /// A `Pipeline` instance.
     pub fn build(self, shader: wgpu::ShaderModule) -> Pipeline {
         let pipeline = self.device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
-            label: self.label.as_deref(),
+            label: Some(self.label),
             layout: Some(&self.layout),
             module: &shader,
             entry_point: ENTRY,
             cache: None,
             compilation_options: wgpu::PipelineCompilationOptions::default(),
         });
+        trace!("Created compute pipeline with label '{}'", self.label);
         Pipeline::new(pipeline, self.bind_group)
     }
 }

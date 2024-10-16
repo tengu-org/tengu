@@ -134,7 +134,8 @@ impl tengu_backend::Backend for Backend {
     /// # Returns
     /// A new tensor initialized with the provided data.
     fn tensor<T: IOType>(self: &Rc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T> {
-        let buffer = self.device().buffer::<T>(BufferUsage::Read).with_data(data);
+        let label = label.into();
+        let buffer = self.device().buffer::<T>(&label, BufferUsage::Read).with_data(data);
         WGPUTensor::new(self, label, data.len(), buffer)
     }
 
@@ -147,8 +148,9 @@ impl tengu_backend::Backend for Backend {
     /// # Returns
     /// A new zero-initialized tensor.
     fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T> {
+        let label = label.into();
         let size = count.of::<T>();
-        let buffer = self.device().buffer::<T>(BufferUsage::ReadWrite).empty(size);
+        let buffer = self.device().buffer::<T>(&label, BufferUsage::ReadWrite).empty(size);
         WGPUTensor::new(self, label, count, buffer)
     }
 
@@ -161,7 +163,7 @@ impl tengu_backend::Backend for Backend {
     /// A new probe for the specified number of elements.
     fn probe<T: StorageType>(self: &Rc<Self>, count: usize) -> <Self::Tensor<T> as Tensor<T>>::Probe {
         let size = count.of::<T>();
-        let buffer = self.device.buffer::<T>(BufferUsage::Staging).empty(size);
+        let buffer = self.device.buffer::<T>("probe", BufferUsage::Staging).empty(size);
         Probe::new(self, buffer)
     }
 }

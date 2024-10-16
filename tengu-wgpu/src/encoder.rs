@@ -25,6 +25,8 @@
 //!   - `copy_buffer`: Copies data from a source buffer to a destination buffer.
 //!   - `finish`: Finalizes the command buffer and returns it for submission to the GPU.
 
+use tracing::trace;
+
 use crate::{Buffer, Device, Error, Result};
 
 /// Represents a command encoder in the WGPU backend.
@@ -43,6 +45,7 @@ impl Encoder {
     /// A new `Encoder` instance.
     pub fn new(device: &Device, label: &str) -> Self {
         let encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some(label) });
+        trace!("Created command encoder '{label}'");
         Self { encoder }
     }
 
@@ -62,6 +65,7 @@ impl Encoder {
             label: Some(label),
             timestamp_writes: None,
         });
+        trace!("Executing compute pass...");
         call(compute_pass).map_err(Error::ComputeError)?;
         Ok(self)
     }
@@ -74,6 +78,7 @@ impl Encoder {
     /// # Returns
     /// The updated `Encoder` instance.
     pub fn readout(mut self, call: impl FnOnce(&mut Encoder)) -> Self {
+        trace!("Executing readout...");
         call(&mut self);
         self
     }

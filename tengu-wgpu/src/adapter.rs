@@ -24,6 +24,8 @@
 
 use std::ops::Deref;
 
+use tracing::trace;
+
 use crate::{device::DeviceBuilder, Error, Surface};
 
 // NOTE: Adapter implementation.
@@ -112,6 +114,7 @@ impl<'surface, 'window> AdapterBuilder<'surface, 'window> {
             .request_adapter(&self.request_adapter_options)
             .await
             .ok_or(Error::CreateAdapterError)?;
+        trace!("Requested new adapter");
         Ok(Adapter::new(adapter))
     }
 }

@@ -180,7 +180,7 @@ impl<B: Backend> Builder<B> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
         let data = data.iter().map(|v| *v as u32).collect::<Vec<_>>();
         let label = self.get_or_create_label();
-        let tensor = self.backend.tensor(label, &data);
+        let tensor = self.backend.tensor(&label, &data);
         let tensor = Tensor::new(&self.backend, self.shape, self.count, tensor);
         Expression::Tensor(tensor)
     }

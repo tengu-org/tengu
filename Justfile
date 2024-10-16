@@ -12,3 +12,5 @@ docs:
 test: docs
     cargo nextest run
 
+mnist:
+    RUST_LOG="none,tengu_wgpu=trace" cargo run --example mnist

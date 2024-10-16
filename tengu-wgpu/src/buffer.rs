@@ -31,6 +31,7 @@
 //! the GPU. This is particularly useful for initializing buffers with data or reading back results from computations.
 
 use std::ops::Deref;
+use tracing::trace;
 use wgpu::util::DeviceExt;
 
 use crate::Device;
@@ -105,7 +106,7 @@ impl Deref for Buffer {
 /// Builder for creating and configuring a GPU buffer.
 pub struct BufferBuilder<'a, 'device> {
     device: &'device Device,
-    label: Option<&'a str>,
+    label: &'a str,
     usage: BufferUsage,
 }
 
@@ -118,24 +119,8 @@ impl<'a, 'device> BufferBuilder<'a, 'device> {
     ///
     /// # Returns
     /// A new `BufferBuilder` instance.
-    pub fn new(device: &'device Device, usage: BufferUsage) -> Self {
-        Self {
-            device,
-            label: None,
-            usage,
-        }
-    }
-
-    /// Sets the label for the buffer.
-    ///
-    /// # Parameters
-    /// - `label`: The label to set.
-    ///
-    /// # Returns
-    /// The updated `BufferBuilder`.
-    pub fn with_label(mut self, label: &'a str) -> Self {
-        self.label = Some(label);
-        self
+    pub fn new(device: &'device Device, label: &'a str, usage: BufferUsage) -> Self {
+        Self { device, label, usage }
     }
 
     /// Creates an empty buffer with the specified size.
@@ -147,11 +132,12 @@ impl<'a, 'device> BufferBuilder<'a, 'device> {
     /// A `Buffer` instance.
     pub fn empty(self, size: usize) -> Buffer {
         let buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: self.label,
+            label: Some(self.label),
             size: size as u64,
             usage: self.usage.usage(),
             mapped_at_creation: false,
         });
+        trace!("Created buffer with label '{}'", self.label);
         Buffer::new(buffer, self.usage)
     }
 
@@ -167,10 +153,11 @@ impl<'a, 'device> BufferBuilder<'a, 'device> {
         T: bytemuck::Pod,
     {
         let buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: self.label,
+            label: Some(self.label),
             contents: bytemuck::cast_slice(data),
             usage: self.usage.usage(),
         });
+        trace!("Created initialized buffer with label '{}'", self.label);
         Buffer::new(buffer, self.usage)
     }
 }

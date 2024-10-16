@@ -3,6 +3,7 @@
 //! adapters. This backend leverages the wgpu library to interface with various GPU backends.
 
 use bon::bon;
+use tracing::trace;
 
 use crate::adapter::AdapterBuilder;
 use crate::{Device, Result, Surface};
@@ -27,6 +28,7 @@ impl WGPU {
             backends,
             ..Default::default()
         });
+        trace!("Created WGPU instance with {:?} backend", backends);
         WGPU { instance }
     }
 
@@ -39,6 +41,7 @@ impl WGPU {
     /// A `Result` containing the created `Surface` or an error.
     pub fn create_surface<'window>(&self, target: impl Into<wgpu::SurfaceTarget<'window>>) -> Result<Surface<'window>> {
         let surface = self.instance.create_surface(target)?;
+        trace!("Created a new surface");
         Ok(Surface::new(surface))
     }
 
