@@ -3,6 +3,7 @@
 
 use tengu_backend::Backend;
 use tengu_wgpu::Encoder;
+use tracing::trace;
 
 use crate::Backend as WGPUBackend;
 
@@ -34,6 +35,7 @@ impl<'a> tengu_backend::Readout<'a> for Readout<'a> {
     /// # Parameters
     /// - `processor`: A reference to the processor from the backend which provides the sources.
     fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) {
+        trace!("Comitting readout operation...");
         processor.sources().for_each(|tensor| tensor.readout(self.encoder));
     }
 }

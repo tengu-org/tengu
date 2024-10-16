@@ -2026,6 +2026,7 @@ dependencies = [
  "tengu-wgpu",
  "thiserror",
  "tokio",
+ "tracing",
  "wgpu",
 ]
 

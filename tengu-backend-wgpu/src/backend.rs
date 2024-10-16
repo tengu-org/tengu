@@ -8,6 +8,7 @@
 use std::rc::Rc;
 use tengu_backend::{Error, IOType, Result, StorageType, Tensor};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
+use tracing::trace;
 
 use crate::compute::Compute as WGPUCompute;
 use crate::limits::Limits as WGPULimits;
@@ -61,6 +62,7 @@ impl tengu_backend::Backend for Backend {
     /// A result containing a reference-counted `Backend` instance or an error.
     async fn new() -> tengu_backend::Result<Rc<Self>> {
         let device = WGPU::default_context().await.map_err(|e| Error::WGPUError(e.into()))?;
+        trace!("Created WGPU instance for backend");
         Ok(Rc::new(Self { device }))
     }
 
@@ -86,6 +88,7 @@ impl tengu_backend::Backend for Backend {
     /// - `call`: A function that takes a `Linker` and performs data propagation.
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>)) {
         let mut encoder = self.device.encoder("linker");
+        trace!("Executing propagation step...");
         call(WGPULinker::new(&mut encoder));
         self.device.submit(encoder.finish());
     }
@@ -99,6 +102,7 @@ impl tengu_backend::Backend for Backend {
     where
         F: FnOnce(Self::Compute<'_>) -> Result<()>,
     {
+        trace!("Executing compute step...");
         let commands = self
             .device
             .encoder(label)
@@ -117,6 +121,7 @@ impl tengu_backend::Backend for Backend {
     /// - `label`: A label for the readout operations.
     /// - `call`: A function that takes a `Readout` and performs data readout from probes.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>)) {
+        trace!("Executing readout step...");
         let commands = self
             .device
             .encoder(label)
@@ -135,6 +140,7 @@ impl tengu_backend::Backend for Backend {
     /// A new tensor initialized with the provided data.
     fn tensor<T: IOType>(self: &Rc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T> {
         let label = label.into();
+        trace!("Creating new tensor '{label}'...");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::Read).with_data(data);
         WGPUTensor::new(self, label, data.len(), buffer)
     }
@@ -150,6 +156,7 @@ impl tengu_backend::Backend for Backend {
     fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T> {
         let label = label.into();
         let size = count.of::<T>();
+        trace!("Creating new zero tensor '{label}'...");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::ReadWrite).empty(size);
         WGPUTensor::new(self, label, count, buffer)
     }
@@ -163,6 +170,7 @@ impl tengu_backend::Backend for Backend {
     /// A new probe for the specified number of elements.
     fn probe<T: StorageType>(self: &Rc<Self>, count: usize) -> <Self::Tensor<T> as Tensor<T>>::Probe {
         let size = count.of::<T>();
+        trace!("Creating new probe...");
         let buffer = self.device.buffer::<T>("probe", BufferUsage::Staging).empty(size);
         Probe::new(self, buffer)
     }
