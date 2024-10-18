@@ -11,9 +11,9 @@
 //! in the `commit` method, which performs the following operations:
 //! 1. **Pipeline Creation**: The `pipeline` method is called to create a pipeline for the compute operations. This method
 //!    generates a shader from the processor's shader code and sets up the necessary buffer bindings.
-//! 2. **Resource Binding**: The `commit` method sets the pipeline and bind group for the compute pass using the created
+//! 2. **Resource Binding**: The `run` method sets the pipeline and bind group for the compute pass using the created
 //!    pipeline. It binds the resources required for the compute operations.
-//! 3. **Dispatch Workgroups**: The `commit` method dispatches the workgroups to execute the compute operations on the GPU.
+//! 3. **Dispatch Workgroups**: The `run` method then dispatches the workgroups to execute the compute operations on the GPU.
 
 use tengu_backend::{Backend, Error, Result};
 use tengu_wgpu::{Device, Pipeline};
@@ -55,7 +55,7 @@ impl<'a> Compute<'a> {
     /// A `Result` containing the `Pipeline` object if the pipeline creation is successful, or an `Error` if
     /// the buffer limit is reached.
     fn pipeline(&self, processor: &Processor<'_>) -> Result<Pipeline> {
-        trace!("Creating pipeline...");
+        trace!("Creating pipeline");
         let shader = self.device.shader(self.label, processor.shader());
         let buffers = processor.sources().map(|source| source.buffer()).collect::<Vec<_>>();
         let max_buffers = self.device.limits().max_storage_buffers_per_shader_stage as usize;
@@ -76,7 +76,7 @@ impl<'a> Compute<'a> {
 impl<'a> tengu_backend::Compute for Compute<'a> {
     type Backend = WGPUBackend;
 
-    /// Commits the compute operations by setting up the pipeline, bind group, and dispatching workgroups.
+    /// Runs the compute operations by setting up the pipeline, bind group, and dispatching workgroups.
     ///
     /// # Parameters
     /// - `processor`: A reference to the processor which provides the necessary data for the compute operations.
@@ -84,7 +84,7 @@ impl<'a> tengu_backend::Compute for Compute<'a> {
     /// # Returns
     /// A `Result` indicating whether the compute operations were successful or an error occurred.
     fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()> {
-        trace!("Running compute...");
+        trace!("Executing compute operation");
         let pipeline = self.pipeline(processor)?;
         let workgroup_count = processor.element_count() as u32 / WORKGROUP_SIZE + 1;
         self.pass.set_pipeline(&pipeline);

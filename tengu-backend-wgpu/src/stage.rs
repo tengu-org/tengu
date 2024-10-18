@@ -1,4 +1,4 @@
-//! This module defines the `Stage` struct which is used for retrieving data from a GPU buffer in an asynchronous manner.
+//! This module defines the `Stage` struct which is used to retrieve data from a GPU buffer in an asynchronous manner.
 //! It utilizes the WGPU backend and integrates with the `tengu_backend` crate to provide efficient data retrieval capabilities.
 
 use flume::{Receiver, Sender};
@@ -9,7 +9,7 @@ use tengu_wgpu::Buffer;
 use crate::Backend;
 
 /// The `Stage` struct is used to manage and retrieve data from a GPU buffer.
-/// It holds a reference-counted handle to the staging buffer. During the readout operation it will
+/// It holds handle to the staging buffer. During the readout operation it will
 /// be used as the destination target of the copy from the tensor associated with this probe.
 pub struct Stage<T> {
     backend: Arc<Backend>,
@@ -23,7 +23,7 @@ impl<T: IOType> Stage<T> {
     ///
     /// # Parameters
     /// - `backend`: A reference-counted handle to the backend.
-    /// - `buffer`: The stating buffer from which data will be retrieved.
+    /// - `buffer`: The stating buffer to which the data will be copied during readout.
     ///
     /// # Returns
     /// A new instance of `Stage`.
@@ -45,14 +45,18 @@ impl<T: IOType> Stage<T> {
         &self.buffer
     }
 
+    /// Returns a reference to the probe's receiver. During the retireval phase, `Stage` will
+    /// send its data into the internal `Sender`. The probe on the other side of the channel will
+    /// receive these data using this reciever.
+    ///
+    /// # Returns
+    /// A reciever to be used by a probe.
     pub fn receiver(&self) -> Receiver<Vec<T>> {
         self.receiver.clone()
     }
 
-    /// Asynchronously retrieves data from the GPU buffer and stores it into the provided vector.
-    ///
-    /// # Parameters
-    /// - `buffer`: A mutable reference to a vector where the retrieved data will be stored.
+    /// Asynchronously retrieves data from the GPU buffer and sends it through the internal
+    /// channel.
     ///
     /// # Returns
     /// A result indicating success or failure of the operation.

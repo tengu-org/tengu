@@ -1,3 +1,6 @@
+//! Module implementing the `Limits` struct for the WGPU backend. It provides information about the
+//! limitations of the WGPU backend.
+
 use crate::Backend as WGPUBackend;
 
 /// A struct representing the limits of the WGPU backend.
@@ -27,7 +30,8 @@ impl tengu_backend::Limits for Limits {
     /// This number is equal to the maximum buffer count for one shader stage in WGPU.
     ///
     /// # Returns
-    /// The maximum number of tensors that can be used in a single compute stage.
+    /// The maximum number of tensors that can be used in a single compute stage. If the limit
+    /// is not defined (for example in case of a CPU backend), `None` is returned.
     fn max_tensor_per_compute(&self) -> Option<usize> {
         Some(self.device_limits.max_storage_buffers_per_shader_stage as usize)
     }

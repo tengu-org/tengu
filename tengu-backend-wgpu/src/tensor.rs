@@ -1,5 +1,3 @@
-//! # Tensor Module
-//!
 //! This module provides the implementation of the `Tensor` struct, which represents a tensor in the WGPU backend.
 //! It includes functionality for creating tensors, managing their data, and interfacing with the GPU for compute operations.
 //!
@@ -50,10 +48,10 @@ impl<T: StorageType> Tensor<T> {
         }
     }
 
-    /// Returns a reference to the tensor's stage, initializing it if necessary.
+    /// Returns a reference to the tensor's staging object, initializing it if necessary.
     ///
     /// # Returns
-    /// A reference to the tensor's probe.
+    /// A reference to the tensor's staging object.
     fn stage(&self) -> &Stage<T::IOType> {
         self.stage.get_or_init(|| {
             let size = self.count.of::<T>();
@@ -89,6 +87,9 @@ impl<T: StorageType> Source for Tensor<T> {
     }
 
     /// Retrieves staging buffer data from the GPU to CPU buffer.
+    ///
+    /// # Returns
+    /// A `Result` indicating success or failure of the retrieval operation.
     async fn retrieve(&self) -> Result<()> {
         if let Some(stage) = &self.stage.get() {
             stage.retrieve().await?;

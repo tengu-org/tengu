@@ -1,5 +1,4 @@
 //! This module defines the `Backend` struct which implements the `Backend` trait from the `tengu_backend` crate.
-//!
 //! The `Backend` struct is responsible for managing the WGPU device and providing methods to create and manipulate GPU resources
 //! such as tensors, compute passes, and linkers. The `Backend` struct serves as the main entry point for managing GPU resources and
 //! executing GPU operations. It provides methods to create tensors, perform compute operations, propagate data, and read out data
@@ -90,55 +89,62 @@ impl tengu_backend::Backend for Backend {
     /// - `call`: A function that takes a `Linker` and performs data propagation.
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>)) {
         let mut encoder = self.device.encoder("linker");
-        trace!("Executing propagation step...");
+        trace!("Executing propagation step");
         call(WGPULinker::new(&mut encoder));
+        trace!("Submitting propagation commands to the queue");
         self.device.submit(encoder.finish());
     }
 
     /// Executes a compute pass using the provided compute function.
     ///
     /// # Parameters
-    /// - `label`: A label for the compute operations.
+    /// - `label`: A label for compute operations.
     /// - `call`: A function that takes a `Compute` and performs compute operations.
     fn compute<F>(&self, label: &str, call: F) -> Result<()>
     where
         F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>,
     {
-        trace!("Executing compute step...");
+        trace!("Executing compute step");
         let commands = self
             .device
             .encoder(label)
             .pass(label, |pass| call(WGPUCompute::new(&self.device, label, pass)))
             .map_err(|e| Error::ComputeError(e.into()))?
             .finish();
+        trace!("Submitting compute commands to the queue");
         self.device.submit(commands);
-        trace!("Submitted compute commands");
         Ok(())
     }
 
-    /// Reads out data using the provided readout function.
+    /// Reads out data to staging buffers using the provided readout function.
     ///
     /// # Parameters
     /// - `label`: A label for the readout operations.
-    /// - `call`: A function that takes a `Readout` and performs data readout from probes.
-
+    /// - `call`: A function that takes a `Readout` and performs data readout into staging buffers.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>)) {
-        trace!("Executing readout step...");
+        trace!("Executing readout step");
         let commands = self
             .device
             .encoder(label)
             .readout(|encoder| call(WGPUReadout::new(encoder)))
             .finish();
+        trace!("Submitting readout commands to the queue");
         self.device.submit(commands);
-        trace!("Submitted readout commands");
     }
 
+    /// Retrieves data from staging buffers using the provided retrieve function.
+    ///
+    /// # Parameters
+    /// - `call`: A function that takes a `Retrieve` and performs data retrieval from staging buffers.
+    ///
+    /// # Returns
+    /// A result indicating success or failure of the retrieve operation.
     async fn retrieve<F, Fut>(&self, call: F) -> Result<()>
     where
         Fut: Future<Output = anyhow::Result<()>>,
         F: FnOnce(Self::Retrieve) -> Fut,
     {
-        trace!("Executing retrieve step...");
+        trace!("Executing retrieve step");
         call(WGPURetrieve).await.map_err(Error::RetrieveError)
     }
 
@@ -152,7 +158,7 @@ impl tengu_backend::Backend for Backend {
     /// A new tensor initialized with the provided data.
     fn tensor<T: IOType>(self: &Arc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T> {
         let label = label.into();
-        trace!("Creating new tensor '{label}'...");
+        trace!("Creating new tensor '{label}'");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::Read).with_data(data);
         WGPUTensor::new(self, label, data.len(), buffer)
     }
@@ -168,7 +174,7 @@ impl tengu_backend::Backend for Backend {
     fn zero<T: StorageType>(self: &Arc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T> {
         let label = label.into();
         let size = count.of::<T>();
-        trace!("Creating new zero tensor '{label}'...");
+        trace!("Creating new zero tensor '{label}'");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::ReadWrite).empty(size);
         WGPUTensor::new(self, label, count, buffer)
     }
