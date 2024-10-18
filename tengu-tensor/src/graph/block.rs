@@ -8,18 +8,18 @@
 //! blocks, and doesn't share tensors with any other blocks. On some backends (like WGPU), a block
 //! will have its own memory and its own shader.
 
-use std::rc::Rc;
-use tengu_backend::{Backend, Compute, Processor, Readout, StorageType};
+use std::sync::Arc;
+use tengu_backend::{Backend, Compute, Processor, Readout, Retrieve, StorageType};
 
 use super::computation::Computation;
 use crate::expression::{Expression, Shape, Source};
-use crate::Tengu;
+use crate::{Error, Result, Tengu};
 
 /// A struct representing a computational block in the Tengu framework.
 ///
 /// The `Block` struct holds computations and provides methods to add, label, and process these computations.
 pub struct Block<B: Backend> {
-    tengu: Rc<Tengu<B>>,
+    tengu: Arc<Tengu<B>>,
     label: String,
     computations: Vec<Computation<B>>,
 }
@@ -33,9 +33,9 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Returns
     /// A new `Block` instance.
-    pub fn new(tengu: &Rc<Tengu<B>>, label: impl Into<String>) -> Self {
+    pub fn new(tengu: &Arc<Tengu<B>>, label: impl Into<String>) -> Self {
         Self {
-            tengu: Rc::clone(tengu),
+            tengu: Arc::clone(tengu),
             label: label.into(),
             computations: Vec::new(),
         }
@@ -75,8 +75,8 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Returns
     /// A `Result` indicating whether the computation was successful or an error occurred.
-    pub fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) -> tengu_backend::Result<()> {
-        compute.commit(processor)
+    pub(crate) fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) -> Result<()> {
+        compute.run(processor).map_err(Error::BackendError)
     }
 
     /// Executes the tensor readout operation for all tensors in the block which have a probe
@@ -85,8 +85,18 @@ impl<B: Backend + 'static> Block<B> {
     /// # Parameters
     /// - `readout`: A mutable reference to the readout object.
     /// - `processor`: A reference to the processor.
-    pub fn readout(&self, readout: &mut B::Readout<'_>, processor: &B::Processor<'_>) {
-        readout.commit(processor);
+    pub(crate) fn readout(&self, readout: &mut B::Readout<'_>, processor: &B::Processor<'_>) {
+        readout.run(processor);
+    }
+
+    /// Executes the tensor retrieve operation for all tensors in the block which have a probe
+    /// associated with them.
+    ///
+    /// # Parameters
+    /// - `retrieve`: A mutable reference to the readout object.
+    /// - `processor`: A reference to the processor.
+    pub(crate) async fn retrieve(&self, retrieve: &mut B::Retrieve, processor: &B::Processor<'_>) -> Result<()> {
+        retrieve.run(processor).await.map_err(Error::BackendError)
     }
 
     /// Retrieves a source by its label from the computations in the block.

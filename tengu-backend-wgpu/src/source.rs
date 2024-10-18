@@ -1,16 +1,19 @@
 //! This module defines the `Source` trait which is used to represent a data source that can provide
-//! a buffer, a label, and a method to read data using an encoder. It is needed to treat tensor in
+//! a buffer, a label, and a methods to readout and retrieve and  data from the GPU. It is needed to treat tensor in
 //! uniform fashion, irrespecitve of their underlying storage type.
 
+use async_trait::async_trait;
+use tengu_backend::Result;
 use tengu_wgpu::{Buffer, Encoder};
 
-/// The `Source` trait represents a "type-less" tensor. It is implemented only but tensor and used
+/// The `Source` trait represents a "type-less" tensor. It is implemented only by tensor and used
 /// by the `Processor` to handle all tensors in a uniform fashion.
+#[async_trait]
 pub trait Source {
     /// Returns a label that describes the source.
     ///
     /// # Returns
-    /// A string slice that holds the label.
+    /// A string slice containing the label of the source.
     fn label(&self) -> &str;
 
     /// Returns a reference to the buffer associated with the source.
@@ -24,6 +27,12 @@ pub trait Source {
     /// # Parameters
     /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operation.
     fn readout(&self, encoder: &mut Encoder);
+
+    /// Performs a retrieval operation.
+    ///
+    /// # Returns
+    /// A `Result` indicating whether the retrieval was successful or an error occurred.
+    async fn retrieve(&self) -> Result<()>;
 
     /// Returns the number of elements in the source.
     ///

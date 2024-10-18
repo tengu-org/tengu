@@ -1,5 +1,5 @@
 //! This module defines the `Readout` struct which implements the `Readout` trait from the `tengu_backend` crate.
-//! It is used for committing readout operations using an encoder provided by `tengu_wgpu`.
+//! It is used for reading out the data from the GPU buffers into staging buffers using the WGPU backend.
 
 use tengu_backend::Backend;
 use tengu_wgpu::Encoder;
@@ -26,16 +26,18 @@ impl<'a> Readout<'a> {
     }
 }
 
-impl<'a> tengu_backend::Readout<'a> for Readout<'a> {
+impl<'a> tengu_backend::Readout for Readout<'a> {
     type Backend = WGPUBackend;
 
-    /// Commits the readout operations by iterating over the sources of the processor
+    /// Runs the readout operation by iterating over the sources of the processor
     /// and performing the readout operation on each tensor.
     ///
     /// # Parameters
     /// - `processor`: A reference to the processor from the backend which provides the sources.
-    fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) {
-        trace!("Comitting readout operation...");
-        processor.sources().for_each(|tensor| tensor.readout(self.encoder));
+    fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) {
+        trace!("Executing readout operation");
+        for source in processor.sources() {
+            source.readout(self.encoder);
+        }
     }
 }

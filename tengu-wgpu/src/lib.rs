@@ -69,15 +69,15 @@
 //! This example demonstrates how to set up a compute shader using the `tengu-wgpu` crate, providing a clear and concise workflow for
 //! GPU compute operations.
 
-pub mod adapter;
-pub mod buffer;
-pub mod device;
-pub mod encoder;
-pub mod error;
-pub mod pipeline;
-pub mod size;
-pub mod surface;
-pub mod wgpu;
+mod adapter;
+mod buffer;
+mod device;
+mod encoder;
+mod error;
+mod pipeline;
+mod size;
+mod surface;
+mod wgpu;
 
 pub use adapter::Adapter;
 pub use buffer::{Buffer, BufferUsage};

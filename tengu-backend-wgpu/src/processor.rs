@@ -16,7 +16,8 @@ use std::collections::{BTreeMap, HashSet};
 use tengu_backend::{Backend, StorageType};
 use tracing::trace;
 
-use crate::{source::Source, Backend as WGPUBackend};
+use crate::source::Source;
+use crate::Backend as WGPUBackend;
 use declarator::Declarator;
 use emitter::Emitter;
 
@@ -77,7 +78,7 @@ impl<'a> Processor<'a> {
     }
 }
 
-// Processor trait implementation
+// NOTE: Processor trait implementation
 
 impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     type Backend = WGPUBackend;

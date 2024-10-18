@@ -3,7 +3,6 @@
 //! This module defines the `Builder` struct and associated methods for creating tensors with various initializations.
 //! It provides an interface to set the shape, label, and initial values of tensors.
 
-use num::Float;
 use rand::distributions::uniform::SampleUniform;
 use rand::distributions::Uniform;
 use rand::Rng;
@@ -11,7 +10,9 @@ use rand_distr::Distribution;
 use rand_distr::Normal;
 use rand_distr::StandardNormal;
 use random_string::charsets::ALPHA;
-use std::rc::Rc;
+
+use num::Float;
+use std::sync::Arc;
 use tengu_backend::{Backend, IOType};
 
 use crate::expression::Expression;
@@ -28,7 +29,7 @@ pub struct Builder<B: Backend> {
     shape: Vec<usize>,
     count: usize,
     label: Option<String>,
-    backend: Rc<B>,
+    backend: Arc<B>,
 }
 
 impl<B: Backend> Builder<B> {
@@ -40,14 +41,14 @@ impl<B: Backend> Builder<B> {
     ///
     /// # Returns
     /// A new `Builder` instance.
-    pub fn new(backend: &Rc<B>, shape: impl Into<Vec<usize>>) -> Self {
+    pub fn new(backend: &Arc<B>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
         Self {
             shape,
             count,
             label: None,
-            backend: Rc::clone(backend),
+            backend: Arc::clone(backend),
         }
     }
     /// Sets the label for the tensor.

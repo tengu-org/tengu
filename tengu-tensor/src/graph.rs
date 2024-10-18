@@ -5,8 +5,9 @@
 //! computations using the blocks and links.
 
 use as_any::Downcast;
+use futures::Future;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 use tengu_backend::{Backend, StorageType};
 
 use crate::expression::Source;
@@ -16,19 +17,125 @@ use crate::{Error, Result, Tengu};
 
 use block::Block;
 use link::Link;
+use runner::Runner;
 
 mod block;
 mod computation;
 mod link;
+mod runner;
 
 /// A struct representing a computational graph in the Tengu framework.
 ///
 /// The `Graph` struct holds blocks and links, allowing for the construction and processing
 /// of complex computations.
 pub struct Graph<B: Backend> {
-    tengu: Rc<Tengu<B>>,
+    tengu: Arc<Tengu<B>>,
     blocks: HashMap<String, Block<B>>,
     links: Vec<Link>,
+}
+
+// NOTE: Computation interface
+
+impl<B: Backend + 'static> Graph<B> {
+    /// Performs computations in the graph for a specified number of iterations.
+    ///
+    /// # Parameters
+    /// - `times`: The number of iterations to perform.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
+    pub async fn compute(&self, times: usize) -> Result<()> {
+        let runner = Runner::new(self);
+        for _ in 0..times {
+            runner.step().await?;
+        }
+        Ok(())
+    }
+
+    /// Processes the graph for a specified number of iterations with a user-defined async callback.
+    ///
+    /// # Parameters
+    /// - `times`: The number of iterations to perform.
+    /// - `call`: A callback function to call after each iteration.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
+    pub async fn process_async<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
+    where
+        Fut: Future,
+        F: FnMut(usize) -> Fut,
+    {
+        let runner = Runner::new(self);
+        for i in 0..times {
+            runner.step().await?;
+            call(i).await;
+        }
+        Ok(())
+    }
+
+    /// Processes the graph for a specified number of iterations with a user-defined callback.
+    ///
+    /// # Parameters
+    /// - `times`: The number of iterations to perform.
+    /// - `call`: A callback function to call after each iteration.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
+    pub async fn process(&self, times: usize, mut call: impl FnMut(usize)) -> Result<()> {
+        let runner = Runner::new(self);
+        for i in 0..times {
+            runner.step().await?;
+            call(i);
+        }
+        Ok(())
+    }
+
+    /// Processes the graph for a specified number of iterations with a user-defined async callback that
+    /// determines whether to continue.
+    ///
+    /// # Parameters
+    /// - `times`: The number of iterations to perform.
+    /// - `call`: A callback function that returns a boolean indicating whether to continue processing.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
+    pub async fn process_while_async<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
+    where
+        Fut: Future<Output = bool>,
+        F: FnMut(usize) -> Fut,
+    {
+        let runner = Runner::new(self);
+        for i in 0..times {
+            runner.step().await?;
+            if !call(i).await {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    /// Processes the graph for a specified number of iterations with a user-defined callback that
+    /// determines whether to continue.
+    ///
+    /// # Parameters
+    /// - `times`: The number of iterations to perform.
+    /// - `call`: A callback function that returns a boolean indicating whether to continue processing.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
+    pub async fn process_while<F>(&self, times: usize, mut call: F) -> Result<()>
+    where
+        F: FnMut(usize) -> bool,
+    {
+        let runner = Runner::new(self);
+        for i in 0..times {
+            runner.step().await?;
+            if !call(i) {
+                break;
+            }
+        }
+        Ok(())
+    }
 }
 
 // NOTE: Construction interface
@@ -41,9 +148,9 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A new `Graph` instance.
-    pub fn new(tengu: &Rc<Tengu<B>>) -> Self {
+    pub fn new(tengu: &Arc<Tengu<B>>) -> Self {
         Self {
-            tengu: Rc::clone(tengu),
+            tengu: Arc::clone(tengu),
             blocks: HashMap::new(),
             links: Vec::new(),
         }
@@ -142,107 +249,6 @@ impl<B: Backend + 'static> Graph<B> {
             .ok_or_else(|| Error::BlockNotFound(block.to_string()))?
             .source(source)
             .ok_or_else(|| Error::SourceNotFound(source.to_string()))
-    }
-}
-
-// NOTE: Computation interface
-
-impl<B: Backend + 'static> Graph<B> {
-    /// Performs computations in the graph for a specified number of iterations.
-    ///
-    /// # Parameters
-    /// - `times`: The number of iterations to perform.
-    pub fn compute(&self, times: usize) -> Result<()> {
-        let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
-        let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        for _ in 0..times {
-            self.compute_blocks(&processors)?;
-            self.compute_readout(&processors);
-            self.compute_links(&links);
-        }
-        Ok(())
-    }
-
-    /// Processes the graph for a specified number of iterations with a user-defined callback.
-    ///
-    /// # Parameters
-    /// - `times`: The number of iterations to perform.
-    /// - `call`: A callback function to call after each iteration.
-    pub fn process<F>(&self, times: usize, mut call: F) -> Result<()>
-    where
-        F: FnMut(),
-    {
-        let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
-        let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        for _ in 0..times {
-            self.compute_blocks(&processors)?;
-            self.compute_readout(&processors);
-            self.compute_links(&links);
-            call();
-        }
-        Ok(())
-    }
-
-    /// Processes the graph for a specified number of iterations with a user-defined callback that determines whether to continue.
-    ///
-    /// # Parameters
-    /// - `times`: The number of iterations to perform.
-    /// - `call`: A callback function that returns a boolean indicating whether to continue processing.
-    pub fn process_while<F>(&self, times: usize, mut call: F) -> Result<()>
-    where
-        F: FnMut() -> bool,
-    {
-        let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
-        let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
-        for _ in 0..times {
-            self.compute_blocks(&processors)?;
-            self.compute_readout(&processors);
-            self.compute_links(&links);
-            if !call() {
-                break;
-            }
-        }
-        Ok(())
-    }
-
-    /// Computes the blocks in the graph.
-    ///
-    /// # Parameters
-    /// - `processors`: A vector of processors for the blocks, one processor for each block.
-    fn compute_blocks(&self, processors: &Vec<B::Processor<'_>>) -> Result<()> {
-        self.tengu
-            .backend()
-            .compute("compute", |mut compute| {
-                for (block, processor) in self.blocks.values().zip(processors) {
-                    block.compute(&mut compute, processor)?;
-                }
-                Ok(())
-            })
-            .map_err(Error::BackendError)
-    }
-
-    /// Reads out the results from the blocks in the graph.
-    ///
-    /// # Parameters
-    /// - `processors`: A vector of processors for the blocks, once processor for each block.
-    fn compute_readout(&self, processors: &Vec<B::Processor<'_>>) {
-        self.tengu.backend().readout("readout", |mut readout| {
-            for (block, processor) in self.blocks.values().zip(processors) {
-                block.readout(&mut readout, processor);
-            }
-        });
-    }
-
-    /// Computes the links in the graph.
-    ///
-    /// # Parameters
-    /// - `links`: A vector of source pairs for the links.
-    fn compute_links(&self, links: &Vec<(&dyn Source<B>, &dyn Source<B>)>) {
-        self.tengu.backend().propagate(|mut linker| {
-            for (from, to) in links {
-                from.copy(*to, &mut linker).expect("link endpoints should match");
-            }
-        });
     }
 }
 

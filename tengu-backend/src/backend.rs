@@ -4,11 +4,10 @@
 
 #![allow(async_fn_in_trait)]
 
-use std::rc::Rc;
+use std::future::Future;
+use std::sync::Arc;
 
-use crate::linker::Linker;
-use crate::readout::Readout;
-use crate::{Compute, IOType, Limits, Processor, Result, StorageType, Tensor};
+use crate::*;
 
 /// The `Backend` trait provides an interface for tensor computation backends. It defines various associated
 /// types and methods for creating and managing tensors, processors, compute instances, linkers, and readouts.
@@ -30,15 +29,19 @@ pub trait Backend {
     type Linker<'a>: Linker<'a, Backend = Self>;
 
     /// The underlying readout type.
-    type Readout<'a>: Readout<'a, Backend = Self>;
+    type Readout<'a>: Readout<Backend = Self>;
 
+    /// The underlying retrieve type.
+    type Retrieve: Retrieve<Backend = Self>;
+
+    /// The underliying limits type.
     type Limits: Limits<Backend = Self>;
 
     /// Asynchronously creates a new backend instance.
     ///
     /// # Returns
-    /// A result wrapping an `Rc` to the new backend instance.
-    async fn new() -> Result<Rc<Self>>;
+    /// A result wrapping an `Arc` to the new backend instance.
+    async fn new() -> Result<Arc<Self>>;
 
     /// Returns the limits of the backend.
     ///
@@ -46,7 +49,8 @@ pub trait Backend {
     /// The limits of the backend.
     fn limits(&self) -> Self::Limits;
 
-    /// Creates a processor to perform recursive computation of tensor expression ASTs.
+    /// Creates a processor that will be used to recursively process tensor AST and
+    /// convert them to the representation suitable for backend.
     ///
     /// # Returns
     /// A processor instance for the backend.
@@ -55,15 +59,28 @@ pub trait Backend {
     /// Propagates buffers through links using the provided callback.
     ///
     /// # Parameters
-    /// - `call`: A callback function that takes the linker as an argument.
+    /// - `call`: A callback function that takes the linker as an argument propagates the
+    ///   information through the link.
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>));
 
-    /// Reads out probes using the provided callback.
+    /// Updates staging data by reading out graph state into the staging buffers.
     ///
     /// # Parameters
     /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
-    /// - `call`: A callback function that takes the readout as an argument.
+    /// - `call`: A callback function that takes the readout as an argument and performs the
+    ///   readout operation.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
+
+    /// Retrieves the data from the staging buffers into probes.
+    ///
+    /// # Parameters
+    /// - `label`: A label for the retrieve operation, to be used by backend for debugging purposes.
+    /// - `call`: A callback function that takes the retrieve as an argument and performs the
+    ///   retrieve operation.
+    async fn retrieve<F, Fut>(&self, call: F) -> Result<()>
+    where
+        Fut: Future<Output = anyhow::Result<()>>,
+        F: FnOnce(Self::Retrieve) -> Fut;
 
     /// Computes the specified function on the backend using the provided callback.
     ///
@@ -72,7 +89,7 @@ pub trait Backend {
     /// - `call`: A callback function that takes the compute instance as an argument.
     fn compute<F>(&self, label: &str, call: F) -> Result<()>
     where
-        F: FnOnce(Self::Compute<'_>) -> Result<()>;
+        F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>;
 
     /// Creates a new zero-initialized tensor with the specified label and element count.
     ///
@@ -82,7 +99,7 @@ pub trait Backend {
     ///
     /// # Returns
     /// A new zero-initialized tensor.
-    fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T>;
+    fn zero<T: StorageType>(self: &Arc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T>;
 
     /// Creates a new tensor with the specified label and data.
     ///
@@ -92,14 +109,5 @@ pub trait Backend {
     ///
     /// # Returns
     /// A new tensor initialized with the given data.
-    fn tensor<T: IOType>(self: &Rc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T>;
-
-    /// Creates a new probe with the specified label and size.
-    ///
-    /// # Parameters
-    /// - `count`: The number of elements returned by the probe.
-    ///
-    /// # Returns
-    /// A new probe instance.
-    fn probe<T: StorageType>(self: &Rc<Self>, count: usize) -> <Self::Tensor<T> as Tensor<T>>::Probe;
+    fn tensor<T: IOType>(self: &Arc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T>;
 }

@@ -24,9 +24,9 @@ pub async fn main() {
     graph.add_block("main").unwrap().add_computation("m1", w1);
     //
     // Set up probes.
-    let mut p1 = graph.get_probe::<f32>("main/w1").unwrap();
+    let p1 = graph.get_probe::<f32>("main/w1").unwrap();
 
     // Run the computation and display the result twice.
-    graph.compute(1).unwrap();
+    graph.compute(1).await.unwrap();
     println!("{:?}", p1.retrieve().await.unwrap());
 }

@@ -7,4 +7,3 @@ edition = "2021"
 bytemuck = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
-num = "0.4.3"

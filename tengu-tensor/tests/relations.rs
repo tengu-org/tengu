@@ -16,9 +16,12 @@ async fn main() {
         .add_computation("rel", a.eq(b).cast::<u32>());
 
     // Set up probes.
-    let mut probe = graph.get_probe::<u32>("main/rel").unwrap();
+    let probe = graph.get_probe::<u32>("main/rel").unwrap();
 
-    // Run one step of computation and display the result.
-    graph.compute(1).unwrap();
-    assert_eq!(probe.retrieve().await.unwrap(), [1, 0, 1, 0]);
+    // Run one step of computation.
+    graph.compute(1).await.unwrap();
+
+    // Retrieve result and assert.
+    let data = probe.retrieve().await.unwrap().into_owned();
+    assert_eq!(data, [1, 0, 1, 0]);
 }

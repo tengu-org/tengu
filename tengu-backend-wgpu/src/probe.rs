@@ -1,70 +1,36 @@
-//! This module defines the `Probe` struct which is used for retrieving data from a GPU buffer in an asynchronous manner.
-//! It utilizes the WGPU backend and integrates with the `tengu_backend` crate to provide efficient data retrieval capabilities.
+//! Probe implementation for the WGPU backend. This module defines the `Probe` struct which implements
+//! the `Probe` trait from the `tengu_backend` crate. It is used for inspecting the data of a tensor in the WGPU backend.
 
-use std::{marker::PhantomData, rc::Rc};
-
+use flume::Receiver;
+use std::borrow::Cow;
 use tengu_backend::{Error, IOType, Result};
-use tengu_wgpu::Buffer;
 
-use crate::Backend;
-
-/// The `Probe` struct is used to manage and retrieve data from a GPU buffer.
-/// It holds a reference-counted handle to the staging buffer. During the readout operation it will
-/// be used as the destination target of the copy from the tensor associated with this probe.
+/// The `Probe` struct is used for inspecting the data of a tensor in the WGPU backend.
 pub struct Probe<T> {
-    backend: Rc<Backend>,
-    buffer: Buffer,
-    phantom: PhantomData<T>,
+    receiver: Receiver<Vec<T>>,
 }
 
 impl<T> Probe<T> {
     /// Creates a new `Probe` instance.
     ///
     /// # Parameters
-    /// - `backend`: A reference-counted handle to the backend.
-    /// - `buffer`: The stating buffer from which data will be retrieved.
+    /// - `receiver`: A receiver for the tensor data.
     ///
     /// # Returns
     /// A new instance of `Probe`.
-    pub fn new(backend: &Rc<Backend>, buffer: Buffer) -> Self {
-        Self {
-            backend: Rc::clone(backend),
-            buffer,
-            phantom: PhantomData,
-        }
-    }
-
-    /// Returns a reference to the GPU buffer.
-    ///
-    /// # Returns
-    /// A reference to the probe's staging buffer.
-    pub fn buffer(&self) -> &Buffer {
-        &self.buffer
+    pub fn new(receiver: Receiver<Vec<T>>) -> Self {
+        Self { receiver }
     }
 }
 
 impl<T: IOType> tengu_backend::Probe<T> for Probe<T> {
-    /// Asynchronously retrieves data from the GPU buffer and stores it into the provided vector.
-    ///
-    /// # Parameters
-    /// - `buffer`: A mutable reference to a vector where the retrieved data will be stored.
+    /// Asynchronously retrieves the data from the probe.
     ///
     /// # Returns
-    /// A result indicating success or failure of the operation.
-    async fn retrieve_to(&self, buffer: &mut Vec<T>) -> Result<()> {
-        let buffer_slice = self.buffer.slice(..);
-        let (sender, receiver) = flume::bounded(1);
-        buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
-        self.backend.device().poll(wgpu::Maintain::wait()).panic_on_timeout();
-        receiver
-            .recv_async()
-            .await
-            .map_err(|e| Error::WGPUError(e.into()))?
-            .map_err(|e| Error::WGPUError(e.into()))?;
-        let data = buffer_slice.get_mapped_range();
-        *buffer = bytemuck::cast_slice(&data).to_vec();
-        drop(data);
-        self.buffer.unmap();
-        Ok(())
+    /// A reference or an owned copy of the retrieved data if there are no errors. Otherwise,
+    /// an error is returned.
+    async fn retrieve(&self) -> Result<Cow<'_, [T]>> {
+        let buffer = self.receiver.recv_async().await.map_err(|e| Error::OSError(e.into()))?;
+        Ok(buffer.into())
     }
 }
