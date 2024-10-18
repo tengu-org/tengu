@@ -6,7 +6,7 @@ pub struct Probe<T> {
     receiver: Receiver<Vec<T>>,
 }
 
-impl<T> Probe<T> {
+impl<T: IOType> Probe<T> {
     pub fn new(receiver: Receiver<Vec<T>>) -> Self {
         Self { receiver }
     }

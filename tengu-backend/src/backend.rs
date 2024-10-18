@@ -4,7 +4,7 @@
 
 #![allow(async_fn_in_trait)]
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::linker::Linker;
 use crate::readout::Readout;
@@ -38,7 +38,7 @@ pub trait Backend {
     ///
     /// # Returns
     /// A result wrapping an `Rc` to the new backend instance.
-    async fn new() -> Result<Rc<Self>>;
+    async fn new() -> Result<Arc<Self>>;
 
     /// Returns the limits of the backend.
     ///
@@ -82,7 +82,7 @@ pub trait Backend {
     ///
     /// # Returns
     /// A new zero-initialized tensor.
-    fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T>;
+    fn zero<T: StorageType>(self: &Arc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T>;
 
     /// Creates a new tensor with the specified label and data.
     ///
@@ -92,14 +92,5 @@ pub trait Backend {
     ///
     /// # Returns
     /// A new tensor initialized with the given data.
-    fn tensor<T: IOType>(self: &Rc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T>;
-
-    /// Creates a new probe with the specified label and size.
-    ///
-    /// # Parameters
-    /// - `count`: The number of elements returned by the probe.
-    ///
-    /// # Returns
-    /// A new probe instance.
-    fn probe<T: StorageType>(self: &Rc<Self>, count: usize) -> <Self::Tensor<T> as Tensor<T>>::Probe;
+    fn tensor<T: IOType>(self: &Arc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T>;
 }

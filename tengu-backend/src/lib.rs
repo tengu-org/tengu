@@ -58,16 +58,16 @@
 //!
 //! - **Probe**: Allows for the asynchronous retrieval of data from tensors or other types that implement the `IOType` trait.
 
-pub mod backend;
-pub mod compute;
-pub mod error;
-pub mod limits;
-pub mod linker;
-pub mod probe;
-pub mod processor;
-pub mod readout;
-pub mod tensor;
-pub mod types;
+mod backend;
+mod compute;
+mod error;
+mod limits;
+mod linker;
+mod probe;
+mod processor;
+mod readout;
+mod tensor;
+mod types;
 
 pub use backend::Backend;
 pub use compute::Compute;

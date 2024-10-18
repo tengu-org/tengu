@@ -8,6 +8,7 @@ tengu-backend = { path = "../tengu-backend" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
+flume = { workspace = true }
 itertools = "0.13.0"
 
 [dev-dependencies]

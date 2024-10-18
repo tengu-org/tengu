@@ -6,7 +6,7 @@
 
 use as_any::Downcast;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::sync::Arc;
 use tengu_backend::{Backend, StorageType};
 
 use crate::expression::Source;
@@ -26,7 +26,7 @@ mod link;
 /// The `Graph` struct holds blocks and links, allowing for the construction and processing
 /// of complex computations.
 pub struct Graph<B: Backend> {
-    tengu: Rc<Tengu<B>>,
+    tengu: Arc<Tengu<B>>,
     blocks: HashMap<String, Block<B>>,
     links: Vec<Link>,
 }
@@ -41,9 +41,9 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A new `Graph` instance.
-    pub fn new(tengu: &Rc<Tengu<B>>) -> Self {
+    pub fn new(tengu: &Arc<Tengu<B>>) -> Self {
         Self {
-            tengu: Rc::clone(tengu),
+            tengu: Arc::clone(tengu),
             blocks: HashMap::new(),
             links: Vec::new(),
         }

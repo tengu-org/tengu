@@ -248,7 +248,7 @@ where
     fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
         match self {
             Self::Scalar(scalar) => processor.scalar(*scalar),
-            Self::Tensor(tensor) => processor.var(tensor.raw_tensor()),
+            Self::Tensor(tensor) => processor.var(tensor.raw()),
             Self::Binary(binary) => binary.visit(processor),
             Self::Cast(cast) => cast.visit(processor),
             Self::UnaryFn(unary_fn) => unary_fn.visit(processor),

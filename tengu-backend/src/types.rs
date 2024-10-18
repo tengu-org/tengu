@@ -65,9 +65,20 @@ impl IOType for i32 {}
 ///
 /// # Associated Types
 /// - `IOType`: Defines the type that will be used to transfer this storage type to the CPU.
-pub trait StorageType: Display + Copy + Clone + 'static {
+pub trait StorageType: Display + Copy + Clone + Default + Send + Sync + 'static
+where
+    Self::IOType: From<Self>,
+{
     /// The type that will be used to extract this storage type to CPU.
     type IOType: IOType;
+
+    /// Converts the storage type to the IO type.
+    ///
+    /// # Returns
+    /// The IO type corresponding to the storage type.
+    fn convert(self) -> Self::IOType {
+        self.into()
+    }
 }
 
 impl StorageType for f32 {

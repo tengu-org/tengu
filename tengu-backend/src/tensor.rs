@@ -43,5 +43,5 @@ pub trait Tensor<T: StorageType> {
     ///
     /// # Returns
     /// A reference to the probe bound to this tensor.
-    fn probe(&self) -> &Self::Probe;
+    fn probe(&self) -> Self::Probe;
 }

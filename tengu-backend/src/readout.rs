@@ -12,7 +12,9 @@
 //!
 //! - `Backend`: A trait representing the backend where computations are performed.
 
-use crate::Backend;
+#![allow(async_fn_in_trait)]
+
+use crate::{Backend, Result};
 
 /// A trait for handling readout operations in the Tengu backend.
 ///
@@ -35,5 +37,8 @@ pub trait Readout<'a> {
     /// # Parameters
     /// - `processor`: A reference to the processor used for finding tensors and performing
     ///   the readout process on them.
-    fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>);
+    ///
+    /// # Returns
+    /// A result indicating the success or failure of the readout process.
+    async fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()>;
 }

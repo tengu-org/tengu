@@ -8,7 +8,7 @@
 //! blocks, and doesn't share tensors with any other blocks. On some backends (like WGPU), a block
 //! will have its own memory and its own shader.
 
-use std::rc::Rc;
+use std::sync::Arc;
 use tengu_backend::{Backend, Compute, Processor, Readout, StorageType};
 
 use super::computation::Computation;
@@ -19,7 +19,7 @@ use crate::Tengu;
 ///
 /// The `Block` struct holds computations and provides methods to add, label, and process these computations.
 pub struct Block<B: Backend> {
-    tengu: Rc<Tengu<B>>,
+    tengu: Arc<Tengu<B>>,
     label: String,
     computations: Vec<Computation<B>>,
 }
@@ -33,9 +33,9 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Returns
     /// A new `Block` instance.
-    pub fn new(tengu: &Rc<Tengu<B>>, label: impl Into<String>) -> Self {
+    pub fn new(tengu: &Arc<Tengu<B>>, label: impl Into<String>) -> Self {
         Self {
-            tengu: Rc::clone(tengu),
+            tengu: Arc::clone(tengu),
             label: label.into(),
             computations: Vec::new(),
         }

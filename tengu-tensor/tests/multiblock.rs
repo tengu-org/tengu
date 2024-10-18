@@ -15,9 +15,12 @@ async fn main() {
     graph.link("fst/out", "snd/b").unwrap();
 
     // Set up probes.
-    let mut out = graph.get_probe::<f32>("snd/out").unwrap();
+    let out = graph.get_probe::<f32>("snd/out").unwrap();
 
-    // Run the computation and display the result twice.
+    // Run the computation twice.
     graph.compute(2).unwrap();
-    assert_eq!(out.retrieve().await.unwrap(), [3.0, 4.0, 5.0, 6.0]);
+
+    // Retrieve results and assert.
+    let out: Vec<_> = out.retrieve().await.unwrap().unwrap().into();
+    assert_eq!(out, [3.0, 4.0, 5.0, 6.0]);
 }

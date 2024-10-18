@@ -13,14 +13,15 @@
 //! - `tensor`: Defines the `Tensor` struct, which represents a tensor stored on the GPU and provides methods for tensor operations.
 //! - `limits`: Defines the `Limits` struct, which holds information about the limits of the WGPU device.
 
-pub mod backend;
-pub mod compute;
-pub mod limits;
-pub mod linker;
-pub mod probe;
-pub mod processor;
-pub mod readout;
-pub mod source;
-pub mod tensor;
+mod backend;
+mod compute;
+mod limits;
+mod linker;
+mod probe;
+mod processor;
+mod readout;
+mod source;
+mod stage;
+mod tensor;
 
 pub use backend::Backend;

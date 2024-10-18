@@ -2,10 +2,13 @@
 //! a buffer, a label, and a method to read data using an encoder. It is needed to treat tensor in
 //! uniform fashion, irrespecitve of their underlying storage type.
 
+use async_trait::async_trait;
+use tengu_backend::Result;
 use tengu_wgpu::{Buffer, Encoder};
 
 /// The `Source` trait represents a "type-less" tensor. It is implemented only but tensor and used
 /// by the `Processor` to handle all tensors in a uniform fashion.
+#[async_trait]
 pub trait Source {
     /// Returns a label that describes the source.
     ///
@@ -23,7 +26,7 @@ pub trait Source {
     ///
     /// # Parameters
     /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operation.
-    fn readout(&self, encoder: &mut Encoder);
+    async fn readout(&self, encoder: &mut Encoder) -> Result<()>;
 
     /// Returns the number of elements in the source.
     ///

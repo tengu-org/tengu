@@ -83,7 +83,7 @@ impl<'a> tengu_backend::Compute for Compute<'a> {
     ///
     /// # Returns
     /// A `Result` indicating whether the compute operations were successful or an error occurred.
-    fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> tengu_backend::Result<()> {
+    fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()> {
         let pipeline = self.pipeline(processor)?;
         let workgroup_count = processor.element_count() as u32 / WORKGROUP_SIZE + 1;
         self.pass.set_pipeline(&pipeline);

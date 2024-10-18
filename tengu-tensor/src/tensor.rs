@@ -5,7 +5,7 @@
 //! enabling tensor operations and shape management.
 
 use as_any::Downcast;
-use std::rc::Rc;
+use std::sync::Arc;
 use tengu_backend::{Backend, Linker, StorageType};
 
 use crate::expression::{Shape, Source};
@@ -19,8 +19,8 @@ use crate::{Error, Result};
 pub struct Tensor<T: StorageType, B: Backend + 'static> {
     count: usize,
     shape: Vec<usize>,
-    backend: Rc<B>,
-    tensor: Rc<B::Tensor<T>>,
+    backend: Arc<B>,
+    raw: Arc<B::Tensor<T>>,
 }
 
 impl<T: StorageType, B: Backend> Tensor<T, B> {
@@ -34,12 +34,12 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     ///
     /// # Returns
     /// A new `Tensor` instance.
-    pub fn new(backend: &Rc<B>, shape: Vec<usize>, count: usize, tensor: B::Tensor<T>) -> Self {
+    pub fn new(backend: &Arc<B>, shape: Vec<usize>, count: usize, tensor: B::Tensor<T>) -> Self {
         Self {
-            backend: Rc::clone(backend),
+            backend: Arc::clone(backend),
             count,
             shape,
-            tensor: tensor.into(),
+            raw: tensor.into(),
         }
     }
 
@@ -47,18 +47,17 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     ///
     /// # Returns
     /// A reference to the backend tensor.
-    pub fn raw_tensor(&self) -> &B::Tensor<T> {
-        &self.tensor
+    pub fn raw(&self) -> &B::Tensor<T> {
+        &self.raw
     }
 
     /// Returns a probe object for inspecting the tensor data.
     ///
     /// # Returns
     /// A `Probe` object for the tensor.
-    pub fn probe(&self) -> Probe<'_, T, B> {
+    pub fn probe(&self) -> Probe<T, B> {
         use tengu_backend::Tensor;
-        let raw_probe = self.tensor.probe();
-        Probe::new(raw_probe, self.count)
+        Probe::new(self.raw.probe())
     }
 
     /// Returns the label of the tensor.
@@ -67,7 +66,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// A string slice representing the tensor's label.
     pub fn label(&self) -> &str {
         use tengu_backend::Tensor;
-        self.tensor.label()
+        self.raw.label()
     }
 }
 
@@ -96,7 +95,7 @@ impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
     /// A result indicating the success of the operation.
     fn copy(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()> {
         let to = to.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
-        linker.copy_link(self.raw_tensor(), to.raw_tensor());
+        linker.copy_link(self.raw(), to.raw());
         Ok(())
     }
 }
@@ -132,8 +131,8 @@ impl<T: StorageType, B: Backend> Clone for Tensor<T, B> {
         Self {
             count: self.count,
             shape: self.shape.clone(),
-            backend: Rc::clone(&self.backend),
-            tensor: Rc::clone(&self.tensor),
+            backend: Arc::clone(&self.backend),
+            raw: Arc::clone(&self.raw),
         }
     }
 }
