@@ -22,6 +22,6 @@ async fn main() {
     graph.compute(1).await.unwrap();
 
     // Retrieve result and assert.
-    let data: Vec<_> = probe.retrieve().await.unwrap().unwrap().into();
+    let data = probe.retrieve().await.unwrap().into_owned();
     assert_eq!(data, [1, 0, 1, 0]);
 }

@@ -20,7 +20,7 @@ async fn main() {
     // Run the computation twice.
     graph
         .process(2, |i| async move {
-            let out: Vec<_> = out.retrieve().await.unwrap().unwrap().into();
+            let out = out.retrieve().await.unwrap().into_owned();
             match i {
                 0 => assert_eq!(out, [1.0, 1.0, 1.0, 1.0]),
                 1 => assert_eq!(out, [3.0, 4.0, 5.0, 6.0]),

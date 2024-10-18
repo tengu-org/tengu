@@ -72,7 +72,7 @@ impl Link {
     /// - `graph`: A reference to the computational graph.
     ///
     /// # Returns
-    /// A tuple containing references to the source and destination nodes.
+    /// A `RealizedLink` instance containing the source and destination nodes.
     ///
     /// # Panics
     /// Panics if the source or destination nodes do not exist in the graph.
@@ -85,20 +85,39 @@ impl Link {
 
 // NOTE: Realized link
 
+/// A struct representing a realized link between two sources in a computational graph.
+/// The difference between a `Link` and a `RealizedLink` is that the latter contains the actual
+/// source objects, while the former only holds the identifiers of the source and destination tensors.
 pub struct RealizedLink<'a, B: Backend> {
     from: &'a dyn Source<B>,
     to: &'a dyn Source<B>,
 }
 
 impl<'a, B: Backend> RealizedLink<'a, B> {
+    /// Creates a new `RealizedLink` instance between two sources in the graph.
+    ///
+    /// # Parameters
+    /// - `from`: The source node of the link.
+    /// - `to`: The destination node of the link.
+    ///
+    /// # Returns
+    /// A new `RealizedLink` instance.
     pub fn new(from: &'a dyn Source<B>, to: &'a dyn Source<B>) -> Self {
         Self { from, to }
     }
 
+    /// Returns a reference to the source node of the link.
+    ///
+    /// # Returns
+    /// A reference to the source node.
     pub fn from(&self) -> &dyn Source<B> {
         self.from
     }
 
+    /// Returns a reference to the destination node of the link.
+    ///
+    /// # Returns
+    /// A reference to the destination node.
     pub fn to(&self) -> &dyn Source<B> {
         self.to
     }

@@ -88,7 +88,7 @@ impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
     /// Copies the data from this tensor to another tensor using the provided linker.
     ///
     /// # Parameters
-    /// - `to`: The target tesnro to link to.
+    /// - `to`: The target tensor to link to.
     /// - `linker`: The linker to use for copying the link.
     ///
     /// # Returns

@@ -27,9 +27,9 @@ async fn main() {
     graph.compute(1).await.unwrap();
 
     // Retrieve the results and assert.
-    let add: Vec<_> = add.retrieve().await.unwrap().unwrap().into();
-    let sub: Vec<_> = sub.retrieve().await.unwrap().unwrap().into();
-    let exp: Vec<_> = exp.retrieve().await.unwrap().unwrap().into();
+    let add = add.retrieve().await.unwrap().into_owned();
+    let sub = sub.retrieve().await.unwrap().into_owned();
+    let exp = exp.retrieve().await.unwrap().into_owned();
     assert_eq!(add, [6.0, 13.0, 22.0, 33.0]);
     assert_eq!(sub, [9.8, 11.0, 12.5, 15.0]);
     assert_eq!(exp, [4, 9, 22, 56]);

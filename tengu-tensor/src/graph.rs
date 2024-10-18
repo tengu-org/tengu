@@ -41,6 +41,9 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Parameters
     /// - `times`: The number of iterations to perform.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
     pub async fn compute(&self, times: usize) -> Result<()> {
         let runner = Runner::new(self);
         for _ in 0..times {
@@ -54,6 +57,9 @@ impl<B: Backend + 'static> Graph<B> {
     /// # Parameters
     /// - `times`: The number of iterations to perform.
     /// - `call`: A callback function to call after each iteration.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
     pub async fn process<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
     where
         Fut: Future,
@@ -67,11 +73,15 @@ impl<B: Backend + 'static> Graph<B> {
         Ok(())
     }
 
-    /// Processes the graph for a specified number of iterations with a user-defined callback that determines whether to continue.
+    /// Processes the graph for a specified number of iterations with a user-defined callback that
+    /// determines whether to continue.
     ///
     /// # Parameters
     /// - `times`: The number of iterations to perform.
     /// - `call`: A callback function that returns a boolean indicating whether to continue processing.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
     pub async fn process_while<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
     where
         Fut: Future<Output = bool>,
