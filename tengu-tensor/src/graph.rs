@@ -73,6 +73,23 @@ impl<B: Backend + 'static> Graph<B> {
         Ok(())
     }
 
+    /// Processes the graph for a specified number of iterations with a user-defined callback.
+    ///
+    /// # Parameters
+    /// - `times`: The number of iterations to perform.
+    /// - `call`: A callback function to call after each iteration.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
+    pub async fn process(&self, times: usize, mut call: impl FnMut(usize)) -> Result<()> {
+        let runner = Runner::new(self);
+        for i in 0..times {
+            runner.step().await?;
+            call(i);
+        }
+        Ok(())
+    }
+
     /// Processes the graph for a specified number of iterations with a user-defined async callback that
     /// determines whether to continue.
     ///
@@ -91,6 +108,29 @@ impl<B: Backend + 'static> Graph<B> {
         for i in 0..times {
             runner.step().await?;
             if !call(i).await {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    /// Processes the graph for a specified number of iterations with a user-defined callback that
+    /// determines whether to continue.
+    ///
+    /// # Parameters
+    /// - `times`: The number of iterations to perform.
+    /// - `call`: A callback function that returns a boolean indicating whether to continue processing.
+    ///
+    /// # Returns
+    /// A result indicating success or failure.
+    pub async fn process_while<F>(&self, times: usize, mut call: F) -> Result<()>
+    where
+        F: FnMut(usize) -> bool,
+    {
+        let runner = Runner::new(self);
+        for i in 0..times {
+            runner.step().await?;
+            if !call(i) {
                 break;
             }
         }
