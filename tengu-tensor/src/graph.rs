@@ -52,7 +52,7 @@ impl<B: Backend + 'static> Graph<B> {
         Ok(())
     }
 
-    /// Processes the graph for a specified number of iterations with a user-defined callback.
+    /// Processes the graph for a specified number of iterations with a user-defined async callback.
     ///
     /// # Parameters
     /// - `times`: The number of iterations to perform.
@@ -60,7 +60,7 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A result indicating success or failure.
-    pub async fn process<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
+    pub async fn process_async<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
     where
         Fut: Future,
         F: FnMut(usize) -> Fut,
@@ -73,7 +73,7 @@ impl<B: Backend + 'static> Graph<B> {
         Ok(())
     }
 
-    /// Processes the graph for a specified number of iterations with a user-defined callback that
+    /// Processes the graph for a specified number of iterations with a user-defined async callback that
     /// determines whether to continue.
     ///
     /// # Parameters
@@ -82,7 +82,7 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A result indicating success or failure.
-    pub async fn process_while<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
+    pub async fn process_while_async<F, Fut>(&self, times: usize, mut call: F) -> Result<()>
     where
         Fut: Future<Output = bool>,
         F: FnMut(usize) -> Fut,
