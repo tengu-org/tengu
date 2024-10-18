@@ -78,14 +78,20 @@ impl<T: StorageType> Source for Tensor<T> {
     fn buffer(&self) -> &Buffer {
         &self.buffer
     }
-    /// Copies the tensor's data from the GPU buffer to the probe's buffer using the provided encoder.
+    /// Copies the tensor's data from the GPU buffer to the staging buffer using the provided encoder.
     ///
     /// # Parameters
     /// - `encoder`: The encoder used to copy the buffer data.
-    async fn readout(&self, encoder: &mut Encoder) -> Result<()> {
-        if let Some(stage) = &self.stage.get() {
+    fn readout(&self, encoder: &mut Encoder) {
+        if let Some(stage) = self.stage.get() {
             encoder.copy_buffer(&self.buffer, stage.buffer());
-            stage.readout().await?;
+        }
+    }
+
+    /// Retrieves staging buffer data from the GPU to CPU buffer.
+    async fn retrieve(&self) -> Result<()> {
+        if let Some(stage) = &self.stage.get() {
+            stage.retrieve().await?;
         }
         Ok(())
     }

@@ -20,6 +20,7 @@ mod linker;
 mod probe;
 mod processor;
 mod readout;
+mod retrieve;
 mod source;
 mod stage;
 mod tensor;

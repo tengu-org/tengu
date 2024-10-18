@@ -66,6 +66,7 @@ mod linker;
 mod probe;
 mod processor;
 mod readout;
+mod retrieve;
 mod tensor;
 mod types;
 
@@ -77,5 +78,6 @@ pub use linker::Linker;
 pub use probe::Probe;
 pub use processor::Processor;
 pub use readout::Readout;
+pub use retrieve::Retrieve;
 pub use tensor::Tensor;
 pub use types::{IOType, StorageType};

@@ -65,7 +65,7 @@ impl IOType for i32 {}
 ///
 /// # Associated Types
 /// - `IOType`: Defines the type that will be used to transfer this storage type to the CPU.
-pub trait StorageType: Display + Copy + Clone + Default + Send + Sync + 'static
+pub trait StorageType: Display + Copy + Clone + std::fmt::Debug + Default + Send + Sync + 'static
 where
     Self::IOType: From<Self>,
 {

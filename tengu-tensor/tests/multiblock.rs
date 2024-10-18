@@ -15,12 +15,18 @@ async fn main() {
     graph.link("fst/out", "snd/b").unwrap();
 
     // Set up probes.
-    let out = graph.get_probe::<f32>("snd/out").unwrap();
+    let out = &graph.get_probe::<f32>("snd/out").unwrap();
 
     // Run the computation twice.
-    graph.compute(2).await.unwrap();
-
-    // Retrieve results and assert.
-    let out: Vec<_> = out.retrieve().await.unwrap().unwrap().into();
-    assert_eq!(out, [3.0, 4.0, 5.0, 6.0]);
+    graph
+        .process(2, |i| async move {
+            let out: Vec<_> = out.retrieve().await.unwrap().unwrap().into();
+            match i {
+                0 => assert_eq!(out, [1.0, 1.0, 1.0, 1.0]),
+                1 => assert_eq!(out, [3.0, 4.0, 5.0, 6.0]),
+                _ => (),
+            }
+        })
+        .await
+        .unwrap();
 }

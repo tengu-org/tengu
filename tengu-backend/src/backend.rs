@@ -7,9 +7,7 @@
 use std::future::Future;
 use std::sync::Arc;
 
-use crate::linker::Linker;
-use crate::readout::Readout;
-use crate::{Compute, IOType, Limits, Processor, Result, StorageType, Tensor};
+use crate::*;
 
 /// The `Backend` trait provides an interface for tensor computation backends. It defines various associated
 /// types and methods for creating and managing tensors, processors, compute instances, linkers, and readouts.
@@ -31,8 +29,12 @@ pub trait Backend {
     type Linker<'a>: Linker<'a, Backend = Self>;
 
     /// The underlying readout type.
-    type Readout: Readout<Backend = Self>;
+    type Readout<'a>: Readout<Backend = Self>;
 
+    /// The underlying readout type.
+    type Retrieve: Retrieve<Backend = Self>;
+
+    /// The underliying limits type.
     type Limits: Limits<Backend = Self>;
 
     /// Asynchronously creates a new backend instance.
@@ -59,15 +61,22 @@ pub trait Backend {
     /// - `call`: A callback function that takes the linker as an argument.
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>));
 
+    /// Updates probe data by reading out graph state.
+    ///
+    /// # Parameters
+    /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
+    /// - `call`: A callback function that takes the readout as an argument.
+    fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
+
     /// Reads out probes using the provided callback.
     ///
     /// # Parameters
     /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
     /// - `call`: A callback function that takes the readout as an argument.
-    async fn readout<F, Fut>(&self, label: &str, call: F) -> Result<()>
+    async fn retrieve<F, Fut>(&self, call: F) -> Result<()>
     where
-        Fut: Future<Output = anyhow::Result<<Self::Readout as Readout>::Output>>,
-        F: FnOnce(Self::Readout) -> Fut;
+        Fut: Future<Output = anyhow::Result<()>>,
+        F: FnOnce(Self::Retrieve) -> Fut;
 
     /// Computes the specified function on the backend using the provided callback.
     ///

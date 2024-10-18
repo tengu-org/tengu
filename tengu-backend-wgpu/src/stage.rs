@@ -56,7 +56,7 @@ impl<T: IOType> Stage<T> {
     ///
     /// # Returns
     /// A result indicating success or failure of the operation.
-    pub async fn readout(&self) -> Result<()> {
+    pub async fn retrieve(&self) -> Result<()> {
         let buffer_slice = self.buffer.slice(..);
         let (sender, receiver) = flume::bounded(1);
         buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());

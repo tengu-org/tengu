@@ -2,10 +2,10 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Readout error: {0}")]
-    ReadoutError(#[source] anyhow::Error),
+    #[error("Retrieve error: {0}")]
+    RetrieveError(#[source] anyhow::Error),
     #[error("Compute error: {0}")]
-    ComputeError(#[from] anyhow::Error),
+    ComputeError(#[source] anyhow::Error),
     #[error("WGPU error: {0}")]
     WGPUError(#[source] anyhow::Error),
     #[error("OS error: {0}")]

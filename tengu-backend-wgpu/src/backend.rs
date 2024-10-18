@@ -7,7 +7,7 @@
 
 use std::future::Future;
 use std::sync::Arc;
-use tengu_backend::{Error, IOType, Readout, Result, StorageType};
+use tengu_backend::{Error, IOType, Result, StorageType};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 use tracing::trace;
 
@@ -16,6 +16,7 @@ use crate::limits::Limits as WGPULimits;
 use crate::linker::Linker as WGPULinker;
 use crate::processor::Processor as WGPUProcessor;
 use crate::readout::Readout as WGPUReadout;
+use crate::retrieve::Retrieve as WGPURetrieve;
 use crate::tensor::Tensor as WGPUTensor;
 
 /// The `Backend` struct is responsible for managing the WGPU device and providing methods to create and manipulate GPU resources.
@@ -53,7 +54,8 @@ impl tengu_backend::Backend for Backend {
     type Compute<'a> = WGPUCompute<'a>;
     type Processor<'a> = WGPUProcessor<'a>;
     type Linker<'a> = WGPULinker<'a>;
-    type Readout = WGPUReadout;
+    type Readout<'a> = WGPUReadout<'a>;
+    type Retrieve = WGPURetrieve;
     type Limits = WGPULimits;
 
     /// Creates a new `Backend` instance asynchronously.
@@ -110,6 +112,7 @@ impl tengu_backend::Backend for Backend {
             .map_err(|e| Error::ComputeError(e.into()))?
             .finish();
         self.device.submit(commands);
+        trace!("Submitted compute commands");
         Ok(())
     }
 
@@ -119,21 +122,24 @@ impl tengu_backend::Backend for Backend {
     /// - `label`: A label for the readout operations.
     /// - `call`: A function that takes a `Readout` and performs data readout from probes.
 
-    async fn readout<F, Fut>(&self, label: &str, call: F) -> Result<()>
-    where
-        Fut: Future<Output = anyhow::Result<<Self::Readout as Readout>::Output>>,
-        F: FnOnce(Self::Readout) -> Fut,
-    {
+    fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>)) {
         trace!("Executing readout step...");
         let commands = self
             .device
             .encoder(label)
-            .readout(|encoder| async { call(WGPUReadout::new(encoder)).await })
-            .await
-            .map_err(|e| Error::ReadoutError(e.into()))?
+            .readout(|encoder| call(WGPUReadout::new(encoder)))
             .finish();
         self.device.submit(commands);
-        Ok(())
+        trace!("Submitted readout commands");
+    }
+
+    async fn retrieve<F, Fut>(&self, call: F) -> Result<()>
+    where
+        Fut: Future<Output = anyhow::Result<()>>,
+        F: FnOnce(Self::Retrieve) -> Fut,
+    {
+        trace!("Executing retrieve step...");
+        call(WGPURetrieve).await.map_err(Error::RetrieveError)
     }
 
     /// Creates a new tensor with the provided data.

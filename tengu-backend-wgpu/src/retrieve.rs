@@ -1,32 +1,16 @@
 //! This module defines the `Readout` struct which implements the `Readout` trait from the `tengu_backend` crate.
 //! It is used for committing readout operations using an encoder provided by `tengu_wgpu`.
 
-use tengu_backend::Backend;
-use tengu_wgpu::Encoder;
+use tengu_backend::{Backend, Result};
 use tracing::trace;
 
 use crate::Backend as WGPUBackend;
 
 /// The `Readout` struct is used to perform readout operations in the WGPU backend.
 /// It holds a mutable reference to an `Encoder` which is used to encode the readout operations.
-pub struct Readout<'a> {
-    encoder: &'a mut Encoder,
-}
+pub struct Retrieve;
 
-impl<'a> Readout<'a> {
-    /// Creates a new `Readout` instance.
-    ///
-    /// # Parameters
-    /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operations.
-    ///
-    /// # Returns
-    /// A new instance of `Readout`.
-    pub fn new(encoder: &'a mut Encoder) -> Self {
-        Self { encoder }
-    }
-}
-
-impl<'a> tengu_backend::Readout for Readout<'a> {
+impl tengu_backend::Retrieve for Retrieve {
     type Backend = WGPUBackend;
 
     /// Commits the readout operations by iterating over the sources of the processor
@@ -34,10 +18,11 @@ impl<'a> tengu_backend::Readout for Readout<'a> {
     ///
     /// # Parameters
     /// - `processor`: A reference to the processor from the backend which provides the sources.
-    fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) {
-        trace!("Executing readout operation...");
+    async fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()> {
+        trace!("Comitting readout operation...");
         for source in processor.sources() {
-            source.readout(self.encoder);
+            source.retrieve().await?;
         }
+        Ok(())
     }
 }

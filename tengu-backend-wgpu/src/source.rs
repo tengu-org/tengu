@@ -26,7 +26,13 @@ pub trait Source {
     ///
     /// # Parameters
     /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operation.
-    async fn readout(&self, encoder: &mut Encoder) -> Result<()>;
+    fn readout(&self, encoder: &mut Encoder);
+
+    /// Performs a retrieval operation using the provided encoder.
+    ///
+    /// # Returns
+    /// A `Result` indicating whether the retrieval was successful or an error occurred.
+    async fn retrieve(&self) -> Result<()>;
 
     /// Returns the number of elements in the source.
     ///

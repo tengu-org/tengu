@@ -76,12 +76,30 @@ impl Link {
     ///
     /// # Panics
     /// Panics if the source or destination nodes do not exist in the graph.
-    pub(crate) fn realize<'a, B: Backend + 'static>(
-        &self,
-        graph: &'a Graph<B>,
-    ) -> (&'a dyn Source<B>, &'a dyn Source<B>) {
+    pub(crate) fn realize<'a, B: Backend + 'static>(&self, graph: &'a Graph<B>) -> RealizedLink<'a, B> {
         let from = graph.get_source(&self.from).expect("link from source should exist");
         let to = graph.get_source(&self.to).expect("link to source should exist");
-        (from, to)
+        RealizedLink::new(from, to)
+    }
+}
+
+// NOTE: Realized link
+
+pub struct RealizedLink<'a, B: Backend> {
+    from: &'a dyn Source<B>,
+    to: &'a dyn Source<B>,
+}
+
+impl<'a, B: Backend> RealizedLink<'a, B> {
+    pub fn new(from: &'a dyn Source<B>, to: &'a dyn Source<B>) -> Self {
+        Self { from, to }
+    }
+
+    pub fn from(&self) -> &dyn Source<B> {
+        self.from
+    }
+
+    pub fn to(&self) -> &dyn Source<B> {
+        self.to
     }
 }

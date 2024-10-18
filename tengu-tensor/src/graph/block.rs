@@ -9,7 +9,7 @@
 //! will have its own memory and its own shader.
 
 use std::sync::Arc;
-use tengu_backend::{Backend, Compute, Processor, Readout, StorageType};
+use tengu_backend::{Backend, Compute, Processor, Readout, Retrieve, StorageType};
 
 use super::computation::Computation;
 use crate::expression::{Expression, Shape, Source};
@@ -75,7 +75,7 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Returns
     /// A `Result` indicating whether the computation was successful or an error occurred.
-    pub fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) -> Result<()> {
+    pub(crate) fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) -> Result<()> {
         compute.run(processor).map_err(Error::BackendError)
     }
 
@@ -85,8 +85,18 @@ impl<B: Backend + 'static> Block<B> {
     /// # Parameters
     /// - `readout`: A mutable reference to the readout object.
     /// - `processor`: A reference to the processor.
-    pub async fn readout(&self, readout: &mut B::Readout, processor: &B::Processor<'_>) -> Result<()> {
-        readout.run(processor).await.map_err(Error::BackendError)
+    pub(crate) fn readout(&self, readout: &mut B::Readout<'_>, processor: &B::Processor<'_>) {
+        readout.run(processor);
+    }
+
+    /// Executes the tensor retrieve operation for all tensors in the block which have a probe
+    /// associated with them.
+    ///
+    /// # Parameters
+    /// - `retrieve`: A mutable reference to the readout object.
+    /// - `processor`: A reference to the processor.
+    pub(crate) async fn retrieve(&self, retrieve: &mut B::Retrieve, processor: &B::Processor<'_>) -> Result<()> {
+        retrieve.run(processor).await.map_err(Error::BackendError)
     }
 
     /// Retrieves a source by its label from the computations in the block.

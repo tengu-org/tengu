@@ -84,11 +84,13 @@ impl<'a> tengu_backend::Compute for Compute<'a> {
     /// # Returns
     /// A `Result` indicating whether the compute operations were successful or an error occurred.
     fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()> {
+        trace!("Running compute...");
         let pipeline = self.pipeline(processor)?;
         let workgroup_count = processor.element_count() as u32 / WORKGROUP_SIZE + 1;
         self.pass.set_pipeline(&pipeline);
         self.pass.set_bind_group(0, pipeline.bind_group(), &[]);
         self.pass.dispatch_workgroups(workgroup_count, 1, 1);
+        trace!("Dispatched workgroups");
         Ok(())
     }
 }

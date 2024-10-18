@@ -76,14 +76,14 @@
 //! shape unifications, and backend initializations, and the error types provide detailed information to
 //! help diagnose and resolve issues.
 
-pub mod builder;
-pub mod error;
-pub mod expression;
-pub mod graph;
-pub mod probe;
-pub mod tengu;
-pub mod tensor;
-pub mod unify;
+mod builder;
+mod error;
+mod expression;
+mod graph;
+mod probe;
+mod tengu;
+mod tensor;
+mod unify;
 
 pub use error::{Error, Result};
 pub use tengu::Tengu;
