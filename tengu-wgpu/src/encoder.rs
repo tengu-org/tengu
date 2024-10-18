@@ -56,7 +56,7 @@ impl Encoder {
     /// - `call`: A callback function to execute within the compute pass.
     ///
     /// # Returns
-    /// The updated `Encoder` instance.
+    /// The updated `Encoder` instance. If an error occurs during the compute pass, it is returned as an `Error`.
     pub fn pass<F>(mut self, label: &str, call: F) -> Result<Self>
     where
         F: FnOnce(wgpu::ComputePass) -> anyhow::Result<()>,
@@ -65,7 +65,7 @@ impl Encoder {
             label: Some(label),
             timestamp_writes: None,
         });
-        trace!("Executing compute pass...");
+        trace!("Executing compute pass");
         call(compute_pass).map_err(Error::ComputeError)?;
         Ok(self)
     }
@@ -78,7 +78,7 @@ impl Encoder {
     /// # Returns
     /// The updated `Encoder` instance.
     pub fn readout(mut self, call: impl FnOnce(&mut Encoder)) -> Self {
-        trace!("Executing readout...");
+        trace!("Executing readout");
         call(&mut self);
         self
     }
