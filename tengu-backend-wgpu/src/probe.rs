@@ -14,11 +14,7 @@ impl<T> Probe<T> {
 
 impl<T: IOType> tengu_backend::Probe<T> for Probe<T> {
     async fn retrieve(&self) -> Result<Cow<'_, [T]>> {
-        let buffer = self
-            .receiver
-            .recv_async()
-            .await
-            .map_err(|e| Error::BackendError(e.into()))?;
+        let buffer = self.receiver.recv_async().await.map_err(|e| Error::OSError(e.into()))?;
         Ok(buffer.into())
     }
 }

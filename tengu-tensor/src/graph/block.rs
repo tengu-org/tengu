@@ -13,7 +13,7 @@ use tengu_backend::{Backend, Compute, Processor, Readout, StorageType};
 
 use super::computation::Computation;
 use crate::expression::{Expression, Shape, Source};
-use crate::Tengu;
+use crate::{Error, Result, Tengu};
 
 /// A struct representing a computational block in the Tengu framework.
 ///
@@ -75,8 +75,8 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Returns
     /// A `Result` indicating whether the computation was successful or an error occurred.
-    pub fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) -> tengu_backend::Result<()> {
-        compute.commit(processor)
+    pub fn compute(&self, compute: &mut B::Compute<'_>, processor: &B::Processor<'_>) -> Result<()> {
+        compute.run(processor).map_err(Error::BackendError)
     }
 
     /// Executes the tensor readout operation for all tensors in the block which have a probe
@@ -85,8 +85,8 @@ impl<B: Backend + 'static> Block<B> {
     /// # Parameters
     /// - `readout`: A mutable reference to the readout object.
     /// - `processor`: A reference to the processor.
-    pub fn readout(&self, readout: &mut B::Readout<'_>, processor: &B::Processor<'_>) {
-        readout.commit(processor);
+    pub async fn readout(&self, readout: &mut B::Readout, processor: &B::Processor<'_>) -> Result<()> {
+        readout.run(processor).await.map_err(Error::BackendError)
     }
 
     /// Retrieves a source by its label from the computations in the block.

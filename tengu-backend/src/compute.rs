@@ -20,5 +20,5 @@ pub trait Compute {
     ///
     /// # Returns
     /// A `Result` indicating whether the computation was successful or an error occurred.
-    fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()>;
+    fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()>;
 }

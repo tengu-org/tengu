@@ -24,7 +24,7 @@ async fn main() {
     let exp = graph.get_probe::<u32>("main/explog").unwrap();
 
     // Run the computation.
-    graph.compute(1).unwrap();
+    graph.compute(1).await.unwrap();
 
     // Retrieve the results and assert.
     let add: Vec<_> = add.retrieve().await.unwrap().unwrap().into();

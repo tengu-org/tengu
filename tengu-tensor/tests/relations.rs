@@ -19,7 +19,7 @@ async fn main() {
     let probe = graph.get_probe::<u32>("main/rel").unwrap();
 
     // Run one step of computation.
-    graph.compute(1).unwrap();
+    graph.compute(1).await.unwrap();
 
     // Retrieve result and assert.
     let data: Vec<_> = probe.retrieve().await.unwrap().unwrap().into();

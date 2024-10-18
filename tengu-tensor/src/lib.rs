@@ -60,7 +60,7 @@
 //!     let mut add = graph.get_probe::<f32>("main/a").unwrap();
 //!
 //!     // Run the computation and display the result.
-//!     graph.compute(1);
+//!     graph.compute(1).await;
 //!     println!("{:?}", add.retrieve().await.unwrap());
 //! }
 //! ```

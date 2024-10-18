@@ -7,7 +7,7 @@
 use as_any::Downcast;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tengu_backend::{Backend, StorageType};
+use tengu_backend::{Backend, Readout, StorageType};
 
 use crate::expression::Source;
 use crate::probe::Probe;
@@ -152,12 +152,12 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Parameters
     /// - `times`: The number of iterations to perform.
-    pub fn compute(&self, times: usize) -> Result<()> {
+    pub async fn compute(&self, times: usize) -> Result<()> {
         let processors: Vec<_> = self.blocks.values().map(|block| block.processor()).collect();
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
         for _ in 0..times {
             self.compute_blocks(&processors)?;
-            self.compute_readout(&processors);
+            self.compute_readout(&processors).await?;
             self.compute_links(&links);
         }
         Ok(())
@@ -168,7 +168,7 @@ impl<B: Backend + 'static> Graph<B> {
     /// # Parameters
     /// - `times`: The number of iterations to perform.
     /// - `call`: A callback function to call after each iteration.
-    pub fn process<F>(&self, times: usize, mut call: F) -> Result<()>
+    pub async fn process<F>(&self, times: usize, mut call: F) -> Result<()>
     where
         F: FnMut(),
     {
@@ -176,7 +176,7 @@ impl<B: Backend + 'static> Graph<B> {
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
         for _ in 0..times {
             self.compute_blocks(&processors)?;
-            self.compute_readout(&processors);
+            self.compute_readout(&processors).await?;
             self.compute_links(&links);
             call();
         }
@@ -188,7 +188,7 @@ impl<B: Backend + 'static> Graph<B> {
     /// # Parameters
     /// - `times`: The number of iterations to perform.
     /// - `call`: A callback function that returns a boolean indicating whether to continue processing.
-    pub fn process_while<F>(&self, times: usize, mut call: F) -> Result<()>
+    pub async fn process_while<F>(&self, times: usize, mut call: F) -> Result<()>
     where
         F: FnMut() -> bool,
     {
@@ -196,7 +196,7 @@ impl<B: Backend + 'static> Graph<B> {
         let links: Vec<_> = self.links.iter().map(|link| link.realize(self)).collect();
         for _ in 0..times {
             self.compute_blocks(&processors)?;
-            self.compute_readout(&processors);
+            self.compute_readout(&processors).await?;
             self.compute_links(&links);
             if !call() {
                 break;
@@ -225,12 +225,17 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Parameters
     /// - `processors`: A vector of processors for the blocks, once processor for each block.
-    fn compute_readout(&self, processors: &Vec<B::Processor<'_>>) {
-        self.tengu.backend().readout("readout", |mut readout| {
-            for (block, processor) in self.blocks.values().zip(processors) {
-                block.readout(&mut readout, processor);
-            }
-        });
+    async fn compute_readout(&self, processors: &Vec<B::Processor<'_>>) -> Result<()> {
+        self.tengu
+            .backend()
+            .readout("readout", |mut readout| async move {
+                for (block, processor) in self.blocks.values().zip(processors) {
+                    block.readout(&mut readout, processor).await?;
+                }
+                Ok(readout.finish())
+            })
+            .await
+            .map_err(Error::BackendError)
     }
 
     /// Computes the links in the graph.

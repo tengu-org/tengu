@@ -4,6 +4,7 @@
 
 #![allow(async_fn_in_trait)]
 
+use std::future::Future;
 use std::sync::Arc;
 
 use crate::linker::Linker;
@@ -30,7 +31,7 @@ pub trait Backend {
     type Linker<'a>: Linker<'a, Backend = Self>;
 
     /// The underlying readout type.
-    type Readout<'a>: Readout<'a, Backend = Self>;
+    type Readout: Readout<Backend = Self>;
 
     type Limits: Limits<Backend = Self>;
 
@@ -63,7 +64,10 @@ pub trait Backend {
     /// # Parameters
     /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
     /// - `call`: A callback function that takes the readout as an argument.
-    fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
+    async fn readout<F, Fut>(&self, label: &str, call: F) -> Result<()>
+    where
+        Fut: Future<Output = anyhow::Result<<Self::Readout as Readout>::Output>>,
+        F: FnOnce(Self::Readout) -> Fut;
 
     /// Computes the specified function on the backend using the provided callback.
     ///
@@ -72,7 +76,7 @@ pub trait Backend {
     /// - `call`: A callback function that takes the compute instance as an argument.
     fn compute<F>(&self, label: &str, call: F) -> Result<()>
     where
-        F: FnOnce(Self::Compute<'_>) -> Result<()>;
+        F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>;
 
     /// Creates a new zero-initialized tensor with the specified label and element count.
     ///

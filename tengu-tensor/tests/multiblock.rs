@@ -18,7 +18,7 @@ async fn main() {
     let out = graph.get_probe::<f32>("snd/out").unwrap();
 
     // Run the computation twice.
-    graph.compute(2).unwrap();
+    graph.compute(2).await.unwrap();
 
     // Retrieve results and assert.
     let out: Vec<_> = out.retrieve().await.unwrap().unwrap().into();

@@ -25,6 +25,8 @@
 //!   - `copy_buffer`: Copies data from a source buffer to a destination buffer.
 //!   - `finish`: Finalizes the command buffer and returns it for submission to the GPU.
 
+use std::future::Future;
+
 use tracing::trace;
 
 use crate::{Buffer, Device, Error, Result};
@@ -77,10 +79,13 @@ impl Encoder {
     ///
     /// # Returns
     /// The updated `Encoder` instance.
-    pub fn readout(mut self, call: impl FnOnce(&mut Encoder)) -> Self {
+    pub async fn readout<F, Fut>(self, call: F) -> Result<Self>
+    where
+        Fut: Future<Output = anyhow::Result<Self>>,
+        F: FnOnce(Encoder) -> Fut,
+    {
         trace!("Executing readout...");
-        call(&mut self);
-        self
+        call(self).await.map_err(Error::ReadoutError)
     }
 
     /// Copies the contents of one buffer to another.

@@ -28,9 +28,12 @@ use crate::{Backend, Result};
 ///
 /// # Methods
 /// - `commit`: Runs the readout process using the specified processor.
-pub trait Readout<'a> {
+pub trait Readout {
     /// The type of the backend.
     type Backend: Backend;
+
+    /// The type of the output of the commit operation.
+    type Output;
 
     /// Runs the readout process using the specified processor to locate tensors.
     ///
@@ -40,5 +43,7 @@ pub trait Readout<'a> {
     ///
     /// # Returns
     /// A result indicating the success or failure of the readout process.
-    async fn commit(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()>;
+    async fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()>;
+
+    fn finish(self) -> Self::Output;
 }

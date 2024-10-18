@@ -1,11 +1,5 @@
 [workspace]
-members = [
-    "tengu-wgpu",
-    "tengu-tensor",
-    "tengu-backend",
-    "tengu-backend-wgpu",
-    "tengu-backend-cpu",
-]
+members = ["tengu-wgpu", "tengu-tensor", "tengu-backend", "tengu-backend-wgpu"]
 resolver = "2"
 
 [workspace.dependencies]

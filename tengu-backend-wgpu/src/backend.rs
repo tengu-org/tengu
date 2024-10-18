@@ -5,8 +5,9 @@
 //! executing GPU operations. It provides methods to create tensors, perform compute operations, propagate data, and read out data
 //! from the GPU.
 
+use std::future::Future;
 use std::sync::Arc;
-use tengu_backend::{Error, IOType, Result, StorageType};
+use tengu_backend::{Error, IOType, Readout, Result, StorageType};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 use tracing::trace;
 
@@ -52,7 +53,7 @@ impl tengu_backend::Backend for Backend {
     type Compute<'a> = WGPUCompute<'a>;
     type Processor<'a> = WGPUProcessor<'a>;
     type Linker<'a> = WGPULinker<'a>;
-    type Readout<'a> = WGPUReadout<'a>;
+    type Readout = WGPUReadout;
     type Limits = WGPULimits;
 
     /// Creates a new `Backend` instance asynchronously.
@@ -99,16 +100,14 @@ impl tengu_backend::Backend for Backend {
     /// - `call`: A function that takes a `Compute` and performs compute operations.
     fn compute<F>(&self, label: &str, call: F) -> Result<()>
     where
-        F: FnOnce(Self::Compute<'_>) -> Result<()>,
+        F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>,
     {
         trace!("Executing compute step...");
         let commands = self
             .device
             .encoder(label)
-            .pass(label, |pass| {
-                call(WGPUCompute::new(&self.device, label, pass)).map_err(Into::into)
-            })
-            .map_err(|e| Error::WGPUError(e.into()))?
+            .pass(label, |pass| call(WGPUCompute::new(&self.device, label, pass)))
+            .map_err(|e| Error::ComputeError(e.into()))?
             .finish();
         self.device.submit(commands);
         Ok(())
@@ -119,14 +118,22 @@ impl tengu_backend::Backend for Backend {
     /// # Parameters
     /// - `label`: A label for the readout operations.
     /// - `call`: A function that takes a `Readout` and performs data readout from probes.
-    fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>)) {
+
+    async fn readout<F, Fut>(&self, label: &str, call: F) -> Result<()>
+    where
+        Fut: Future<Output = anyhow::Result<<Self::Readout as Readout>::Output>>,
+        F: FnOnce(Self::Readout) -> Fut,
+    {
         trace!("Executing readout step...");
         let commands = self
             .device
             .encoder(label)
-            .readout(|encoder| call(WGPUReadout::new(encoder)))
+            .readout(|encoder| async { call(WGPUReadout::new(encoder)).await })
+            .await
+            .map_err(|e| Error::ReadoutError(e.into()))?
             .finish();
         self.device.submit(commands);
+        Ok(())
     }
 
     /// Creates a new tensor with the provided data.

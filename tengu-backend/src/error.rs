@@ -2,10 +2,14 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("Readout error: {0}")]
+    ReadoutError(#[source] anyhow::Error),
+    #[error("Compute error: {0}")]
+    ComputeError(#[from] anyhow::Error),
     #[error("WGPU error: {0}")]
     WGPUError(#[source] anyhow::Error),
-    #[error("Backend error: {0}")]
-    BackendError(#[source] anyhow::Error),
+    #[error("OS error: {0}")]
+    OSError(#[source] anyhow::Error),
     #[error("Storage buffer limit reached: {0} buffers used")]
     BufferLimitReached(usize),
 }
