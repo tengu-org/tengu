@@ -9,12 +9,12 @@ use std::borrow::Cow;
 use crate::{IOType, Result};
 
 /// The `Probe` trait defines an interface for retrieving data asynchronously
-/// from the associated tensor. The retrieved data is stored in the provided buffer.
+/// from the associated tensor.
 ///
 /// # Type Parameters
 /// - `T`: The type of data to be retrieved, which must implement the `IOType` trait.
 pub trait Probe<T: IOType> {
-    /// Asynchronously retrieves the data from the probe and stores it in the provided buffer.
+    /// Asynchronously retrieves the data from the probe.
     ///
     /// # Returns
     /// A reference or an owned copy of the retrieved data if there are no errors. Otherwise,

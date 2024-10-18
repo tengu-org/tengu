@@ -14,7 +14,7 @@ pub trait Processor<'a> {
     /// The type of the backend that this processor interacts with.
     type Backend: Backend;
 
-    /// The type of the representation produced and accepted by this processor.    type Repr;
+    /// The type of the representation produced and accepted by this processor.
     type Repr;
 
     /// Processes a tensor variable and produces its representation.
@@ -56,7 +56,7 @@ pub trait Processor<'a> {
     /// A new representation after applying the binary operation.
     fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, symbol: &str) -> Self::Repr;
 
-    /// Casts a representation to a specified type.
+    /// Creates a representation of a type cast applyied to a tensor expression.
     ///
     /// # Parameters
     /// - `inner`: The inner representation to be cast.
@@ -66,7 +66,7 @@ pub trait Processor<'a> {
     /// A new representation after casting.
     fn cast(&mut self, inner: Self::Repr, ty: &str) -> Self::Repr;
 
-    /// Processes a statement that assigns an expression to an output.
+    /// Creates a representation of a statement that assigns an expression to an output.
     ///
     /// # Parameters
     /// - `out`: The output representation.

@@ -4,7 +4,6 @@
 //! values from tensors. It provides functionalities to turn probing on and off and to retrieve
 //! tensor data asynchronously.
 
-use num::Zero;
 use std::borrow::Cow;
 use tengu_backend::{Backend, IOType, StorageType, Tensor};
 
@@ -20,10 +19,7 @@ pub struct Probe<T: StorageType, B: Backend> {
     on: bool,
 }
 
-impl<T: StorageType, B: Backend> Probe<T, B>
-where
-    T::IOType: Zero,
-{
+impl<T: StorageType, B: Backend> Probe<T, B> {
     /// Creates a new `Probe` instance.
     ///
     /// # Parameters

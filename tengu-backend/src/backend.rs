@@ -31,7 +31,7 @@ pub trait Backend {
     /// The underlying readout type.
     type Readout<'a>: Readout<Backend = Self>;
 
-    /// The underlying readout type.
+    /// The underlying retrieve type.
     type Retrieve: Retrieve<Backend = Self>;
 
     /// The underliying limits type.
@@ -40,7 +40,7 @@ pub trait Backend {
     /// Asynchronously creates a new backend instance.
     ///
     /// # Returns
-    /// A result wrapping an `Rc` to the new backend instance.
+    /// A result wrapping an `Arc` to the new backend instance.
     async fn new() -> Result<Arc<Self>>;
 
     /// Returns the limits of the backend.
@@ -49,7 +49,8 @@ pub trait Backend {
     /// The limits of the backend.
     fn limits(&self) -> Self::Limits;
 
-    /// Creates a processor to perform recursive computation of tensor expression ASTs.
+    /// Creates a processor that will be used to recursively process tensor AST and
+    /// convert them to the representation suitable for backend.
     ///
     /// # Returns
     /// A processor instance for the backend.
@@ -58,21 +59,24 @@ pub trait Backend {
     /// Propagates buffers through links using the provided callback.
     ///
     /// # Parameters
-    /// - `call`: A callback function that takes the linker as an argument.
+    /// - `call`: A callback function that takes the linker as an argument propagates the
+    ///   information through the link.
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>));
 
-    /// Updates probe data by reading out graph state.
+    /// Updates staging data by reading out graph state into the staging buffers.
     ///
     /// # Parameters
     /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
-    /// - `call`: A callback function that takes the readout as an argument.
+    /// - `call`: A callback function that takes the readout as an argument and performs the
+    ///   readout operation.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
 
-    /// Reads out probes using the provided callback.
+    /// Retrieves the data from the staging buffers into probes.
     ///
     /// # Parameters
-    /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
-    /// - `call`: A callback function that takes the readout as an argument.
+    /// - `label`: A label for the retrieve operation, to be used by backend for debugging purposes.
+    /// - `call`: A callback function that takes the retrieve as an argument and performs the
+    ///   retrieve operation.
     async fn retrieve<F, Fut>(&self, call: F) -> Result<()>
     where
         Fut: Future<Output = anyhow::Result<()>>,

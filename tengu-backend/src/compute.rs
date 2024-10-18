@@ -1,14 +1,11 @@
 //! This module defines the `Compute` trait, which is used for performing computations
-//! using a given processor state within a specified backend. The trait provides an interface
-//! for committing computation tasks to the backend.
+//! using a given processor state within the backend. The trait provides an interface
+//! for running computation tasks using data accumulated and preprocessed by processor.
 
 use crate::{Backend, Result};
 
-/// The `Compute` trait defines a set of operations for performing computations within a specified backend.
+/// The `Compute` trait defines a set of operations for performing computations within a backend.
 /// Types that implement this trait can use a processor state to execute computation tasks.
-///
-/// # Type Parameters
-/// - `Backend`: The type of the backend that this compute trait interacts with.
 pub trait Compute {
     /// The type of the backend that this compute trait interacts with.
     type Backend: Backend;
@@ -16,7 +13,8 @@ pub trait Compute {
     /// Uses the given processor state to perform computations.
     ///
     /// # Parameters
-    /// - `processor`: A reference to the processor state used to perform computations.
+    /// - `processor`: A reference to the processor that was used to prepare data from tensor AST
+    ///   for backend consumption.
     ///
     /// # Returns
     /// A `Result` indicating whether the computation was successful or an error occurred.
