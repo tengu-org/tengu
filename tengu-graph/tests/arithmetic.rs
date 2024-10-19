@@ -1,5 +1,5 @@
 use pretty_assertions::assert_eq;
-use tengu_tensor::Tengu;
+use tengu_graph::Tengu;
 
 #[tokio::test]
 async fn main() {

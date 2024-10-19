@@ -8,12 +8,12 @@
 
 use std::sync::Arc;
 use tengu_backend::{Backend, IOType};
+use tengu_backend_wgpu::Backend as WGPUBackend;
 
 use crate::builder::Builder;
 use crate::expression::{Expression, Shape};
 use crate::graph::Graph;
 use crate::Result;
-use crate::WGPUBackend;
 
 /// Main struct for the Tengu tensor computation framework.
 ///

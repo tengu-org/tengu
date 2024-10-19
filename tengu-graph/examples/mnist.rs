@@ -4,7 +4,7 @@
 // It includes setting up a second mode for the backpropagation algorithm, training the network,
 // and then using the result to predict output.
 
-use tengu_tensor::Tengu;
+use tengu_graph::Tengu;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[pollster::main]

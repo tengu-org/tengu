@@ -39,7 +39,7 @@
 //! Here is a basic example demonstrating how to create and manipulate tensors using the crate:
 //!
 //! ```rust
-//! use tengu_tensor::{Tengu, StorageType, WGPUBackend};
+//! use tengu_graph::{Tengu, StorageType};
 //!
 //! #[tokio::main]
 //! async fn main() {
@@ -87,5 +87,4 @@ mod unify;
 
 pub use error::{Error, Result};
 pub use tengu::Tengu;
-pub use tengu_backend::StorageType;
-pub use tengu_backend_wgpu::Backend as WGPUBackend;
+pub use tengu_backend::{IOType, StorageType};
