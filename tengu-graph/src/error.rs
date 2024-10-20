@@ -2,8 +2,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Channel error: {0}")]
-    ChannelError(#[source] anyhow::Error),
+    #[error("Tensor error: {0}")]
+    TensorError(#[source] tengu_tensor::Error),
     #[error("Backend error: {0}")]
     BackendError(#[from] tengu_backend::Error),
     #[error("Cannot find source with label {0}")]

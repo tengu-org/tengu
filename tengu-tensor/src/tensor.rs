@@ -12,6 +12,7 @@ use tengu_tensor_traits::StorageType;
 
 use crate::channel::Channel;
 use crate::probe::Probe;
+use crate::{Error, Result};
 
 /// A tensor structure that holds data and metadata for tensor operations.
 ///
@@ -67,7 +68,26 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
         self.raw.label()
     }
 
-    pub fn channel(&self) -> &Channel<T, B> {
+    /// Reads the tensor data from the source and sends it to associated probes.
+    /// If the channel is full then there is no point wasting time on reading the data out - the
+    /// previous message hasn't been read out by the probe yet. In this case the method will return
+    /// immediately without retrieving and sending anything.
+    ///
+    /// # Returns
+    /// A result indicating the success of the operation.
+    pub async fn retrieve(&self) -> Result<()> {
+        use tengu_tensor_traits::Tensor;
+        if self.channel().is_full() {
+            return Ok(());
+        }
+        let data: Vec<_> = self.raw().retrieve().await.map_err(Error::ChannelError)?.into_owned();
+        self.channel()
+            .send(data)
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))
+    }
+
+    fn channel(&self) -> &Channel<T, B> {
         self.channel.get_or_init(|| Channel::new())
     }
 }

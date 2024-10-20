@@ -42,7 +42,7 @@ pub trait Source<B: Backend>: AsAny {
     ///
     /// # Returns
     /// A result indicating success or failure.
-    async fn readout(&self) -> Result<()>;
+    async fn retrieve(&self) -> Result<()>;
 }
 
 // NOTE: Tensor implementation.
@@ -90,15 +90,7 @@ impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
     ///
     /// # Returns
     /// A result indicating the success of the operation.
-    async fn readout(&self) -> Result<()> {
-        use tengu_tensor_traits::Tensor;
-        if self.channel().is_full() {
-            return Ok(());
-        }
-        let data: Vec<_> = self.raw().retrieve().await.map_err(Error::ChannelError)?.into_owned();
-        self.channel()
-            .send(data)
-            .await
-            .map_err(|e| Error::ChannelError(e.into()))
+    async fn retrieve(&self) -> Result<()> {
+        self.retrieve().await.map_err(Error::TensorError)
     }
 }

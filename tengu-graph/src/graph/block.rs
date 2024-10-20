@@ -113,7 +113,7 @@ impl<B: Backend + 'static> Block<B> {
     /// - `processor`: A reference to the collector that provides soureces.
     pub(crate) async fn retrieve(&self, collector: &Collector<'_, B>) -> Result<()> {
         for source in collector.sources() {
-            source.readout().await?;
+            source.retrieve().await?;
         }
         Ok(())
     }
