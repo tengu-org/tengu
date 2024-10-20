@@ -14,7 +14,7 @@ use tengu_tensor_traits::IOType;
 use crate::builder::Builder;
 use crate::expression::Expression;
 use crate::graph::Graph;
-use crate::node::Shape;
+use crate::shape::Shape;
 use crate::Result;
 
 /// Main struct for the Tengu tensor computation framework.
@@ -91,5 +91,35 @@ impl Tengu<WGPUBackend> {
     /// A result containing a reference-counted `Tengu` instance or an error.
     pub async fn wgpu() -> Result<Rc<Self>> {
         Tengu::new().await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::builder::LABEL_LENGTH;
+    use crate::shape::Shape;
+    use crate::Tengu;
+    use pretty_assertions::assert_eq;
+
+    #[tokio::test]
+    async fn tensor_shape() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
+        assert_eq!(tensor.count(), 27);
+        assert_eq!(tensor.shape(), &[3, 3, 3]);
+    }
+
+    #[tokio::test]
+    async fn tensor_label() {
+        let tengu = Tengu::wgpu().await.unwrap();
+        let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
+        let label = tensor.label().unwrap();
+        assert_eq!(label.len(), LABEL_LENGTH);
+        assert!(label.chars().all(|c| c.is_alphabetic()));
+
+        let tensor = tengu.tensor([3]).init(&[1, 2, 3]);
+        let label = tensor.label().unwrap();
+        assert_eq!(label.len(), LABEL_LENGTH);
+        assert!(label.chars().all(|c| c.is_alphabetic()));
     }
 }

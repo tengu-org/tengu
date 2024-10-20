@@ -10,11 +10,10 @@ use std::rc::Rc;
 use as_any::Downcast;
 use futures::Future;
 use tengu_backend::Backend;
+use tengu_tensor::{Probe, Tensor};
 use tengu_tensor_traits::StorageType;
 
-use crate::probe::Probe;
 use crate::source::Source;
-use crate::tensor::Tensor;
 use crate::{Error, Result, Tengu};
 
 use block::Block;

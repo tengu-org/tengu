@@ -8,7 +8,8 @@ use tengu_tensor_traits::StorageType;
 
 use super::Expression;
 use crate::collector::Collector;
-use crate::node::{Node, Shape};
+use crate::node::Node;
+use crate::shape::Shape;
 use crate::source::Source;
 
 /// Struct representing a type cast on a tensor expression.

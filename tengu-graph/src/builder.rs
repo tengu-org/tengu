@@ -10,6 +10,7 @@ use rand_distr::Distribution;
 use rand_distr::Normal;
 use rand_distr::StandardNormal;
 use random_string::charsets::ALPHA;
+use tengu_tensor::Tensor;
 
 use std::rc::Rc;
 
@@ -18,7 +19,6 @@ use tengu_backend::Backend;
 use tengu_tensor_traits::IOType;
 
 use crate::expression::Expression;
-use crate::tensor::Tensor;
 use crate::{Error, Result, StorageType};
 
 /// The length of the label generated for tensors if no label is provided.

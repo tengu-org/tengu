@@ -8,7 +8,8 @@ use flume::Receiver;
 use tengu_backend::Backend;
 use tengu_tensor_traits::StorageType;
 
-use crate::{channel::Payload, Error, Result};
+use crate::channel::Payload;
+use crate::{Error, Result};
 
 /// A struct for probing tensor values.
 ///

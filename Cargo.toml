@@ -5,6 +5,7 @@ members = [
     "tengu-backend",
     "tengu-backend-wgpu",
     "tengu-tensor-traits",
+    "tengu-tensor",
 ]
 resolver = "2"
 

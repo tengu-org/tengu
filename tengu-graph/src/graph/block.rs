@@ -17,7 +17,7 @@ use tengu_tensor_traits::StorageType;
 use super::computation::Computation;
 use crate::collector::Collector;
 use crate::expression::Expression;
-use crate::node::Shape;
+use crate::shape::Shape;
 use crate::source::Source;
 use crate::{Error, Result, Tengu};
 

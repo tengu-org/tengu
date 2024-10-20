@@ -1,0 +1,11 @@
+[package]
+name = "tengu-tensor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tengu-backend = { path = "../tengu-backend" }
+tengu-tensor-traits = { path = "../tengu-tensor-traits" }
+flume = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }

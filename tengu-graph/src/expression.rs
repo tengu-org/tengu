@@ -6,6 +6,7 @@
 //! and processing these expressions.
 
 use tengu_backend::{Backend, Processor};
+use tengu_tensor::Tensor;
 use tengu_tensor_traits::StorageType;
 
 use cast::Cast;
@@ -14,9 +15,9 @@ use statement::Statement;
 use unary_fn::UnaryFn;
 
 use crate::collector::Collector;
-use crate::node::{Node, Shape};
+use crate::node::Node;
+use crate::shape::Shape;
 use crate::source::Source;
-use crate::tensor::Tensor;
 
 mod binary;
 mod cast;

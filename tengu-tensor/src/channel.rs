@@ -33,6 +33,12 @@ impl<T: StorageType, B: Backend> Channel<T, B> {
     }
 }
 
+impl<T: StorageType, B: Backend> Default for Channel<T, B> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: StorageType, B: Backend> Clone for Channel<T, B> {
     fn clone(&self) -> Self {
         Self {

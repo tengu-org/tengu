@@ -10,7 +10,8 @@ use tengu_tensor_traits::StorageType;
 
 use crate::collector::Collector;
 use crate::expression::Expression;
-use crate::node::{Node, Shape};
+use crate::node::Node;
+use crate::shape::Shape;
 use crate::source::Source;
 
 /// A struct representing a computation in the Tengu framework.

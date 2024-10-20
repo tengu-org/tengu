@@ -77,16 +77,14 @@
 //! help diagnose and resolve issues.
 
 mod builder;
-mod channel;
 mod collector;
 mod error;
 mod expression;
 mod graph;
 mod node;
-mod probe;
+mod shape;
 mod source;
 mod tengu;
-mod tensor;
 mod unify;
 
 pub use error::{Error, Result};

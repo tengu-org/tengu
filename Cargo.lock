@@ -2049,7 +2049,6 @@ dependencies = [
  "anyhow",
  "as-any",
  "async-trait",
- "flume",
  "futures",
  "indoc",
  "itertools",
@@ -2061,11 +2060,23 @@ dependencies = [
  "random-string",
  "tengu-backend",
  "tengu-backend-wgpu",
+ "tengu-tensor",
  "tengu-tensor-traits",
  "thiserror",
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "tengu-tensor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "flume",
+ "tengu-backend",
+ "tengu-tensor-traits",
+ "thiserror",
 ]
 
 [[package]]

@@ -1,8 +1,12 @@
-use as_any::AsAny;
+use as_any::{AsAny, Downcast};
 use async_trait::async_trait;
-use tengu_backend::Backend;
 
-use crate::Result;
+use tengu_backend::{Backend, Linker};
+use tengu_tensor::Tensor;
+use tengu_tensor_traits::StorageType;
+
+use crate::shape::Shape;
+use crate::{Error, Result};
 
 /// A trait for tensors to treat the uniformly irrespective of their underlying type.
 ///
@@ -39,4 +43,62 @@ pub trait Source<B: Backend>: AsAny {
     /// # Returns
     /// A result indicating success or failure.
     async fn readout(&self) -> Result<()>;
+}
+
+// NOTE: Tensor implementation.
+
+#[async_trait(?Send)]
+impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
+    /// Retrieves the label of the source.
+    ///
+    /// # Returns
+    /// The label of the source.
+    fn label(&self) -> &str {
+        self.label()
+    }
+
+    /// Checks if the tensor matches the shape of another tensor.
+    ///
+    /// # Parameters
+    /// - `other`: Another source to compare against.
+    ///
+    /// # Returns
+    /// A result indicating whether the shapes match.
+    fn matches_to(&self, other: &dyn Source<B>) -> Result<bool> {
+        let other = other.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
+        Ok(self.shape() == other.shape())
+    }
+
+    /// Copies the data from this tensor to another tensor using the provided linker.
+    ///
+    /// # Parameters
+    /// - `to`: The target tensor to link to.
+    /// - `linker`: The linker to use for copying the link.
+    ///
+    /// # Returns
+    /// A result indicating the success of the operation.
+    fn copy(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()> {
+        let to = to.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
+        linker.copy_link(self.raw(), to.raw());
+        Ok(())
+    }
+
+    /// Reads the tensor data from the source and sends it to associated probes.
+    /// If the channel is full then there is no point wasting time on reading the data out - the
+    /// previous message hasn't been read out by the probe yet. In this case the method will return
+    /// immediately without retrieving and sending anything.
+    ///
+    /// # Returns
+    /// A result indicating the success of the operation.
+    async fn readout(&self) -> Result<()> {
+        use tengu_tensor_traits::Tensor;
+        if self.channel().is_full() {
+            return Ok(());
+        }
+        let data: Vec<_> = self.raw().retrieve().await.map_err(Error::ChannelError)?.into_owned();
+        self.channel()
+            .send(data)
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))
+    }
 }
