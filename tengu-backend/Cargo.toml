@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bytemuck = { workspace = true }
+tengu-tensor-traits = { path = "../tengu-tensor-traits" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }

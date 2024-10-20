@@ -2,7 +2,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("WGPU error: {0}")]
+    #[error("Channel error: {0}")]
+    ChannelError(#[source] anyhow::Error),
+    #[error("Backend error: {0}")]
     BackendError(#[from] tengu_backend::Error),
     #[error("Cannot find source with label {0}")]
     SourceNotFound(String),

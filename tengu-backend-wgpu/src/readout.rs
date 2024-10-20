@@ -7,20 +7,19 @@ use tracing::trace;
 
 use crate::Backend as WGPUBackend;
 
-/// The `Readout` struct is used to perform readout operations in the WGPU backend.
-/// It holds a mutable reference to an `Encoder` which is used to encode the readout operations.
+/// The `Stage` struct is used to perform staging operations in the WGPU backend.
 pub struct Readout<'a> {
     encoder: &'a mut Encoder,
 }
 
 impl<'a> Readout<'a> {
-    /// Creates a new `Readout` instance.
+    /// Creates a new `Stage` instance.
     ///
     /// # Parameters
     /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operations.
     ///
     /// # Returns
-    /// A new instance of `Readout`.
+    /// A new instance of `Stage`.
     pub fn new(encoder: &'a mut Encoder) -> Self {
         Self { encoder }
     }
@@ -36,7 +35,7 @@ impl<'a> tengu_backend::Readout for Readout<'a> {
     /// - `processor`: A reference to the processor from the backend which provides the sources.
     fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) {
         trace!("Executing readout operation");
-        for source in processor.sources() {
+        for source in processor.readout_sources() {
             source.readout(self.encoder);
         }
     }

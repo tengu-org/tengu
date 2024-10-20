@@ -2017,7 +2017,7 @@ name = "tengu-backend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bytemuck",
+ "tengu-tensor-traits",
  "thiserror",
 ]
 
@@ -2034,6 +2034,7 @@ dependencies = [
  "pretty_assertions",
  "regex",
  "tengu-backend",
+ "tengu-tensor-traits",
  "tengu-wgpu",
  "thiserror",
  "tokio",
@@ -2047,6 +2048,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "as-any",
+ "async-trait",
+ "flume",
  "futures",
  "indoc",
  "itertools",
@@ -2058,10 +2061,19 @@ dependencies = [
  "random-string",
  "tengu-backend",
  "tengu-backend-wgpu",
+ "tengu-tensor-traits",
  "thiserror",
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "tengu-tensor-traits"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
 ]
 
 [[package]]

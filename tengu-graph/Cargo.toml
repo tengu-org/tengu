@@ -6,9 +6,12 @@ edition = "2021"
 [dependencies]
 tengu-backend = { path = "../tengu-backend" }
 tengu-backend-wgpu = { path = "../tengu-backend-wgpu" }
+tengu-tensor-traits = { path = "../tengu-tensor-traits" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
+flume = { workspace = true }
+async-trait = { workspace = true }
 random-string = "1.1.0"
 indoc = "2.0.5"
 itertools = "0.13.0"

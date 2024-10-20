@@ -6,7 +6,7 @@
 
 use indoc::formatdoc;
 use itertools::Itertools;
-use tengu_backend::StorageType;
+use tengu_tensor_traits::StorageType;
 
 use crate::source::Source;
 use crate::tensor::Tensor;
@@ -158,7 +158,7 @@ mod tests {
     #[tokio::test]
     async fn cast() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let cast_a = processor.cast(a, "f32");
@@ -168,7 +168,7 @@ mod tests {
     #[tokio::test]
     async fn unary_fn() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("a", &[1, 2, 3, 4]);
+        let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let cast_a = processor.unary_fn(a, "exp");
@@ -178,8 +178,8 @@ mod tests {
     #[tokio::test]
     async fn binary() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("a", &[1, 2, 3, 4]);
-        let b = backend.tensor("b", &[5, 6, 7, 8]);
+        let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
+        let b = backend.tensor("b", [4], &[5, 6, 7, 8]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
@@ -190,9 +190,9 @@ mod tests {
     #[tokio::test]
     async fn statement() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("a", &[1, 2, 3, 4]);
-        let b = backend.tensor("b", &[5, 6, 7, 8]);
-        let c = backend.zero::<f32>("c", 4);
+        let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
+        let b = backend.tensor("b", [4], &[5, 6, 7, 8]);
+        let c = backend.zero::<f32>("c", [4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
@@ -205,9 +205,9 @@ mod tests {
     #[tokio::test]
     async fn body() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("a", &[1, 2, 3, 4]);
-        let b = backend.tensor("b", &[5, 6, 7, 8]);
-        let c = backend.zero::<f32>("c", 4);
+        let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
+        let b = backend.tensor("b", [4], &[5, 6, 7, 8]);
+        let c = backend.zero::<f32>("c", [4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);

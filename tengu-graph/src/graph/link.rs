@@ -7,7 +7,7 @@
 use tengu_backend::Backend;
 
 use super::Graph;
-use crate::expression::Source;
+use crate::source::Source;
 use crate::{Error, Result};
 
 /// A struct representing a link between two tensors in a computational graph.

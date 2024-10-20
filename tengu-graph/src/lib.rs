@@ -57,7 +57,7 @@
 //!         .add_computation("addoe", a + 1.0);
 //!
 //!     // Set up probe.
-//!     let mut add = graph.get_probe::<f32>("main/a").unwrap();
+//!     let mut add = graph.add_probe::<f32>("main/a").unwrap();
 //!
 //!     // Run the computation and display the result.
 //!     graph.compute(1).await;
@@ -77,14 +77,18 @@
 //! help diagnose and resolve issues.
 
 mod builder;
+mod channel;
+mod collector;
 mod error;
 mod expression;
 mod graph;
+mod node;
 mod probe;
+mod source;
 mod tengu;
 mod tensor;
 mod unify;
 
 pub use error::{Error, Result};
 pub use tengu::Tengu;
-pub use tengu_backend::{IOType, StorageType};
+pub use tengu_tensor_traits::{IOType, StorageType};

@@ -19,17 +19,17 @@ async fn main() {
         .add_computation("explog", (a.exp() + b.log()).cast::<u32>());
 
     // Set up probes.
-    let add = graph.get_probe::<f32>("main/addmul").unwrap();
-    let sub = graph.get_probe::<f32>("main/subdiv").unwrap();
-    let exp = graph.get_probe::<u32>("main/explog").unwrap();
+    let add = graph.add_probe::<f32>("main/addmul").unwrap();
+    let sub = graph.add_probe::<f32>("main/subdiv").unwrap();
+    let exp = graph.add_probe::<u32>("main/explog").unwrap();
 
     // Run the computation.
     graph.compute(1).await.unwrap();
 
     // Retrieve the results and assert.
-    let add = add.retrieve().await.unwrap().into_owned();
-    let sub = sub.retrieve().await.unwrap().into_owned();
-    let exp = exp.retrieve().await.unwrap().into_owned();
+    let add = add.retrieve().await.unwrap();
+    let sub = sub.retrieve().await.unwrap();
+    let exp = exp.retrieve().await.unwrap();
     assert_eq!(add, [6.0, 13.0, 22.0, 33.0]);
     assert_eq!(sub, [9.8, 11.0, 12.5, 15.0]);
     assert_eq!(exp, [4, 9, 22, 56]);

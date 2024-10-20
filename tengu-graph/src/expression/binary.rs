@@ -2,9 +2,13 @@
 //! such as addition, subtraction, multiplication, division, and equality comparisons in tensor expressions.
 //! It leverages the backend processing capabilities to apply these operations on tensor data.
 
-use tengu_backend::{Backend, Processor, StorageType};
+use tengu_backend::{Backend, Processor};
+use tengu_tensor_traits::StorageType;
 
-use super::{Expression, Node, Shape};
+use super::Expression;
+use crate::collector::Collector;
+use crate::node::{Node, Shape};
+use crate::source::Source;
 use crate::unify::Unify;
 
 // NOTE: Operator
@@ -115,6 +119,11 @@ where
         Box::new(self.clone())
     }
 
+    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
+        self.lhs.collect(collector);
+        self.rhs.collect(collector);
+    }
+
     /// Finds a source node by its label in the left-hand or right-hand side tensor expressions.
     ///
     /// # Parameters
@@ -122,7 +131,7 @@ where
     ///
     /// # Returns
     /// An optional reference to the found source node.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn super::Source<B>> {
+    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>> {
         self.lhs.find(label).or_else(|| self.rhs.find(label))
     }
 

@@ -3,7 +3,8 @@
 //! for tensor arithmetic and includes tests to ensure correct behavior.
 
 use std::ops::{Add, Div, Mul, Sub};
-use tengu_backend::{Backend, StorageType};
+use tengu_backend::Backend;
+use tengu_tensor_traits::StorageType;
 
 use super::{Binary, Expression};
 

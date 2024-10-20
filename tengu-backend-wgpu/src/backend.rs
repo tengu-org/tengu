@@ -4,9 +4,11 @@
 //! executing GPU operations. It provides methods to create tensors, perform compute operations, propagate data, and read out data
 //! from the GPU.
 
-use std::future::Future;
-use std::sync::Arc;
-use tengu_backend::{Error, IOType, Result, StorageType};
+use std::collections::HashSet;
+use std::rc::Rc;
+
+use tengu_backend::{Error, Result};
+use tengu_tensor_traits::{IOType, StorageType};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 use tracing::trace;
 
@@ -15,7 +17,6 @@ use crate::limits::Limits as WGPULimits;
 use crate::linker::Linker as WGPULinker;
 use crate::processor::Processor as WGPUProcessor;
 use crate::readout::Readout as WGPUReadout;
-use crate::retrieve::Retrieve as WGPURetrieve;
 use crate::tensor::Tensor as WGPUTensor;
 
 /// The `Backend` struct is responsible for managing the WGPU device and providing methods to create and manipulate GPU resources.
@@ -41,8 +42,8 @@ impl Backend {
     ///
     /// # Returns
     /// A new instance of `Backend`.
-    pub fn from_device(device: Device) -> Arc<Self> {
-        Arc::new(Self { device })
+    pub fn from_device(device: Device) -> Rc<Self> {
+        Rc::new(Self { device })
     }
 }
 
@@ -54,17 +55,16 @@ impl tengu_backend::Backend for Backend {
     type Processor<'a> = WGPUProcessor<'a>;
     type Linker<'a> = WGPULinker<'a>;
     type Readout<'a> = WGPUReadout<'a>;
-    type Retrieve = WGPURetrieve;
     type Limits = WGPULimits;
 
     /// Creates a new `Backend` instance asynchronously.
     ///
     /// # Returns
     /// A result containing a reference-counted `Backend` instance or an error.
-    async fn new() -> tengu_backend::Result<Arc<Self>> {
+    async fn new() -> Result<Rc<Self>> {
         let device = WGPU::default_context().await.map_err(|e| Error::WGPUError(e.into()))?;
         trace!("Created WGPU instance for backend");
-        Ok(Arc::new(Self { device }))
+        Ok(Rc::new(Self { device }))
     }
 
     /// Returns the limits of the backend.
@@ -79,8 +79,8 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Returns
     /// A new `Processor` instance.
-    fn processor(&self) -> Self::Processor<'_> {
-        WGPUProcessor::new()
+    fn processor<'a>(&self, readouts: &'a HashSet<String>) -> Self::Processor<'a> {
+        WGPUProcessor::new(readouts)
     }
 
     /// Propagates data using the provided linker function.
@@ -116,36 +116,20 @@ impl tengu_backend::Backend for Backend {
         Ok(())
     }
 
-    /// Reads out data to staging buffers using the provided readout function.
+    /// Copies data to staging buffers using the provided staging function.
     ///
     /// # Parameters
     /// - `label`: A label for the readout operations.
-    /// - `call`: A function that takes a `Readout` and performs data readout into staging buffers.
+    /// - `call`: A function that takes a `Readout` value and copies data into staging buffers.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>)) {
         trace!("Executing readout step");
         let commands = self
             .device
             .encoder(label)
-            .readout(|encoder| call(WGPUReadout::new(encoder)))
+            .stage(|encoder| call(WGPUReadout::new(encoder)))
             .finish();
         trace!("Submitting readout commands to the queue");
         self.device.submit(commands);
-    }
-
-    /// Retrieves data from staging buffers using the provided retrieve function.
-    ///
-    /// # Parameters
-    /// - `call`: A function that takes a `Retrieve` and performs data retrieval from staging buffers.
-    ///
-    /// # Returns
-    /// A result indicating success or failure of the retrieve operation.
-    async fn retrieve<F, Fut>(&self, call: F) -> Result<()>
-    where
-        Fut: Future<Output = anyhow::Result<()>>,
-        F: FnOnce(Self::Retrieve) -> Fut,
-    {
-        trace!("Executing retrieve step");
-        call(WGPURetrieve).await.map_err(Error::RetrieveError)
     }
 
     /// Creates a new tensor with the provided data.
@@ -156,11 +140,16 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Returns
     /// A new tensor initialized with the provided data.
-    fn tensor<T: IOType>(self: &Arc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T> {
+    fn tensor<T: IOType>(
+        self: &Rc<Self>,
+        label: impl Into<String>,
+        shape: impl Into<Vec<usize>>,
+        data: &[T],
+    ) -> Self::Tensor<T> {
         let label = label.into();
         trace!("Creating new tensor '{label}'");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::Read).with_data(data);
-        WGPUTensor::new(self, label, data.len(), buffer)
+        WGPUTensor::new(self, label, shape, buffer)
     }
 
     /// Creates a new zero-initialized tensor with the specified count.
@@ -171,11 +160,16 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Returns
     /// A new zero-initialized tensor.
-    fn zero<T: StorageType>(self: &Arc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T> {
+    fn zero<T: StorageType>(
+        self: &Rc<Self>,
+        label: impl Into<String>,
+        shape: impl Into<Vec<usize>>,
+    ) -> Self::Tensor<T> {
         let label = label.into();
-        let size = count.of::<T>();
+        let shape = shape.into();
+        let size = shape.iter().product::<usize>().of::<T>();
         trace!("Creating new zero tensor '{label}'");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::ReadWrite).empty(size);
-        WGPUTensor::new(self, label, count, buffer)
+        WGPUTensor::new(self, label, shape, buffer)
     }
 }

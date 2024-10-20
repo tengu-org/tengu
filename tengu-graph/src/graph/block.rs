@@ -8,20 +8,27 @@
 //! blocks, and doesn't share tensors with any other blocks. On some backends (like WGPU), a block
 //! will have its own memory and its own shader.
 
-use std::sync::Arc;
-use tengu_backend::{Backend, Compute, Processor, Readout, Retrieve, StorageType};
+use std::collections::HashSet;
+use std::rc::Rc;
+
+use tengu_backend::{Backend, Compute, Processor, Readout};
+use tengu_tensor_traits::StorageType;
 
 use super::computation::Computation;
-use crate::expression::{Expression, Shape, Source};
+use crate::collector::Collector;
+use crate::expression::Expression;
+use crate::node::Shape;
+use crate::source::Source;
 use crate::{Error, Result, Tengu};
 
 /// A struct representing a computational block in the Tengu framework.
 ///
 /// The `Block` struct holds computations and provides methods to add, label, and process these computations.
 pub struct Block<B: Backend> {
-    tengu: Arc<Tengu<B>>,
+    tengu: Rc<Tengu<B>>,
     label: String,
     computations: Vec<Computation<B>>,
+    probes: HashSet<String>,
 }
 
 impl<B: Backend + 'static> Block<B> {
@@ -33,11 +40,12 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Returns
     /// A new `Block` instance.
-    pub fn new(tengu: &Arc<Tengu<B>>, label: impl Into<String>) -> Self {
+    pub fn new(tengu: &Rc<Tengu<B>>, label: impl Into<String>) -> Self {
         Self {
-            tengu: Arc::clone(tengu),
+            tengu: Rc::clone(tengu),
             label: label.into(),
             computations: Vec::new(),
+            probes: HashSet::new(),
         }
     }
 
@@ -67,6 +75,14 @@ impl<B: Backend + 'static> Block<B> {
         self
     }
 
+    /// Adds a new probe label to the block.
+    ///
+    /// # Parameters
+    /// - `label`: The label for the new probe.
+    pub fn add_probe(&mut self, label: impl Into<String>) {
+        self.probes.insert(label.into());
+    }
+
     /// Executes the computations in the block using the provided compute object and processor.
     ///
     /// # Parameters
@@ -83,7 +99,7 @@ impl<B: Backend + 'static> Block<B> {
     /// associated with them.
     ///
     /// # Parameters
-    /// - `readout`: A mutable reference to the readout object.
+    /// - `readout`: A mutable reference to the stage object.
     /// - `processor`: A reference to the processor.
     pub(crate) fn readout(&self, readout: &mut B::Readout<'_>, processor: &B::Processor<'_>) {
         readout.run(processor);
@@ -94,9 +110,40 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Parameters
     /// - `retrieve`: A mutable reference to the readout object.
-    /// - `processor`: A reference to the processor.
-    pub(crate) async fn retrieve(&self, retrieve: &mut B::Retrieve, processor: &B::Processor<'_>) -> Result<()> {
-        retrieve.run(processor).await.map_err(Error::BackendError)
+    /// - `processor`: A reference to the collector that provides soureces.
+    pub(crate) async fn retrieve(&self, collector: &Collector<'_, B>) -> Result<()> {
+        for source in collector.sources() {
+            source.readout().await?;
+        }
+        Ok(())
+    }
+
+    /// Creates a processor specific for this block. Adding computations will invalidate the
+    /// processor.
+    ///
+    /// # Returns
+    /// A processor for the block.
+    pub fn processor(&self) -> B::Processor<'_> {
+        let mut processor = self.tengu.backend().processor(&self.probes);
+        let mut statements = Vec::new();
+        for computation in &self.computations {
+            statements.push(computation.visit(&mut processor));
+        }
+        processor.block(statements.into_iter());
+        processor
+    }
+
+    /// Creates a collector specific for this block. Adding computations will invalidate the
+    /// collector.
+    ///
+    /// # Returns
+    /// A processor for the block.
+    pub fn collector(&self) -> Collector<'_, B> {
+        let mut collector = Collector::new(&self.probes);
+        for computation in &self.computations {
+            computation.collect(&mut collector);
+        }
+        collector
     }
 
     /// Retrieves a source by its label from the computations in the block.
@@ -108,21 +155,6 @@ impl<B: Backend + 'static> Block<B> {
     /// An optional reference to the source.
     pub(crate) fn source(&self, label: &str) -> Option<&dyn Source<B>> {
         self.computations.iter().flat_map(|c| c.source(label)).next()
-    }
-
-    /// Creates a processor specific for this block. Adding computations will invalidate the
-    /// processor.
-    ///
-    /// # Returns
-    /// A processor for the block.
-    pub fn processor(&self) -> B::Processor<'_> {
-        let mut processor = self.tengu.backend().processor();
-        let mut statements = Vec::new();
-        for computation in &self.computations {
-            statements.push(computation.visit(&mut processor));
-        }
-        processor.block(statements.into_iter());
-        processor
     }
 }
 

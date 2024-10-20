@@ -2,7 +2,9 @@
 //! of tensor expressions in a final tagless style. Implementations of the `Processor` trait are responsible
 //! for transforming or evaluating the AST nodes according to specific backend requirements.
 
-use crate::{Backend, StorageType};
+use tengu_tensor_traits::StorageType;
+
+use crate::Backend;
 
 /// The `Processor` trait defines a set of operations for processing tensor expressions.
 /// Types that implement this trait can produce and accept representations of tensor expressions

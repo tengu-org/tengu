@@ -13,7 +13,9 @@
 //!   type casting, and block generation.
 
 use std::collections::{BTreeMap, HashSet};
-use tengu_backend::{Backend, StorageType};
+
+use tengu_backend::Backend;
+use tengu_tensor_traits::{StorageType, Tensor};
 use tracing::trace;
 
 use crate::source::Source;
@@ -31,8 +33,10 @@ pub struct Processor<'a> {
     declarator: Declarator<'a>,
     element_count: usize,
     shader: String,
-    bound_sources: HashSet<&'a str>,
+    visited: HashSet<&'a str>,
     sources: BTreeMap<usize, &'a dyn Source>,
+    readouts: &'a HashSet<String>,
+    readout_sources: Vec<&'a dyn Source>,
     current_binding: usize,
 }
 
@@ -41,14 +45,16 @@ impl<'a> Processor<'a> {
     ///
     /// # Returns
     /// A new instance of `Processor`.
-    pub fn new() -> Self {
+    pub fn new(readouts: &'a HashSet<String>) -> Self {
         Self {
             emitter: Emitter::new(),
             declarator: Declarator::new(),
             element_count: 0,
             shader: String::new(),
-            bound_sources: HashSet::new(),
+            visited: HashSet::new(),
             sources: BTreeMap::new(),
+            readouts,
+            readout_sources: Vec::new(),
             current_binding: 0,
         }
     }
@@ -67,6 +73,15 @@ impl<'a> Processor<'a> {
     /// An iterator over source tensor references.
     pub fn sources(&'a self) -> impl Iterator<Item = &'a dyn Source> {
         self.sources.values().copied()
+    }
+
+    /// Returns an iterator over the source tensors acquird from the tensor AST that can be used in
+    /// readout operations.
+    ///
+    /// # Returns
+    /// An iterator over source tensor references.
+    pub fn readout_sources(&'a self) -> impl Iterator<Item = &'a dyn Source> {
+        self.readout_sources.iter().copied()
     }
 
     /// Returns the generated shader code as a string slice.
@@ -95,11 +110,15 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// Processor representation of the tensor, consisting of the number of elements in the tensor
     /// and emitted shader representation of the tensor.
     fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr {
-        if !self.bound_sources.contains(tensor.label()) {
+        let label = Tensor::label(tensor);
+        if !self.visited.contains(label) {
             self.declarator.var(self.current_binding, tensor);
             self.sources.insert(self.current_binding, tensor);
-            self.bound_sources.insert(tensor.label());
+            self.visited.insert(label);
             self.current_binding += 1;
+            if self.readouts.contains(label) {
+                self.readout_sources.push(tensor);
+            }
         }
         (tensor.count(), self.emitter.var(tensor))
     }
@@ -192,13 +211,5 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
         let body = self.emitter.body();
         trace!("Emitting shader for a block");
         self.shader = format!("{}\n\n{}", header, body);
-    }
-}
-
-// Default implementation
-
-impl<'a> Default for Processor<'a> {
-    fn default() -> Self {
-        Processor::new()
     }
 }

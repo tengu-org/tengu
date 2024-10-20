@@ -2,9 +2,14 @@
 //! It leverages the backend processing capabilities to apply type casting on tensor data.
 
 use std::marker::PhantomData;
-use tengu_backend::{Backend, Processor, StorageType};
 
-use super::{Expression, Node, Shape};
+use tengu_backend::{Backend, Processor};
+use tengu_tensor_traits::StorageType;
+
+use super::Expression;
+use crate::collector::Collector;
+use crate::node::{Node, Shape};
+use crate::source::Source;
 
 /// Struct representing a type cast on a tensor expression.
 pub struct Cast<T, B> {
@@ -63,6 +68,10 @@ where
         Box::new(self.clone())
     }
 
+    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
+        self.expression.collect(collector);
+    }
+
     /// Finds a source node by its label in the expression tensor.
     ///
     /// # Parameters
@@ -70,7 +79,7 @@ where
     ///
     /// # Returns
     /// An optional reference to the found source node.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn super::Source<B>> {
+    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>> {
         self.expression.find(label)
     }
 
@@ -82,9 +91,9 @@ where
     /// # Returns
     /// The inner representation used by the processor.
     fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
-        let expr = self.expression.visit(processor);
+        let epxression = self.expression.visit(processor);
         let ty = std::any::type_name::<T>().to_string();
-        processor.cast(expr, &ty)
+        processor.cast(epxression, &ty)
     }
 }
 

@@ -4,8 +4,10 @@
 
 #![allow(async_fn_in_trait)]
 
-use std::future::Future;
-use std::sync::Arc;
+use std::collections::HashSet;
+use std::rc::Rc;
+
+use tengu_tensor_traits::{IOType, StorageType, Tensor};
 
 use crate::*;
 
@@ -13,7 +15,7 @@ use crate::*;
 /// types and methods for creating and managing tensors, processors, compute instances, linkers, and readouts.
 pub trait Backend {
     /// The underlying raw tensor type.
-    type Tensor<T: StorageType>: Tensor<T>;
+    type Tensor<T: StorageType>: Tensor;
 
     /// The type of the node processor that will construct computation objects.
     type Processor<'a>: Processor<'a, Backend = Self>
@@ -26,13 +28,10 @@ pub trait Backend {
         Self: 'a;
 
     /// The underlying linker type.
-    type Linker<'a>: Linker<'a, Backend = Self>;
+    type Linker<'a>: Linker<Backend = Self>;
 
     /// The underlying readout type.
     type Readout<'a>: Readout<Backend = Self>;
-
-    /// The underlying retrieve type.
-    type Retrieve: Retrieve<Backend = Self>;
 
     /// The underliying limits type.
     type Limits: Limits<Backend = Self>;
@@ -41,7 +40,7 @@ pub trait Backend {
     ///
     /// # Returns
     /// A result wrapping an `Arc` to the new backend instance.
-    async fn new() -> Result<Arc<Self>>;
+    async fn new() -> Result<Rc<Self>>;
 
     /// Returns the limits of the backend.
     ///
@@ -54,7 +53,7 @@ pub trait Backend {
     ///
     /// # Returns
     /// A processor instance for the backend.
-    fn processor(&self) -> Self::Processor<'_>;
+    fn processor<'a>(&self, readouts: &'a HashSet<String>) -> Self::Processor<'a>;
 
     /// Propagates buffers through links using the provided callback.
     ///
@@ -63,24 +62,13 @@ pub trait Backend {
     ///   information through the link.
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>));
 
-    /// Updates staging data by reading out graph state into the staging buffers.
+    /// Updates staging data by copying graph state into the staging buffers.
     ///
     /// # Parameters
     /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
     /// - `call`: A callback function that takes the readout as an argument and performs the
-    ///   readout operation.
+    ///   staging operation.
     fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
-
-    /// Retrieves the data from the staging buffers into probes.
-    ///
-    /// # Parameters
-    /// - `label`: A label for the retrieve operation, to be used by backend for debugging purposes.
-    /// - `call`: A callback function that takes the retrieve as an argument and performs the
-    ///   retrieve operation.
-    async fn retrieve<F, Fut>(&self, call: F) -> Result<()>
-    where
-        Fut: Future<Output = anyhow::Result<()>>,
-        F: FnOnce(Self::Retrieve) -> Fut;
 
     /// Computes the specified function on the backend using the provided callback.
     ///
@@ -95,19 +83,26 @@ pub trait Backend {
     ///
     /// # Parameters
     /// - `label`: A label for the tensor.
-    /// - `count`: Total number of elements in the tensor.
+    /// - `shape`: The shape of the tensor.
     ///
     /// # Returns
     /// A new zero-initialized tensor.
-    fn zero<T: StorageType>(self: &Arc<Self>, label: impl Into<String>, count: usize) -> Self::Tensor<T>;
+    fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<String>, shape: impl Into<Vec<usize>>)
+        -> Self::Tensor<T>;
 
     /// Creates a new tensor with the specified label and data.
     ///
     /// # Parameters
     /// - `label`: A label for the tensor.
+    /// - `shape`: The shape of the tensor.
     /// - `data`: A slice of data to initialize the tensor.
     ///
     /// # Returns
     /// A new tensor initialized with the given data.
-    fn tensor<T: IOType>(self: &Arc<Self>, label: impl Into<String>, data: &[T]) -> Self::Tensor<T>;
+    fn tensor<T: IOType>(
+        self: &Rc<Self>,
+        label: impl Into<String>,
+        shape: impl Into<Vec<usize>>,
+        data: &[T],
+    ) -> Self::Tensor<T>;
 }

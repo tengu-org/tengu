@@ -6,15 +6,16 @@ edition = "2021"
 [dependencies]
 tengu-wgpu = { path = "../tengu-wgpu" }
 tengu-backend = { path = "../tengu-backend" }
+tengu-tensor-traits = { path = "../tengu-tensor-traits" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 wgpu = { workspace = true }
 bytemuck = { workspace = true }
 tracing = { workspace = true }
+async-trait = { workspace = true }
 flume = { workspace = true }
 itertools = "0.13.0"
 indoc = "2.0.5"
-async-trait = "0.1.83"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

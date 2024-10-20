@@ -4,32 +4,36 @@
 //! computational graphs. It provides an interface to add blocks, link them, and perform
 //! computations using the blocks and links.
 
+use std::collections::HashMap;
+use std::rc::Rc;
+
 use as_any::Downcast;
 use futures::Future;
-use std::collections::HashMap;
-use std::sync::Arc;
-use tengu_backend::{Backend, StorageType};
+use tengu_backend::Backend;
+use tengu_tensor_traits::StorageType;
 
-use crate::expression::Source;
 use crate::probe::Probe;
+use crate::source::Source;
 use crate::tensor::Tensor;
 use crate::{Error, Result, Tengu};
 
 use block::Block;
+use executor::Executor;
 use link::Link;
-use runner::Runner;
+use retrieve::Retriever;
 
 mod block;
 mod computation;
+mod executor;
 mod link;
-mod runner;
+mod retrieve;
 
 /// A struct representing a computational graph in the Tengu framework.
 ///
 /// The `Graph` struct holds blocks and links, allowing for the construction and processing
 /// of complex computations.
 pub struct Graph<B: Backend> {
-    tengu: Arc<Tengu<B>>,
+    tengu: Rc<Tengu<B>>,
     blocks: HashMap<String, Block<B>>,
     links: Vec<Link>,
 }
@@ -45,9 +49,11 @@ impl<B: Backend + 'static> Graph<B> {
     /// # Returns
     /// A result indicating success or failure.
     pub async fn compute(&self, times: usize) -> Result<()> {
-        let runner = Runner::new(self);
+        let executor = Executor::new(self);
+        let readout = Retriever::new(self);
         for _ in 0..times {
-            runner.step().await?;
+            executor.step()?;
+            readout.step().await?;
         }
         Ok(())
     }
@@ -65,9 +71,11 @@ impl<B: Backend + 'static> Graph<B> {
         Fut: Future,
         F: FnMut(usize) -> Fut,
     {
-        let runner = Runner::new(self);
+        let executor = Executor::new(self);
+        let readout = Retriever::new(self);
         for i in 0..times {
-            runner.step().await?;
+            executor.step()?;
+            readout.step().await?;
             call(i).await;
         }
         Ok(())
@@ -82,9 +90,11 @@ impl<B: Backend + 'static> Graph<B> {
     /// # Returns
     /// A result indicating success or failure.
     pub async fn process(&self, times: usize, mut call: impl FnMut(usize)) -> Result<()> {
-        let runner = Runner::new(self);
+        let executor = Executor::new(self);
+        let readout = Retriever::new(self);
         for i in 0..times {
-            runner.step().await?;
+            executor.step()?;
+            readout.step().await?;
             call(i);
         }
         Ok(())
@@ -104,9 +114,11 @@ impl<B: Backend + 'static> Graph<B> {
         Fut: Future<Output = bool>,
         F: FnMut(usize) -> Fut,
     {
-        let runner = Runner::new(self);
+        let executor = Executor::new(self);
+        let readout = Retriever::new(self);
         for i in 0..times {
-            runner.step().await?;
+            executor.step()?;
+            readout.step().await?;
             if !call(i).await {
                 break;
             }
@@ -127,9 +139,11 @@ impl<B: Backend + 'static> Graph<B> {
     where
         F: FnMut(usize) -> bool,
     {
-        let runner = Runner::new(self);
+        let executor = Executor::new(self);
+        let readout = Retriever::new(self);
         for i in 0..times {
-            runner.step().await?;
+            executor.step()?;
+            readout.step().await?;
             if !call(i) {
                 break;
             }
@@ -148,9 +162,9 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A new `Graph` instance.
-    pub fn new(tengu: &Arc<Tengu<B>>) -> Self {
+    pub fn new(tengu: &Rc<Tengu<B>>) -> Self {
         Self {
-            tengu: Arc::clone(tengu),
+            tengu: Rc::clone(tengu),
             blocks: HashMap::new(),
             links: Vec::new(),
         }
@@ -212,7 +226,7 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A result containing a reference to the new link or an error if the link creation fails.
-    pub fn link(&mut self, from: impl Into<String>, to: impl Into<String>) -> Result<&Link> {
+    pub fn add_link(&mut self, from: impl Into<String>, to: impl Into<String>) -> Result<&Link> {
         let link = Link::new(self, from, to)?;
         self.links.push(link);
         Ok(self.links.last().expect("should have the last link"))
@@ -225,12 +239,22 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A result containing the probe or an error if the tensor is not found or if there is a type mismatch.
-    pub fn get_probe<T: StorageType>(&self, path: &str) -> Result<Probe<T, B>> {
-        let source = self
-            .get_source(path)?
+    pub fn add_probe<T: StorageType>(&mut self, path: &str) -> Result<Probe<T, B>> {
+        let (block_label, source_label) = path
+            .split_once('/')
+            .ok_or_else(|| Error::InvalidLinkPath(path.to_string()))?;
+        let block = self
+            .blocks
+            .get_mut(block_label)
+            .ok_or_else(|| Error::BlockNotFound(block_label.to_string()))?;
+        let source = block
+            .source(source_label)
+            .ok_or_else(|| Error::SourceNotFound(source_label.to_string()))?
             .downcast_ref::<Tensor<T, B>>()
             .ok_or_else(|| Error::TypeMismatch)?;
-        Ok(source.probe())
+        let probe = source.probe();
+        block.add_probe(source_label);
+        Ok(probe)
     }
 
     /// Retrieves the source object for a given path.
@@ -263,7 +287,7 @@ mod tests {
         let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
         let mut graph = tengu.graph();
         graph.add_block("main").unwrap().add_computation("c", a + b);
-        let link = graph.link("main/c", "main/a").unwrap();
+        let link = graph.add_link("main/c", "main/a").unwrap();
         assert_eq!(link.from(), "main/c");
         assert_eq!(link.to(), "main/a");
     }
@@ -279,7 +303,7 @@ mod tests {
             .add_block("main")
             .unwrap()
             .add_computation("c", (a + b).cast::<f32>());
-        graph.link("main/c", "main/a").unwrap();
+        graph.add_link("main/c", "main/a").unwrap();
     }
 
     #[tokio::test]
@@ -307,7 +331,7 @@ mod tests {
         let b = tengu.tensor([1, 2, 3]).label("b").zero::<u32>();
         let mut graph = tengu.graph();
         graph.add_block("main").unwrap().add_computation("c", a + b);
-        graph.get_probe::<u32>("main/c").unwrap();
+        graph.add_probe::<u32>("main/c").unwrap();
     }
 
     #[tokio::test]
@@ -321,6 +345,6 @@ mod tests {
             .add_block("main")
             .unwrap()
             .add_computation("c", (a + b).cast::<f32>());
-        graph.get_probe::<u32>("main/c").unwrap();
+        graph.add_probe::<u32>("main/c").unwrap();
     }
 }

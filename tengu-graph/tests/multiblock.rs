@@ -12,15 +12,15 @@ async fn main() {
     let mut graph = tengu.graph();
     graph.add_block("fst").unwrap().add_computation("out", a + 1.0);
     graph.add_block("snd").unwrap().add_computation("out", b + 1.0);
-    graph.link("fst/out", "snd/b").unwrap();
+    graph.add_link("fst/out", "snd/b").unwrap();
 
     // Set up probes.
-    let out = &graph.get_probe::<f32>("snd/out").unwrap();
+    let out = &graph.add_probe::<f32>("snd/out").unwrap();
 
     // Run the computation twice.
     graph
         .process_async(2, |i| async move {
-            let out = out.retrieve().await.unwrap().into_owned();
+            let out = out.retrieve().await.unwrap();
             match i {
                 0 => assert_eq!(out, [1.0, 1.0, 1.0, 1.0]),
                 1 => assert_eq!(out, [3.0, 4.0, 5.0, 6.0]),

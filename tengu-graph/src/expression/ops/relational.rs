@@ -1,7 +1,8 @@
 //! This module defines relational operations for tensor expressions, specifically the equality operation.
 //! It leverages the backend processing capabilities to apply these operations on tensor data.
 
-use tengu_backend::{Backend, StorageType};
+use tengu_backend::Backend;
+use tengu_tensor_traits::StorageType;
 
 use super::{Binary, Expression};
 

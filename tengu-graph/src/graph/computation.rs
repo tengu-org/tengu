@@ -5,9 +5,13 @@
 //! within a block. It has direct access to all other tensors used inside a block and create a new
 //! tensor as a result.
 
-use tengu_backend::{Backend, Processor, StorageType};
+use tengu_backend::{Backend, Processor};
+use tengu_tensor_traits::StorageType;
 
-use crate::expression::{Expression, Node, Shape, Source};
+use crate::collector::Collector;
+use crate::expression::Expression;
+use crate::node::{Node, Shape};
+use crate::source::Source;
 
 /// A struct representing a computation in the Tengu framework.
 ///
@@ -42,6 +46,14 @@ impl<B: Backend + 'static> Computation<B> {
     /// The inner representation used by the processor.
     pub fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
         self.statement.visit(processor)
+    }
+
+    /// Collect the computation with a collector.
+    ///
+    /// # Parameters
+    /// - `collector`: A mutable reference to the collector.
+    pub fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
+        self.statement.collect(collector);
     }
 
     /// Finds a source within the computation by its label.

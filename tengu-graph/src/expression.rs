@@ -5,95 +5,24 @@
 //! unary functions, and statements. It provides a comprehensive interface for constructing
 //! and processing these expressions.
 
-use as_any::AsAny;
-use tengu_backend::{Backend, Processor, StorageType};
-
-use crate::tensor::Tensor;
-use crate::Result;
+use tengu_backend::{Backend, Processor};
+use tengu_tensor_traits::StorageType;
 
 use cast::Cast;
 use ops::Binary;
 use statement::Statement;
 use unary_fn::UnaryFn;
 
+use crate::collector::Collector;
+use crate::node::{Node, Shape};
+use crate::source::Source;
+use crate::tensor::Tensor;
+
 mod binary;
 mod cast;
 mod ops;
 mod statement;
 mod unary_fn;
-
-// NOTE: Expression-related traits.
-
-/// A trait for tensors to treat the uniformly irrespective of their underlying type.
-///
-/// The `Source` trait defines methods for matching to and copying links between sources.
-pub trait Source<B: Backend>: AsAny {
-    /// Checks if the source matches another source.
-    ///
-    /// # Parameters
-    /// - `other`: The other source to match against.
-    ///
-    /// # Returns
-    /// A result containing a boolean indicating whether the sources match.
-    fn matches_to(&self, other: &dyn Source<B>) -> Result<bool>;
-
-    /// Copies a source tensor to another source.
-    ///
-    /// # Parameters
-    /// - `to`: The destination source to copy the tensor to.
-    /// - `linker`: A mutable reference to the linker.
-    ///
-    /// # Returns
-    /// A result indicating success or failure.
-    fn copy(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()>;
-}
-
-/// A trait for types that have a shape.
-///
-/// The `Shape` trait defines methods for retrieving the shape and the number of elements of a
-/// tensor or tensor expression.
-pub trait Shape {
-    /// Returns the shape of the object.
-    ///
-    /// # Returns
-    /// A slice representing the shape of the object.
-    fn shape(&self) -> &[usize];
-
-    /// Returns the number of elements in the object.
-    ///
-    /// # Returns
-    /// The number of elements.
-    fn count(&self) -> usize;
-}
-
-/// A trait for AST nodes in the Tengu framework. Any expression or a tensor is a node.
-///
-/// The `Node` trait extends the `Shape` trait and defines methods for visiting, finding, and cloning nodes.
-pub trait Node<B: Backend>: Shape {
-    /// Visits the node with a processor.
-    ///
-    /// # Parameters
-    /// - `processor`: A mutable reference to the processor.
-    ///
-    /// # Returns
-    /// The inner representation of the processor, as defined by `tengu-backend`.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr;
-
-    /// Finds a source by its label.
-    ///
-    /// # Parameters
-    /// - `label`: The label of the source to find.
-    ///
-    /// # Returns
-    /// An optional reference to the source.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>>;
-
-    /// Clones the node into a boxed trait object.
-    ///
-    /// # Returns
-    /// A boxed trait object containing the cloned node.
-    fn clone_box(&self) -> Box<dyn Node<B>>;
-}
 
 // NOTE: Expression implementation.
 
@@ -221,6 +150,18 @@ where
     fn clone_box(&self) -> Box<dyn Node<B>> {
         Box::new(self.clone())
     }
+
+    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
+        match self {
+            Self::Scalar(_) => {}
+            Self::Tensor(tensor) => collector.add(tensor),
+            Self::Binary(binary) => binary.collect(collector),
+            Self::Cast(cast) => cast.collect(collector),
+            Self::UnaryFn(unary_fn) => unary_fn.collect(collector),
+            Self::Statement(statement) => statement.collect(collector),
+        }
+    }
+
     /// Finds a source within the expression by its label.
     ///
     /// # Parameters
@@ -238,6 +179,7 @@ where
             Self::Statement(statement) => statement.find(label),
         }
     }
+
     /// Visits the expression with a processor.
     ///
     /// # Parameters

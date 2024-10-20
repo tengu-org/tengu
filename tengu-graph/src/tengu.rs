@@ -6,13 +6,15 @@
 //! for working with tensors and scalars. This is what user sees first when they start interacting
 //! with Tengu.
 
-use std::sync::Arc;
-use tengu_backend::{Backend, IOType};
+use std::rc::Rc;
+use tengu_backend::Backend;
 use tengu_backend_wgpu::Backend as WGPUBackend;
+use tengu_tensor_traits::IOType;
 
 use crate::builder::Builder;
-use crate::expression::{Expression, Shape};
+use crate::expression::Expression;
 use crate::graph::Graph;
+use crate::node::Shape;
 use crate::Result;
 
 /// Main struct for the Tengu tensor computation framework.
@@ -20,7 +22,7 @@ use crate::Result;
 /// The `Tengu` struct provides methods for managing tensors, expressions,
 /// and computational graphs using a specified backend.
 pub struct Tengu<B> {
-    backend: Arc<B>,
+    backend: Rc<B>,
 }
 
 impl<B: Backend + 'static> Tengu<B> {
@@ -28,16 +30,16 @@ impl<B: Backend + 'static> Tengu<B> {
     ///
     /// # Returns
     /// A result containing a reference-counted `Tengu` instance or an error.
-    pub async fn new() -> Result<Arc<Self>> {
+    pub async fn new() -> Result<Rc<Self>> {
         let backend = B::new().await?;
-        Ok(Arc::new(Self { backend }))
+        Ok(Rc::new(Self { backend }))
     }
 
     /// Returns a reference to the backend used by this Tengu instance.
     ///
     /// # Returns
     /// A reference to the backend.
-    pub(crate) fn backend(self: &Arc<Self>) -> &Arc<B> {
+    pub(crate) fn backend(self: &Rc<Self>) -> &Rc<B> {
         &self.backend
     }
 
@@ -48,7 +50,7 @@ impl<B: Backend + 'static> Tengu<B> {
     ///
     /// # Returns
     /// A `Builder` instance for creating the tensor.
-    pub fn tensor(self: &Arc<Self>, shape: impl Into<Vec<usize>>) -> Builder<B> {
+    pub fn tensor(self: &Rc<Self>, shape: impl Into<Vec<usize>>) -> Builder<B> {
         Builder::new(&self.backend, shape)
     }
     /// Creates a new tensor builder with the same shape as the specified expression.
@@ -58,7 +60,7 @@ impl<B: Backend + 'static> Tengu<B> {
     ///
     /// # Returns
     /// A `Builder` instance for creating the tensor.
-    pub fn like<T: IOType>(self: &Arc<Self>, expr: &Expression<T, B>) -> Builder<B> {
+    pub fn like<T: IOType>(self: &Rc<Self>, expr: &Expression<T, B>) -> Builder<B> {
         Builder::new(&self.backend, expr.shape())
     }
 
@@ -69,7 +71,7 @@ impl<B: Backend + 'static> Tengu<B> {
     ///
     /// # Returns
     /// An `Expression` representing the scalar.
-    pub fn scalar<T: IOType>(self: &Arc<Self>, scalar: T) -> Expression<T, B> {
+    pub fn scalar<T: IOType>(self: &Rc<Self>, scalar: T) -> Expression<T, B> {
         Expression::Scalar(scalar)
     }
 
@@ -77,7 +79,7 @@ impl<B: Backend + 'static> Tengu<B> {
     ///
     /// # Returns
     /// A `Graph` instance for managing computations.
-    pub fn graph(self: &Arc<Self>) -> Graph<B> {
+    pub fn graph(self: &Rc<Self>) -> Graph<B> {
         Graph::new(self)
     }
 }
@@ -87,7 +89,7 @@ impl Tengu<WGPUBackend> {
     ///
     /// # Returns
     /// A result containing a reference-counted `Tengu` instance or an error.
-    pub async fn wgpu() -> Result<Arc<Self>> {
+    pub async fn wgpu() -> Result<Rc<Self>> {
         Tengu::new().await
     }
 }

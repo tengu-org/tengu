@@ -19,13 +19,6 @@
 //! - `linker`: Defines the `Linker` trait, which is used for propagating tensor data between different parts
 //!   of a computation graph or between different storage locations.
 //!
-//! - `retrieve`: Defines the `Retrieve` trait, which provides an interface for retrieving data asynchronously
-//!   from staging buffer and sending it to the probe associated with the implementor of this
-//!   trait.
-//!
-//! - `probe`: Defines the `Probe` trait, which provides an interface for retrieving data asynchronously
-//!   from different types that implement the `IOType` trait.
-//!
 //! - `processor`: Defines the `Processor` trait, which is used for processing the abstract syntax tree (AST)
 //!   of tensor expressions in a final tagless style and preparaing the results for backend
 //!   consumption.
@@ -58,8 +51,6 @@
 //! - **Readout**: Provides methods for reading tensor data from the computation graph into staging
 //!   buffers.
 //!
-//! - **Retrieve**: Provides methods for reading tensor data from staging buffers into probes.
-//!
 //! - **Tensor**: Represents a tensor and provides methods for manipulating tensor data.
 //!
 //! - **Probe**: Allows for the asynchronous retrieval of data from tensors or other types that implement the `IOType` trait.
@@ -69,21 +60,13 @@ mod compute;
 mod error;
 mod limits;
 mod linker;
-mod probe;
 mod processor;
 mod readout;
-mod retrieve;
-mod tensor;
-mod types;
 
 pub use backend::Backend;
 pub use compute::Compute;
 pub use error::{Error, Result};
 pub use limits::Limits;
 pub use linker::Linker;
-pub use probe::Probe;
 pub use processor::Processor;
 pub use readout::Readout;
-pub use retrieve::Retrieve;
-pub use tensor::Tensor;
-pub use types::{IOType, StorageType};

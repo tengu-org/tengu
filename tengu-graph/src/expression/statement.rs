@@ -2,9 +2,13 @@
 //! tensor statements within expressions. It ensures that tensor shapes match and provides
 //! methods for processing and visiting tensor expressions.
 
-use tengu_backend::{Backend, Processor, StorageType};
+use tengu_backend::{Backend, Processor};
+use tengu_tensor_traits::StorageType;
 
-use super::{Expression, Node, Shape};
+use super::Expression;
+use crate::collector::Collector;
+use crate::node::{Node, Shape};
+use crate::source::Source;
 
 /// Struct representing a tensor statement, containing an output tensor and an expression tensor.
 pub struct Statement<B: Backend> {
@@ -64,6 +68,11 @@ impl<B: Backend + 'static> Node<B> for Statement<B> {
         Box::new(self.clone())
     }
 
+    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
+        self.expression.collect(collector);
+        self.output.collect(collector);
+    }
+
     /// Finds a source node by its label in the output or expression tensors.
     ///
     /// # Parameters
@@ -71,7 +80,7 @@ impl<B: Backend + 'static> Node<B> for Statement<B> {
     ///
     /// # Returns
     /// An optional reference to the found source node.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn super::Source<B>> {
+    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>> {
         self.output.find(label).or_else(|| self.expression.find(label))
     }
 

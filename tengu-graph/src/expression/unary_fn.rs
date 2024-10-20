@@ -2,9 +2,13 @@
 //! such as logarithm and exponentiation in tensor expressions. This is a helper struct for storing
 //! `UnaryFn` variant on the `Expression` struct.
 
-use tengu_backend::{Backend, Processor, StorageType};
+use tengu_backend::{Backend, Processor};
+use tengu_tensor_traits::StorageType;
 
-use super::{Expression, Node, Shape};
+use super::Expression;
+use crate::collector::Collector;
+use crate::node::{Node, Shape};
+use crate::source::Source;
 
 // NOTE: Function
 
@@ -106,6 +110,10 @@ impl<B: Backend + 'static> Node<B> for UnaryFn<B> {
         Box::new(self.clone())
     }
 
+    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
+        self.expression.collect(collector);
+    }
+
     /// Finds a source node by its label.
     ///
     /// # Parameters
@@ -113,7 +121,7 @@ impl<B: Backend + 'static> Node<B> for UnaryFn<B> {
     ///
     /// # Returns
     /// An optional reference to the found source node.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn super::Source<B>> {
+    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>> {
         self.expression.find(label)
     }
 

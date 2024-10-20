@@ -3,16 +3,20 @@
 //! stored on the GPU. This trait outlines the necessary operations and associated types
 //! required for a particular implemntation on some backend.
 
-use crate::{Probe, StorageType};
+#![allow(async_fn_in_trait)]
+
+use std::borrow::Cow;
+
+use crate::StorageType;
 
 /// A trait for representing tensors in the Tengu backend.
 ///
 /// This trait defines the necessary operations and associated types required for
 /// interacting with tensors in a generic and type-safe manner. Implementors of
 /// this trait must specify the type of probe that can be bound to the tensor.
-pub trait Tensor<T: StorageType> {
-    /// The type of probe this tensor can be bound to.
-    type Probe: Probe<T::IOType>;
+pub trait Tensor {
+    /// The type of the elements in this tensor.
+    type Elem: StorageType;
 
     /// Returns the label of the tensor.
     ///
@@ -20,9 +24,21 @@ pub trait Tensor<T: StorageType> {
     /// A string slice representing the label of the tensor.
     fn label(&self) -> &str;
 
-    /// Gets the tensor's probe or initializes a new one and binds it to this tensor.
+    /// Returns the number of elements in the tensor.
     ///
     /// # Returns
-    /// A probe bound to this tensor.
-    fn probe(&self) -> Self::Probe;
+    /// The number of elements in the tensor.
+    fn count(&self) -> usize;
+
+    /// Returns the shape of the tensor.
+    ///
+    /// # Returns
+    /// The shape of the tensor as a slice of unsigned integers.
+    fn shape(&self) -> &[usize];
+
+    /// Retrieves the data from the tensor.
+    ///
+    /// # Returns
+    /// A result containing a reference to the data stored in the tensor.
+    async fn retrieve(&self) -> anyhow::Result<Cow<'_, [<Self::Elem as StorageType>::IOType]>>;
 }
