@@ -5,6 +5,12 @@
 //! of functionality it provides is the ability to create probes that can asynchronously retrieve
 //! data from tensors.
 //!
+//! ## Features
+//!
+//! - Tensor Management: Defines the Tensor struct for managing tensor objects with support for different backends.
+//! - Data Inspection: The Probe struct allows users to asynchronously inspect and retrieve tensor data for analysis and debugging.
+//! - Channel Communication: Implements a sender-receiver pattern for transferring data between tensors and probes.
+//!
 //! ## Modules
 //! - `channel`: Defines the `Channel` struct for managing asynchronous data retrieval from tensors.
 //! - `error`: Defines the `Error` and `Result` types for error handling.

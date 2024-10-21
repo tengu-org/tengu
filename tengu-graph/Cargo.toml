@@ -2,6 +2,8 @@
 name = "tengu-graph"
 version = "0.1.0"
 edition = "2021"
+description = "Real-time tensor graph simulation framework"
+license = "MIT OR Apache-2.0"
 
 [dependencies]
 tengu-backend = { path = "../tengu-backend" }

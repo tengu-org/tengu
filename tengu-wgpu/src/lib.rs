@@ -1,8 +1,13 @@
-//! # Tengu WGPU Library
-//!
 //! This crate provides a high-level abstraction over the WGPU graphics API, focusing on ease of use and integration with Tengu
 //! projects. It includes a set of utilities and wrappers to facilitate the creation and management of GPU resources, shaders, and
 //! pipelines.
+//!
+//! ## Features
+//!
+//! - Adapter Management: Discover and initialize GPU adapters with configurable options.
+//! - Device Handling: Build GPU devices, manage resources like buffers, and submit commands for execution.
+//! - Pipeline Creation: Easily set up compute and render pipelines with flexible configuration.
+//! - Surface Integration: Handle GPU surfaces for display output management.
 //!
 //! ## Modules
 //!
