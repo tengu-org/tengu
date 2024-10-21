@@ -6,8 +6,8 @@
 //! and processing these expressions.
 
 use tengu_backend::{Backend, Processor};
+use tengu_backend_tensor::StorageType;
 use tengu_tensor::Tensor;
-use tengu_tensor_traits::StorageType;
 
 use cast::Cast;
 use ops::Binary;

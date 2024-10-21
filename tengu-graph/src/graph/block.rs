@@ -12,7 +12,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Backend, Compute, Processor, Readout};
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use super::computation::Computation;
 use crate::collector::Collector;

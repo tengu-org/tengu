@@ -10,8 +10,8 @@ use std::rc::Rc;
 use as_any::Downcast;
 use futures::Future;
 use tengu_backend::Backend;
+use tengu_backend_tensor::StorageType;
 use tengu_tensor::{Probe, Tensor};
-use tengu_tensor_traits::StorageType;
 
 use crate::source::Source;
 use crate::{Error, Result, Tengu};

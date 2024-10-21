@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 
 use tengu_backend::{Backend, Processor};
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use super::Expression;
 use crate::collector::Collector;

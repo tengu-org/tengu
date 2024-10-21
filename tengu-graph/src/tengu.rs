@@ -8,8 +8,8 @@
 
 use std::rc::Rc;
 use tengu_backend::Backend;
+use tengu_backend_tensor::IOType;
 use tengu_backend_wgpu::Backend as WGPUBackend;
-use tengu_tensor_traits::IOType;
 
 use crate::builder::Builder;
 use crate::expression::Expression;

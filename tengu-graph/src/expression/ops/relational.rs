@@ -2,7 +2,7 @@
 //! It leverages the backend processing capabilities to apply these operations on tensor data.
 
 use tengu_backend::Backend;
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use super::{Binary, Expression};
 

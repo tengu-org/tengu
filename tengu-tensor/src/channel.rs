@@ -1,10 +1,10 @@
 use flume::{Receiver, Sender};
 use tengu_backend::Backend;
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::{Tensor, StorageType};
 
 use crate::{Error, Result};
 
-pub type Payload<T, B> = Vec<<<<B as Backend>::Tensor<T> as tengu_tensor_traits::Tensor>::Elem as StorageType>::IOType>;
+pub type Payload<T, B> = Vec<<<<B as Backend>::Tensor<T> as Tensor>::Elem as StorageType>::IOType>;
 
 pub struct Channel<T: StorageType, B: Backend> {
     sender: Sender<Payload<T, B>>,

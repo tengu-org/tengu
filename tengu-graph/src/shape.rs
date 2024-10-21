@@ -1,6 +1,6 @@
 use tengu_backend::Backend;
+use tengu_backend_tensor::StorageType;
 use tengu_tensor::Tensor;
-use tengu_tensor_traits::StorageType;
 
 /// A trait for types that have a shape.
 ///
@@ -28,7 +28,7 @@ impl<T: StorageType, B: Backend> Shape for Tensor<T, B> {
     /// # Returns
     /// A slice representing the shape of the tensor.
     fn shape(&self) -> &[usize] {
-        use tengu_tensor_traits::Tensor;
+        use tengu_backend_tensor::Tensor;
         self.raw().shape()
     }
 
@@ -37,7 +37,7 @@ impl<T: StorageType, B: Backend> Shape for Tensor<T, B> {
     /// # Returns
     /// The number of elements in the tensor.
     fn count(&self) -> usize {
-        use tengu_tensor_traits::Tensor;
+        use tengu_backend_tensor::Tensor;
         self.raw().count()
     }
 }

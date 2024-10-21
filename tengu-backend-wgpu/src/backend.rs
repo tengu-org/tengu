@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Error, Result};
-use tengu_tensor_traits::{IOType, StorageType};
+use tengu_backend_tensor::{IOType, StorageType};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 use tracing::trace;
 

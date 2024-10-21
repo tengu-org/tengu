@@ -1,6 +1,6 @@
-//! This crate provides the foundational traits and types that other backend implementations must
+//! This crate provides the foundational traits and types that other tensor implementations must
 //! adhere to in order to support tensor operations. The crate is intended to be consumed by user-facing
-//! crates such as `tengu-tensor`.
+//! crates such as `tengu-graph`.
 //!
 //! ## Modules
 //!
