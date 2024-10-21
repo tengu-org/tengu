@@ -2,18 +2,15 @@
 //! a buffer, a label, and a methods to readout and retrieve and  data from the GPU. It is needed to treat tensor in
 //! uniform fashion, irrespecitve of their underlying storage type.
 
-use async_trait::async_trait;
-use tengu_backend::Result;
 use tengu_wgpu::{Buffer, Encoder};
 
 /// The `Source` trait represents a "type-less" tensor. It is implemented only by tensor and used
 /// by the `Processor` to handle all tensors in a uniform fashion.
-#[async_trait]
 pub trait Source {
-    /// Returns a label that describes the source.
+    /// Returns the label of the source.
     ///
     /// # Returns
-    /// A string slice containing the label of the source.
+    /// A string slice representing the label of the source.
     fn label(&self) -> &str;
 
     /// Returns a reference to the buffer associated with the source.
@@ -28,15 +25,12 @@ pub trait Source {
     /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operation.
     fn readout(&self, encoder: &mut Encoder);
 
-    /// Performs a retrieval operation.
+    /// Propagates tensor data to the target tensor.
     ///
-    /// # Returns
-    /// A `Result` indicating whether the retrieval was successful or an error occurred.
-    async fn retrieve(&self) -> Result<()>;
-
-    /// Returns the number of elements in the source.
-    ///
-    /// # Returns
-    /// The number of elements in the source tensor.
-    fn count(&self) -> usize;
+    /// # Parameters
+    /// - `target`: A reference to the target tensor to which data will be propagated.
+    /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operation.
+    fn propagate(&self, target: &dyn Source, encoder: &mut Encoder) {
+        encoder.copy_buffer(self.buffer(), target.buffer());
+    }
 }

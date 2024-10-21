@@ -21,7 +21,7 @@
 //!   command buffers.
 //!   - `new`: Creates a new command encoder with a specified label.
 //!   - `pass`: Begins a new compute pass with a specified label and executes a provided closure with the compute pass.
-//!   - `readout`: Executes a provided closure with a mutable reference to the encoder.
+//!   - `stage`: Executes a provided closure with a mutable reference to the encoder.
 //!   - `copy_buffer`: Copies data from a source buffer to a destination buffer.
 //!   - `finish`: Finalizes the command buffer and returns it for submission to the GPU.
 
@@ -70,14 +70,14 @@ impl Encoder {
         Ok(self)
     }
 
-    /// Executes the provided callback for readout operations.
+    /// Executes the provided callback for staging operations.
     ///
     /// # Parameters
-    /// - `call`: A callback function to execute for readout operations.
+    /// - `call`: A callback function to execute for staging operations.
     ///
     /// # Returns
     /// The updated `Encoder` instance.
-    pub fn readout(mut self, call: impl FnOnce(&mut Encoder)) -> Self {
+    pub fn stage(mut self, call: impl FnOnce(&mut Encoder)) -> Self {
         trace!("Executing readout");
         call(&mut self);
         self

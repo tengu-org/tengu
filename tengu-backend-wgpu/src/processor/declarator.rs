@@ -6,7 +6,7 @@
 
 use itertools::Itertools;
 use std::collections::HashMap;
-use tengu_backend::StorageType;
+use tengu_tensor_traits::StorageType;
 use tengu_wgpu::BufferUsage;
 
 use crate::source::Source;
@@ -109,9 +109,9 @@ mod tests {
     #[tokio::test]
     async fn declaration() {
         let backend = WGPUBackend::new().await.unwrap();
-        let a = backend.tensor("a", &[1.0, 2.0, 3.0, 4.0]);
-        let b = backend.tensor("b", &[5.0, 6.0, 7.0, 8.0]);
-        let c = backend.zero::<f32>("c", 4);
+        let a = backend.tensor("a", [4], &[1.0, 2.0, 3.0, 4.0]);
+        let b = backend.tensor("b", [4], &[5.0, 6.0, 7.0, 8.0]);
+        let c = backend.zero::<f32>("c", [4]);
         let mut processor = Declarator::new();
         processor.var(0, &a);
         processor.var(1, &b);

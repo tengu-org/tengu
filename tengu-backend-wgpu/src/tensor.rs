@@ -7,24 +7,28 @@
 //! This module defines the `Tensor` struct and implements various traits to integrate tensors with the Tengu backend and WGPU
 //! operations.
 
-use std::sync::{Arc, OnceLock};
+use std::borrow::Cow;
+use std::cell::OnceCell;
+use std::marker::PhantomData;
+use std::rc::Rc;
 
 use async_trait::async_trait;
-use tengu_backend::{Result, StorageType};
+use tengu_backend::Error;
+use tengu_tensor_traits::StorageType;
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize, Encoder};
 
-use crate::probe::Probe;
 use crate::source::Source;
-use crate::stage::Stage;
 use crate::Backend as WGPUBackend;
 
 /// Represents a tensor in the WGPU backend.
-pub struct Tensor<T: StorageType> {
-    backend: Arc<WGPUBackend>,
+pub struct Tensor<T> {
+    backend: Rc<WGPUBackend>,
     label: String,
     count: usize,
-    stage: OnceLock<Stage<T::IOType>>,
-    buffer: Arc<Buffer>,
+    shape: Vec<usize>,
+    staging_buffer: OnceCell<Buffer>,
+    buffer: Rc<Buffer>,
+    phantom: PhantomData<T>,
 }
 
 impl<T: StorageType> Tensor<T> {
@@ -38,13 +42,17 @@ impl<T: StorageType> Tensor<T> {
     ///
     /// # Returns
     /// A new instance of `Tensor`.
-    pub fn new(backend: &Arc<WGPUBackend>, label: String, count: usize, buffer: Buffer) -> Self {
+    pub fn new(backend: &Rc<WGPUBackend>, label: String, shape: impl Into<Vec<usize>>, buffer: Buffer) -> Self {
+        let shape = shape.into();
+        let count = shape.iter().product();
         Self {
-            backend: Arc::clone(backend),
+            backend: Rc::clone(backend),
             label,
             count,
-            stage: OnceLock::new(),
+            shape,
+            staging_buffer: OnceCell::new(),
             buffer: buffer.into(),
+            phantom: PhantomData,
         }
     }
 
@@ -52,23 +60,29 @@ impl<T: StorageType> Tensor<T> {
     ///
     /// # Returns
     /// A reference to the tensor's staging object.
-    fn stage(&self) -> &Stage<T::IOType> {
-        self.stage.get_or_init(|| {
+    fn stage(&self) -> &Buffer {
+        self.staging_buffer.get_or_init(|| {
             let size = self.count.of::<T>();
-            let buffer = self
-                .backend
+            self.backend
                 .device()
-                .buffer::<T>(self.label(), BufferUsage::Staging)
-                .empty(size);
-            Stage::new(&self.backend, buffer)
+                .buffer::<T>(&self.label, BufferUsage::Staging)
+                .empty(size)
         })
     }
 }
 
-// NOTE: Source implementation.
+// NOTE: Source trait implementation.
 
 #[async_trait]
 impl<T: StorageType> Source for Tensor<T> {
+    /// Returns the label of the tensor.
+    ///
+    /// # Returns
+    /// The label of the tensor.
+    fn label(&self) -> &str {
+        &self.label
+    }
+
     /// Returns a reference to the GPU buffer storing the tensor's data.
     ///
     /// # Returns
@@ -76,25 +90,27 @@ impl<T: StorageType> Source for Tensor<T> {
     fn buffer(&self) -> &Buffer {
         &self.buffer
     }
+
     /// Copies the tensor's data from the GPU buffer to the staging buffer using the provided encoder.
     ///
     /// # Parameters
     /// - `encoder`: The encoder used to copy the buffer data.
     fn readout(&self, encoder: &mut Encoder) {
-        if let Some(stage) = self.stage.get() {
-            encoder.copy_buffer(&self.buffer, stage.buffer());
-        }
+        encoder.copy_buffer(&self.buffer, self.stage());
     }
+}
 
-    /// Retrieves staging buffer data from the GPU to CPU buffer.
+// NOTE: Tensor trait implementation.
+
+impl<T: StorageType> tengu_tensor_traits::Tensor for Tensor<T> {
+    type Elem = T;
+
+    /// Returns the label of the tensor.
     ///
     /// # Returns
-    /// A `Result` indicating success or failure of the retrieval operation.
-    async fn retrieve(&self) -> Result<()> {
-        if let Some(stage) = &self.stage.get() {
-            stage.retrieve().await?;
-        }
-        Ok(())
+    /// The label of the tensor.
+    fn label(&self) -> &str {
+        &self.label
     }
 
     /// Returns the number of elements in the tensor.
@@ -105,47 +121,48 @@ impl<T: StorageType> Source for Tensor<T> {
         self.count
     }
 
-    /// Returns the label of the tensor.
+    /// Returns the shape of the tensor.
     ///
     /// # Returns
-    /// The label of the tensor.
-    fn label(&self) -> &str {
-        &self.label
-    }
-}
-
-// NOTE: Raw tensor implementation.
-
-impl<T: StorageType> tengu_backend::Tensor<T> for Tensor<T> {
-    type Probe = Probe<T::IOType>;
-
-    /// Returns the label of the tensor.
-    ///
-    /// # Returns
-    /// The label of the tensor.
-    fn label(&self) -> &str {
-        &self.label
+    /// The shape of the tensor as a slice of unsigned integers.
+    fn shape(&self) -> &[usize] {
+        &self.shape
     }
 
-    /// Returns a reference to the tensor's probe, initializing it if necessary.
+    /// Retrieves staging buffer data from the GPU to CPU buffer.
     ///
     /// # Returns
-    /// A reference to the tensor's probe.
-    fn probe(&self) -> Self::Probe {
-        Probe::new(self.stage().receiver())
+    /// A `Result` indicating success or failure of the retrieval operation.
+    async fn retrieve(&self) -> anyhow::Result<Cow<'_, [T::IOType]>> {
+        let staging_buffer = self.stage();
+        let buffer_slice = staging_buffer.slice(..);
+        let (sender, receiver) = flume::bounded(1);
+        buffer_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
+        self.backend.device().poll(wgpu::Maintain::wait()).panic_on_timeout();
+        receiver
+            .recv_async()
+            .await
+            .map_err(|e| Error::WGPUError(e.into()))?
+            .map_err(|e| Error::WGPUError(e.into()))?;
+        let data = buffer_slice.get_mapped_range();
+        let buffer = bytemuck::cast_slice(&data).to_vec();
+        drop(data);
+        staging_buffer.unmap();
+        Ok(buffer.into())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::source::Source;
     use crate::Backend as WGPUBackend;
     use pretty_assertions::assert_eq;
-    use tengu_backend::{Backend, Tensor};
+    use tengu_backend::Backend;
 
     #[tokio::test]
     async fn tensor_emit() {
         let backend = WGPUBackend::new().await.unwrap();
-        let tensor = backend.zero::<u32>("tenzor", 6);
+        let tensor = backend.zero::<u32>("tenzor", [6]);
         assert_eq!(tensor.label(), "tenzor");
     }
 }

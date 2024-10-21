@@ -1,23 +1,28 @@
 [package]
-name = "tengu-backend-wgpu"
+name = "tengu-graph"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tengu-wgpu = { path = "../tengu-wgpu" }
 tengu-backend = { path = "../tengu-backend" }
+tengu-backend-wgpu = { path = "../tengu-backend-wgpu" }
 tengu-tensor-traits = { path = "../tengu-tensor-traits" }
+tengu-tensor = { path = "../tengu-tensor" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
-wgpu = { workspace = true }
-bytemuck = { workspace = true }
 tracing = { workspace = true }
 async-trait = { workspace = true }
-flume = { workspace = true }
-itertools = "0.13.0"
+random-string = "1.1.0"
 indoc = "2.0.5"
+itertools = "0.13.0"
+futures = "0.3.31"
+as-any = "0.3.1"
+num = "0.4.3"
+rand = "0.8.5"
+rand_distr = "0.4.3"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
-regex = "1.11.0"
+pollster = { version = "0.3.0", features = ["macro"] }
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

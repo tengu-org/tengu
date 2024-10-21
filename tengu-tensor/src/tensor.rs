@@ -4,11 +4,13 @@
 //! using a specified backend. It also includes implementations for the `Source` and `Shape` traits,
 //! enabling tensor operations and shape management.
 
-use as_any::Downcast;
-use std::sync::Arc;
-use tengu_backend::{Backend, Linker, StorageType};
+use std::cell::OnceCell;
+use std::rc::Rc;
 
-use crate::expression::{Shape, Source};
+use tengu_backend::Backend;
+use tengu_tensor_traits::StorageType;
+
+use crate::channel::Channel;
 use crate::probe::Probe;
 use crate::{Error, Result};
 
@@ -17,10 +19,9 @@ use crate::{Error, Result};
 /// The `Tensor` struct is parameterized by a storage type `T` and a backend `B`. It includes
 /// fields for the tensor's shape, backend, and the underlying tensor data.
 pub struct Tensor<T: StorageType, B: Backend + 'static> {
-    count: usize,
-    shape: Vec<usize>,
-    backend: Arc<B>,
-    raw: Arc<B::Tensor<T>>,
+    backend: Rc<B>,
+    raw: Rc<B::Tensor<T>>,
+    channel: OnceCell<Channel<T, B>>,
 }
 
 impl<T: StorageType, B: Backend> Tensor<T, B> {
@@ -34,12 +35,11 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     ///
     /// # Returns
     /// A new `Tensor` instance.
-    pub fn new(backend: &Arc<B>, shape: Vec<usize>, count: usize, tensor: B::Tensor<T>) -> Self {
+    pub fn new(backend: &Rc<B>, tensor: B::Tensor<T>) -> Self {
         Self {
-            backend: Arc::clone(backend),
-            count,
-            shape,
+            backend: Rc::clone(backend),
             raw: tensor.into(),
+            channel: OnceCell::new(),
         }
     }
 
@@ -56,8 +56,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// # Returns
     /// A `Probe` object for the tensor.
     pub fn probe(&self) -> Probe<T, B> {
-        use tengu_backend::Tensor;
-        Probe::new(self.raw.probe())
+        Probe::new(self.channel().receiver())
     }
 
     /// Returns the label of the tensor.
@@ -65,58 +64,31 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// # Returns
     /// A string slice representing the tensor's label.
     pub fn label(&self) -> &str {
-        use tengu_backend::Tensor;
+        use tengu_tensor_traits::Tensor;
         self.raw.label()
     }
-}
 
-// NOTE: Node
-
-impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
-    /// Checks if the tensor matches the shape of another tensor.
-    ///
-    /// # Parameters
-    /// - `other`: Another source to compare against.
-    ///
-    /// # Returns
-    /// A result indicating whether the shapes match.
-    fn matches_to(&self, other: &dyn Source<B>) -> Result<bool> {
-        let other = other.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
-        Ok(self.shape() == other.shape())
-    }
-
-    /// Copies the data from this tensor to another tensor using the provided linker.
-    ///
-    /// # Parameters
-    /// - `to`: The target tensor to link to.
-    /// - `linker`: The linker to use for copying the link.
+    /// Reads the tensor data from the source and sends it to associated probes.
+    /// If the channel is full then there is no point wasting time on reading the data out - the
+    /// previous message hasn't been read out by the probe yet. In this case the method will return
+    /// immediately without retrieving and sending anything.
     ///
     /// # Returns
     /// A result indicating the success of the operation.
-    fn copy(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()> {
-        let to = to.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
-        linker.copy_link(self.raw(), to.raw());
-        Ok(())
-    }
-}
-
-// NOTE: Shape
-
-impl<T: StorageType, B: Backend> Shape for Tensor<T, B> {
-    /// Returns the shape of the tensor.
-    ///
-    /// # Returns
-    /// A slice representing the shape of the tensor.
-    fn shape(&self) -> &[usize] {
-        &self.shape
+    pub async fn retrieve(&self) -> Result<()> {
+        use tengu_tensor_traits::Tensor;
+        if self.channel().is_full() {
+            return Ok(());
+        }
+        let data: Vec<_> = self.raw().retrieve().await.map_err(Error::ChannelError)?.into_owned();
+        self.channel()
+            .send(data)
+            .await
+            .map_err(|e| Error::ChannelError(e.into()))
     }
 
-    /// Returns the number of elements in the tensor.
-    ///
-    /// # Returns
-    /// The number of elements in the tensor.
-    fn count(&self) -> usize {
-        self.count
+    fn channel(&self) -> &Channel<T, B> {
+        self.channel.get_or_init(|| Channel::new())
     }
 }
 
@@ -129,40 +101,9 @@ impl<T: StorageType, B: Backend> Clone for Tensor<T, B> {
     /// A new `Tensor` instance that is a clone of the original.
     fn clone(&self) -> Self {
         Self {
-            count: self.count,
-            shape: self.shape.clone(),
-            backend: Arc::clone(&self.backend),
-            raw: Arc::clone(&self.raw),
+            backend: Rc::clone(&self.backend),
+            raw: Rc::clone(&self.raw),
+            channel: self.channel.clone(),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::builder::LABEL_LENGTH;
-    use crate::expression::Shape;
-    use crate::Tengu;
-    use pretty_assertions::assert_eq;
-
-    #[tokio::test]
-    async fn tensor_shape() {
-        let tengu = Tengu::wgpu().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
-        assert_eq!(tensor.count(), 27);
-        assert_eq!(tensor.shape(), &[3, 3, 3]);
-    }
-
-    #[tokio::test]
-    async fn tensor_label() {
-        let tengu = Tengu::wgpu().await.unwrap();
-        let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
-        let label = tensor.label().unwrap();
-        assert_eq!(label.len(), LABEL_LENGTH);
-        assert!(label.chars().all(|c| c.is_alphabetic()));
-
-        let tensor = tengu.tensor([3]).init(&[1, 2, 3]);
-        let label = tensor.label().unwrap();
-        assert_eq!(label.len(), LABEL_LENGTH);
-        assert!(label.chars().all(|c| c.is_alphabetic()));
     }
 }
