@@ -1,3 +1,5 @@
+![tests](https://github.com/tengu-org/tengu/actions/workflows/rust.yml/badge.svg)
+
 # Tengu: Real-Time Tensor Graph Simulation Framework
 
 Tengu (short for TENsor GUraph) is a Rust-based framework for building and managing real-time tensor computation graphs, leveraging GPU capabilities through WGPU. Inspired by systems like Simulink, Tengu enables the creation of dynamic, feedback-driven models that simulate complex systems in real-time. It’s suitable for simulating physical mechanisms, ecosystems, market dynamics, multi-agent interactions, and more.
