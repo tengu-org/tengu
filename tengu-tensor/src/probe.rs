@@ -6,7 +6,7 @@
 
 use flume::Receiver;
 use tengu_backend::Backend;
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use crate::channel::Payload;
 use crate::{Error, Result};

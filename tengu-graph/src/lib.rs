@@ -89,4 +89,4 @@ mod unify;
 
 pub use error::{Error, Result};
 pub use tengu::Tengu;
-pub use tengu_tensor_traits::{IOType, StorageType};
+pub use tengu_backend_tensor::{IOType, StorageType};

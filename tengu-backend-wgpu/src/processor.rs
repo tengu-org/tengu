@@ -15,7 +15,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use tengu_backend::Backend;
-use tengu_tensor_traits::{StorageType, Tensor};
+use tengu_backend_tensor::{StorageType, Tensor};
 use tracing::trace;
 
 use crate::source::Source;

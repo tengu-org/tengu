@@ -1,5 +1,5 @@
 [package]
-name = "tengu-tensor-traits"
+name = "tengu-backend-tensor"
 version = "0.1.0"
 edition = "2021"
 

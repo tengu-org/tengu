@@ -6,7 +6,7 @@
 
 use indoc::formatdoc;
 use itertools::Itertools;
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use crate::source::Source;
 use crate::tensor::Tensor;

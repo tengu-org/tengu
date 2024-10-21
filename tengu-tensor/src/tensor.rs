@@ -8,7 +8,7 @@ use std::cell::OnceCell;
 use std::rc::Rc;
 
 use tengu_backend::Backend;
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use crate::channel::Channel;
 use crate::probe::Probe;
@@ -64,7 +64,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// # Returns
     /// A string slice representing the tensor's label.
     pub fn label(&self) -> &str {
-        use tengu_tensor_traits::Tensor;
+        use tengu_backend_tensor::Tensor;
         self.raw.label()
     }
 
@@ -76,7 +76,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// # Returns
     /// A result indicating the success of the operation.
     pub async fn retrieve(&self) -> Result<()> {
-        use tengu_tensor_traits::Tensor;
+        use tengu_backend_tensor::Tensor;
         if self.channel().is_full() {
             return Ok(());
         }
@@ -87,6 +87,10 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
             .map_err(|e| Error::ChannelError(e.into()))
     }
 
+    /// Returns a reference to the channel for the tensor.
+    ///
+    /// # Returns
+    /// A reference to the tensor's channel.
     fn channel(&self) -> &Channel<T, B> {
         self.channel.get_or_init(|| Channel::new())
     }

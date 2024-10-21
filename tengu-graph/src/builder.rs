@@ -16,7 +16,7 @@ use std::rc::Rc;
 
 use num::Float;
 use tengu_backend::Backend;
-use tengu_tensor_traits::IOType;
+use tengu_backend_tensor::IOType;
 
 use crate::expression::Expression;
 use crate::{Error, Result, StorageType};

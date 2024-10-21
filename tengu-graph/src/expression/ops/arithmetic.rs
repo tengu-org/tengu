@@ -4,7 +4,7 @@
 
 use std::ops::{Add, Div, Mul, Sub};
 use tengu_backend::Backend;
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use super::{Binary, Expression};
 

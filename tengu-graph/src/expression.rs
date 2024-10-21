@@ -6,8 +6,8 @@
 //! and processing these expressions.
 
 use tengu_backend::{Backend, Processor};
+use tengu_backend_tensor::StorageType;
 use tengu_tensor::Tensor;
-use tengu_tensor_traits::StorageType;
 
 use cast::Cast;
 use ops::Binary;
@@ -152,6 +152,10 @@ where
         Box::new(self.clone())
     }
 
+    /// Collect sources from the expression tree.
+    ///
+    /// # Parameters
+    /// - `collector`: A mutable reference to the collector.
     fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
         match self {
             Self::Scalar(_) => {}

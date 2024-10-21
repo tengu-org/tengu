@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tengu-tensor-traits = { path = "../tengu-tensor-traits" }
+tengu-backend-tensor = { path = "../tengu-backend-tensor" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }

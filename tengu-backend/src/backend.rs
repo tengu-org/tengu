@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use tengu_tensor_traits::{IOType, StorageType, Tensor};
+use tengu_backend_tensor::{IOType, StorageType, Tensor};
 
 use crate::*;
 

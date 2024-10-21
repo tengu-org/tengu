@@ -2,8 +2,8 @@ use as_any::{AsAny, Downcast};
 use async_trait::async_trait;
 
 use tengu_backend::{Backend, Linker};
+use tengu_backend_tensor::StorageType;
 use tengu_tensor::Tensor;
-use tengu_tensor_traits::StorageType;
 
 use crate::shape::Shape;
 use crate::{Error, Result};

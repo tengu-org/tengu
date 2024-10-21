@@ -29,11 +29,6 @@
 //! - `limits`: Defines the `Limits` struct, which represents the limits of the backend in terms of
 //!   max tensor count and other properties.
 //!
-//! - `tensor`: Defines the `Tensor` trait, which represents a tensor in the computation framework.
-//!
-//! - `types`: Defines traits used throughout the crate, namely `IOType` and `StorageType`,
-//!   which represent different categories of data types used in tensor computations.
-//!
 //! ## Traits
 //!
 //! Implementors of this crate will need to implement the following traits to create a functional backend:
@@ -50,10 +45,6 @@
 //!
 //! - **Readout**: Provides methods for reading tensor data from the computation graph into staging
 //!   buffers.
-//!
-//! - **Tensor**: Represents a tensor and provides methods for manipulating tensor data.
-//!
-//! - **Probe**: Allows for the asynchronous retrieval of data from tensors or other types that implement the `IOType` trait.
 
 mod backend;
 mod compute;

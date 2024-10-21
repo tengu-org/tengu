@@ -1,7 +1,7 @@
 //! This module defines the `Linker` trait, which is used for propagating tensor data between different parts
 //! of a computation graph. The trait provides an interface for copying tensor data on a specified backend.
 
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use crate::Backend;
 

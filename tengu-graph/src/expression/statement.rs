@@ -3,7 +3,7 @@
 //! methods for processing and visiting tensor expressions.
 
 use tengu_backend::{Backend, Processor};
-use tengu_tensor_traits::StorageType;
+use tengu_backend_tensor::StorageType;
 
 use super::Expression;
 use crate::collector::Collector;
@@ -69,6 +69,10 @@ impl<B: Backend + 'static> Node<B> for Statement<B> {
         Box::new(self.clone())
     }
 
+    /// Collect sources from the statement.
+    ///
+    /// # Parameters
+    /// - `collector`: A mutable reference to the collector.
     fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
         self.expression.collect(collector);
         self.output.collect(collector);
