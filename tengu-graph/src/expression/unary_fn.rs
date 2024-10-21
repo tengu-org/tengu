@@ -111,6 +111,10 @@ impl<B: Backend + 'static> Node<B> for UnaryFn<B> {
         Box::new(self.clone())
     }
 
+    /// Collect sources from the unary operation.
+    ///
+    /// # Parameters
+    /// - `collector`: A mutable reference to the collector.
     fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
         self.expression.collect(collector);
     }

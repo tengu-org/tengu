@@ -1,3 +1,5 @@
+//! This module defines the `Retriever` struct and associated functionality for sending tensor data to their respective probes.
+
 use tengu_backend::Backend;
 
 use super::Graph;

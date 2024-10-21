@@ -69,6 +69,10 @@ impl<B: Backend + 'static> Node<B> for Statement<B> {
         Box::new(self.clone())
     }
 
+    /// Collect sources from the statement.
+    ///
+    /// # Parameters
+    /// - `collector`: A mutable reference to the collector.
     fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
         self.expression.collect(collector);
         self.output.collect(collector);

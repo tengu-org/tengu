@@ -87,6 +87,10 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
             .map_err(|e| Error::ChannelError(e.into()))
     }
 
+    /// Returns a reference to the channel for the tensor.
+    ///
+    /// # Returns
+    /// A reference to the tensor's channel.
     fn channel(&self) -> &Channel<T, B> {
         self.channel.get_or_init(|| Channel::new())
     }

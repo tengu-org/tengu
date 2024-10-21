@@ -69,6 +69,10 @@ where
         Box::new(self.clone())
     }
 
+    /// Collect sources from the cast operation.
+    ///
+    /// # Parameters
+    /// - `collector`: A mutable reference to the collector.
     fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
         self.expression.collect(collector);
     }

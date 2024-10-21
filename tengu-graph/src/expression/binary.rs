@@ -120,6 +120,10 @@ where
         Box::new(self.clone())
     }
 
+    /// Collect sources from the binary operation.
+    ///
+    /// # Parameters
+    /// - `collector`: A mutable reference to the collector.
     fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
         self.lhs.collect(collector);
         self.rhs.collect(collector);
