@@ -1,3 +1,6 @@
+readme:
+    cargo readme -r tengu-wgpu -o README.md
+
 check:
     cargo check --all-features
     cargo clippy --all-features
