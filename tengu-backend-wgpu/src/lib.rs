@@ -2,6 +2,14 @@
 //! This implementation leverages WGPU to perform efficient tensor operations, compute passes, and data management on the GPU.
 //! The crate is structured into several modules, each responsible for a specific aspect of the backend functionality.
 //!
+//! ## Features
+//!
+//! - GPU Device Management: Manages GPU resources like devices, buffers, and command encoders using WGPU.
+//! - Compute Pass Execution: Implements compute passes for tensor operations, ensuring efficient execution on the GPU.
+//! - Data Linking and Copying: Manages data flow between tensors using GPU buffers and encoders.
+//! - Shader Program Management: Configures and manages shaders for executing tensor computations and operations.
+//! - Data Retrieval: Supports efficient GPU data readout for analysis.
+//!
 //! # Modules
 //!
 //! - `backend`: Defines the main `Backend` struct that manages the WGPU device and provides methods to manipulate GPU resources.
