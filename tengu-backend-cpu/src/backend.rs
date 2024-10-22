@@ -1,5 +1,7 @@
+use std::collections::HashSet;
 use std::rc::Rc;
 
+use tengu_backend::{Error, Result};
 use tengu_backend_tensor::StorageType;
 
 use crate::compute::Compute;
@@ -19,31 +21,31 @@ impl tengu_backend::Backend for Backend {
     type Readout<'a> = Readout;
     type Limits = Limits;
 
-    async fn new() -> tengu_backend::Result<std::rc::Rc<Self>> {
-        todo!()
+    async fn new() -> Result<Rc<Self>> {
+        Ok(Rc::new(Self))
     }
 
     fn limits(&self) -> Self::Limits {
         Limits
     }
 
-    fn processor<'a>(&self, readouts: &'a std::collections::HashSet<String>) -> Self::Processor<'a> {
+    fn processor<'a>(&self, readouts: &'a HashSet<String>) -> Self::Processor<'a> {
         Processor::new(readouts)
     }
 
-    fn propagate(&self, _call: impl FnOnce(Self::Linker<'_>)) {
-        todo!();
+    fn propagate(&self, call: impl FnOnce(Self::Linker<'_>)) {
+        call(Linker);
     }
 
-    fn compute<F>(&self, _label: &str, _call: F) -> tengu_backend::Result<()>
+    fn compute<F>(&self, _label: &str, call: F) -> Result<()>
     where
         F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>,
     {
-        todo!();
+        call(Compute).map_err(Error::ComputeError)
     }
 
-    fn readout(&self, _label: &str, _call: impl FnOnce(Self::Readout<'_>)) {
-        todo!();
+    fn readout(&self, _label: &str, call: impl FnOnce(Self::Readout<'_>)) {
+        call(Readout);
     }
 
     fn tensor<T: tengu_backend_tensor::IOType>(
