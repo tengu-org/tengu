@@ -1,4 +1,5 @@
-use std::{borrow::Cow, cell::RefCell};
+use std::borrow::Cow;
+use std::cell::RefCell;
 
 use tengu_backend_tensor::StorageType;
 
@@ -91,7 +92,14 @@ impl<T: StorageType> tengu_backend_tensor::Tensor for Tensor<T> {
     }
 
     async fn retrieve(&self) -> anyhow::Result<Cow<'_, [<Self::Elem as StorageType>::IOType]>> {
-        todo!()
+        let data = self
+            .data
+            .borrow()
+            .iter()
+            .map(|v| v.convert())
+            .collect::<Vec<_>>()
+            .into();
+        Ok(data)
     }
 }
 
