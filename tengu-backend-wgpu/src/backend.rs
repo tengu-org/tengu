@@ -12,12 +12,12 @@ use tengu_backend_tensor::{IOType, StorageType};
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 use tracing::trace;
 
-use crate::compute::Compute as WGPUCompute;
-use crate::limits::Limits as WGPULimits;
-use crate::linker::Linker as WGPULinker;
-use crate::processor::Processor as WGPUProcessor;
-use crate::readout::Readout as WGPUReadout;
-use crate::tensor::Tensor as WGPUTensor;
+use crate::compute::Compute;
+use crate::limits::Limits;
+use crate::linker::Linker;
+use crate::processor::Processor;
+use crate::readout::Readout;
+use crate::tensor::Tensor;
 
 /// The `Backend` struct is responsible for managing the WGPU device and providing methods to create and manipulate GPU resources.
 pub struct Backend {
@@ -50,12 +50,12 @@ impl Backend {
 // NOTE: tengu_backend::Backend implementation
 
 impl tengu_backend::Backend for Backend {
-    type Tensor<T: StorageType> = WGPUTensor<T>;
-    type Compute<'a> = WGPUCompute<'a>;
-    type Processor<'a> = WGPUProcessor<'a>;
-    type Linker<'a> = WGPULinker<'a>;
-    type Readout<'a> = WGPUReadout<'a>;
-    type Limits = WGPULimits;
+    type Tensor<T: StorageType> = Tensor<T>;
+    type Compute<'a> = Compute<'a>;
+    type Processor<'a> = Processor<'a>;
+    type Linker<'a> = Linker<'a>;
+    type Readout<'a> = Readout<'a>;
+    type Limits = Limits;
 
     /// Creates a new `Backend` instance asynchronously.
     ///
@@ -72,7 +72,7 @@ impl tengu_backend::Backend for Backend {
     /// # Returns
     /// The limits of the backend.
     fn limits(&self) -> Self::Limits {
-        WGPULimits::new(self)
+        Limits::new(self)
     }
 
     /// Creates a new `Processor` instance.
@@ -80,7 +80,7 @@ impl tengu_backend::Backend for Backend {
     /// # Returns
     /// A new `Processor` instance.
     fn processor<'a>(&self, readouts: &'a HashSet<String>) -> Self::Processor<'a> {
-        WGPUProcessor::new(readouts)
+        Processor::new(readouts)
     }
 
     /// Propagates data using the provided linker function.
@@ -90,7 +90,7 @@ impl tengu_backend::Backend for Backend {
     fn propagate(&self, call: impl FnOnce(Self::Linker<'_>)) {
         let mut encoder = self.device.encoder("linker");
         trace!("Executing propagation step");
-        call(WGPULinker::new(&mut encoder));
+        call(Linker::new(&mut encoder));
         trace!("Submitting propagation commands to the queue");
         self.device.submit(encoder.finish());
     }
@@ -108,7 +108,7 @@ impl tengu_backend::Backend for Backend {
         let commands = self
             .device
             .encoder(label)
-            .pass(label, |pass| call(WGPUCompute::new(&self.device, label, pass)))
+            .pass(label, |pass| call(Compute::new(&self.device, label, pass)))
             .map_err(|e| Error::ComputeError(e.into()))?
             .finish();
         trace!("Submitting compute commands to the queue");
@@ -126,7 +126,7 @@ impl tengu_backend::Backend for Backend {
         let commands = self
             .device
             .encoder(label)
-            .stage(|encoder| call(WGPUReadout::new(encoder)))
+            .stage(|encoder| call(Readout::new(encoder)))
             .finish();
         trace!("Submitting readout commands to the queue");
         self.device.submit(commands);
@@ -149,7 +149,7 @@ impl tengu_backend::Backend for Backend {
         let label = label.into();
         trace!("Creating new tensor '{label}'");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::Read).with_data(data);
-        WGPUTensor::new(self, label, shape, buffer)
+        Tensor::new(self, label, shape, buffer)
     }
 
     /// Creates a new zero-initialized tensor with the specified count.
@@ -170,6 +170,6 @@ impl tengu_backend::Backend for Backend {
         let size = shape.iter().product::<usize>().of::<T>();
         trace!("Creating new zero tensor '{label}'");
         let buffer = self.device().buffer::<T>(&label, BufferUsage::ReadWrite).empty(size);
-        WGPUTensor::new(self, label, shape, buffer)
+        Tensor::new(self, label, shape, buffer)
     }
 }
