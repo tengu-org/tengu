@@ -1,15 +1,15 @@
 use std::collections::HashSet;
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::{StorageType, Tensor};
+use tengu_backend_tensor::StorageType;
 
 use crate::source::{AsSource, Source};
+use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;
 
 // NOTE: Processor implementation.
 
 pub struct Processor<'a> {
-    element_count: usize,
     visited: HashSet<&'a str>,
     sources: Vec<Source<'a>>,
     readouts: &'a HashSet<String>,
@@ -23,20 +23,11 @@ impl<'a> Processor<'a> {
     /// A new instance of `Processor`.
     pub fn new(readouts: &'a HashSet<String>) -> Self {
         Self {
-            element_count: 0,
             visited: HashSet::new(),
             sources: Vec::new(),
             readouts,
             readout_sources: Vec::new(),
         }
-    }
-
-    /// Returns the maximum number of elements use by the tensors in the AST.
-    ///
-    /// # Returns
-    /// The number of elements as a `usize`.
-    pub fn element_count(&self) -> usize {
-        self.element_count
     }
 
     /// Returns an iterator over the source tensors acquird from the tensor AST.
@@ -74,6 +65,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// Processor representation of the tensor, consisting of the number of elements in the tensor
     /// and emitted shader representation of the tensor.
     fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr {
+        use tengu_backend_tensor::Tensor;
         let label = tensor.label();
         let source = tensor.as_source();
         if !self.visited.contains(label) {
@@ -94,9 +86,8 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Returns
     /// A tuple containing the number of elements (always 0 for scalars) and its shader representation,
     /// which in this case will be a literal.
-    fn scalar<T: StorageType>(&mut self, _value: T) -> Self::Repr {
-        self.element_count = 0;
-        todo!()
+    fn scalar<T: StorageType>(&mut self, value: T) -> Self::Repr {
+        Tensor::<T>::repeat("label", [1], value).as_source().into_owned().lift()
     }
 
     /// Generates the representation for a unary function applied to an inner expression.

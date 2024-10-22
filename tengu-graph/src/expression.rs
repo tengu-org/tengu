@@ -192,7 +192,7 @@ where
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<'a>>::Repr {
         match self {
             Self::Scalar(scalar) => processor.scalar(*scalar),
             Self::Tensor(tensor) => processor.var(tensor.raw()),

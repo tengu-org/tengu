@@ -23,8 +23,15 @@ impl<T: StorageType> Tensor<T> {
         }
     }
 
-    pub fn copy_to(&self, other: &Self) {
-        other.data.borrow_mut().copy_from_slice(&self.data.borrow());
+    pub fn repeat(label: impl Into<String>, shape: impl Into<Vec<usize>>, elem: T) -> Self {
+        let shape = shape.into();
+        let count = shape.iter().product();
+        Self {
+            label: label.into(),
+            count,
+            shape,
+            data: vec![elem; count].into(),
+        }
     }
 
     pub fn empty(label: impl Into<String>, shape: impl Into<Vec<usize>>) -> Self {
@@ -37,6 +44,10 @@ impl<T: StorageType> Tensor<T> {
             data: vec![T::default(); count].into(),
         }
     }
+
+    pub fn copy_to(&self, other: &Self) {
+        other.data.borrow_mut().copy_from_slice(&self.data.borrow());
+    }
 }
 
 // NOTE: AsSource implementations.
@@ -47,29 +58,20 @@ impl<T: StorageType> AsSource<Unsupported> for Tensor<T> {
     }
 }
 
-impl AsSource for Tensor<bool> {
-    fn as_source(&self) -> Source<'_> {
-        Source::Bool(Cow::Borrowed(self))
-    }
+macro_rules! impl_as_source {
+    ( $type:ty ) => {
+        impl AsSource for Tensor<$type> {
+            fn as_source(&self) -> Source<'_> {
+                self.into()
+            }
+        }
+    };
 }
 
-impl AsSource for Tensor<u32> {
-    fn as_source(&self) -> Source<'_> {
-        Source::U32(Cow::Borrowed(self))
-    }
-}
-
-impl AsSource for Tensor<i32> {
-    fn as_source(&self) -> Source<'_> {
-        Source::I32(Cow::Borrowed(self))
-    }
-}
-
-impl AsSource for Tensor<f32> {
-    fn as_source(&self) -> Source<'_> {
-        Source::F32(Cow::Borrowed(self))
-    }
-}
+impl_as_source!(bool);
+impl_as_source!(u32);
+impl_as_source!(i32);
+impl_as_source!(f32);
 
 // NOTE: Backend tensor trait implementation.
 
