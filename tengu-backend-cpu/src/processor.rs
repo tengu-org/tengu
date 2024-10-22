@@ -6,6 +6,8 @@ use tengu_backend_tensor::{StorageType, Tensor};
 use crate::source::{AsSource, Source};
 use crate::Backend as CPUBackend;
 
+// NOTE: Processor implementation.
+
 pub struct Processor<'a> {
     element_count: usize,
     visited: HashSet<&'a str>,
@@ -41,8 +43,8 @@ impl<'a> Processor<'a> {
     ///
     /// # Returns
     /// An iterator over source tensor references.
-    pub fn sources(&'a self) -> impl Iterator<Item = Source<'a>> {
-        self.sources.iter().copied()
+    pub fn sources(&'a self) -> impl Iterator<Item = &'a Source<'a>> {
+        self.sources.iter()
     }
 
     /// Returns an iterator over the source tensors acquird from the tensor AST that can be used in
@@ -50,8 +52,8 @@ impl<'a> Processor<'a> {
     ///
     /// # Returns
     /// An iterator over source tensor references.
-    pub fn readout_sources(&'a self) -> impl Iterator<Item = Source<'a>> {
-        self.readout_sources.iter().copied()
+    pub fn readout_sources(&'a self) -> impl Iterator<Item = &'a Source<'a>> {
+        self.readout_sources.iter()
     }
 }
 
@@ -75,10 +77,10 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
         let label = tensor.label();
         let source = tensor.as_source();
         if !self.visited.contains(label) {
-            self.sources.push(source);
+            self.sources.push(source.clone());
             self.visited.insert(label);
             if self.readouts.contains(label) {
-                self.readout_sources.push(source);
+                self.readout_sources.push(source.clone());
             }
         }
         source

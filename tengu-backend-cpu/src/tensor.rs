@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{borrow::Cow, cell::RefCell};
 
 use tengu_backend_tensor::StorageType;
 
@@ -48,26 +48,26 @@ impl<T: StorageType> AsSource<Unsupported> for Tensor<T> {
 }
 
 impl AsSource for Tensor<bool> {
-    fn as_source(&self) -> crate::source::Source<'_> {
-        Source::Bool(self)
+    fn as_source(&self) -> Source<'_> {
+        Source::Bool(Cow::Borrowed(self))
     }
 }
 
 impl AsSource for Tensor<u32> {
-    fn as_source(&self) -> crate::source::Source<'_> {
-        Source::U32(self)
+    fn as_source(&self) -> Source<'_> {
+        Source::U32(Cow::Borrowed(self))
     }
 }
 
 impl AsSource for Tensor<i32> {
-    fn as_source(&self) -> crate::source::Source<'_> {
-        Source::I32(self)
+    fn as_source(&self) -> Source<'_> {
+        Source::I32(Cow::Borrowed(self))
     }
 }
 
 impl AsSource for Tensor<f32> {
-    fn as_source(&self) -> crate::source::Source<'_> {
-        Source::F32(self)
+    fn as_source(&self) -> Source<'_> {
+        Source::F32(Cow::Borrowed(self))
     }
 }
 
@@ -88,7 +88,20 @@ impl<T: StorageType> tengu_backend_tensor::Tensor for Tensor<T> {
         &self.shape
     }
 
-    async fn retrieve(&self) -> anyhow::Result<std::borrow::Cow<'_, [<Self::Elem as StorageType>::IOType]>> {
+    async fn retrieve(&self) -> anyhow::Result<Cow<'_, [<Self::Elem as StorageType>::IOType]>> {
         todo!()
+    }
+}
+
+// NOTE: Clone implementation.
+
+impl<T: StorageType> Clone for Tensor<T> {
+    fn clone(&self) -> Self {
+        Self {
+            label: self.label.clone(),
+            count: self.count,
+            shape: self.shape.clone(),
+            data: self.data.clone(),
+        }
     }
 }
