@@ -290,6 +290,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "castaway"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0abae9be0aaf9ea96a3b1b8b1b55c602ca751eba1b1500220cea4ecbafe7c0d5"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "cc"
 version = "1.1.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2018,6 +2027,18 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "tengu-backend-tensor",
+ "thiserror",
+]
+
+[[package]]
+name = "tengu-backend-cpu"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "castaway",
+ "tengu-backend",
+ "tengu-backend-tensor",
+ "tengu-wgpu",
  "thiserror",
 ]
 
