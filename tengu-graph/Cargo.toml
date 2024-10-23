@@ -14,7 +14,6 @@ thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
 async-trait = { workspace = true }
-random-string = "1.1.0"
 indoc = "2.0.5"
 itertools = "0.13.0"
 futures = "0.3.31"

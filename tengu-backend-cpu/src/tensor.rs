@@ -5,8 +5,9 @@ use tengu_backend_tensor::StorageType;
 
 use crate::source::{AsSource, Source, Unsupported};
 
-mod binary;
+mod arithmetic;
 mod cast;
+mod relational;
 mod unary_fn;
 
 pub struct Tensor<T> {

@@ -9,7 +9,6 @@ use rand::Rng;
 use rand_distr::Distribution;
 use rand_distr::Normal;
 use rand_distr::StandardNormal;
-use random_string::charsets::ALPHA;
 use tengu_tensor::Tensor;
 
 use std::rc::Rc;
@@ -20,9 +19,6 @@ use tengu_backend_tensor::IOType;
 
 use crate::expression::Expression;
 use crate::{Error, Result, StorageType};
-
-/// The length of the label generated for tensors if no label is provided.
-pub(crate) const LABEL_LENGTH: usize = 6;
 
 /// A struct for building tensors with specified shapes and initializations.
 ///
@@ -193,8 +189,6 @@ impl<B: Backend> Builder<B> {
     /// # Returns
     /// A string representing the label of the tensor.
     fn get_or_create_label(&mut self) -> String {
-        self.label
-            .take()
-            .unwrap_or_else(|| random_string::generate(LABEL_LENGTH, ALPHA))
+        self.label.take().unwrap_or_else(tengu_backend_tensor::create_label)
     }
 }

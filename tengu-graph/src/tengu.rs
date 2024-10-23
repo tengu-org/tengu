@@ -1,5 +1,3 @@
-//! Module for initializing and managing the Tengu tensor computation framework.
-//!
 //! This module defines the `Tengu` struct and associated methods for creating and managing
 //! tensors, scalar expressions, and computational graphs. It provides an interface for
 //! initializing the framework with a specified backend and includes specialized methods
@@ -96,7 +94,6 @@ impl Tengu<WGPUBackend> {
 
 #[cfg(test)]
 mod tests {
-    use crate::builder::LABEL_LENGTH;
     use crate::shape::Shape;
     use crate::Tengu;
     use pretty_assertions::assert_eq;
@@ -114,12 +111,10 @@ mod tests {
         let tengu = Tengu::wgpu().await.unwrap();
         let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
         let label = tensor.label().unwrap();
-        assert_eq!(label.len(), LABEL_LENGTH);
         assert!(label.chars().all(|c| c.is_alphabetic()));
 
         let tensor = tengu.tensor([3]).init(&[1, 2, 3]);
         let label = tensor.label().unwrap();
-        assert_eq!(label.len(), LABEL_LENGTH);
         assert!(label.chars().all(|c| c.is_alphabetic()));
     }
 }

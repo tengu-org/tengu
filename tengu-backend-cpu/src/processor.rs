@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use tengu_backend::Backend;
 use tengu_backend_tensor::{Function, Operator, StorageType, Type, UnaryFn};
 
-use crate::source::{AsSource, Source};
+use crate::source::{AsSource, Equality, Source};
 use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;
 
@@ -121,7 +121,8 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
             Operator::Sub => &lhs - &rhs,
             Operator::Mul => &lhs * &rhs,
             Operator::Div => &lhs / &rhs,
-            _ => todo!(),
+            Operator::Eq => lhs.eq(&rhs),
+            Operator::Neq => lhs.eq(&rhs),
         }
     }
 

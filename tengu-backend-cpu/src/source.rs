@@ -1,9 +1,12 @@
 use crate::tensor::Tensor;
 
-mod binary;
+mod arithmetic;
 mod cast;
 mod copy;
+mod relational;
 mod unary_fn;
+
+pub use relational::Equality;
 
 // NOTE: AsSource trait for specialization.
 

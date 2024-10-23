@@ -2048,6 +2048,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytemuck",
+ "random-string",
 ]
 
 [[package]]
@@ -2086,7 +2087,6 @@ dependencies = [
  "pretty_assertions",
  "rand",
  "rand_distr",
- "random-string",
  "tengu-backend",
  "tengu-backend-tensor",
  "tengu-backend-wgpu",

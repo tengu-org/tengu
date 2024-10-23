@@ -63,11 +63,3 @@ impl<T: StorageType + Div<Output = T>> Div for &Tensor<T> {
         Tensor::new(self.label.clone(), self.shape.clone(), data)
     }
 }
-
-impl<T: StorageType + PartialEq> PartialEq for &Tensor<T> {
-    fn eq(&self, other: &Self) -> bool {
-        let lhs = self.data.borrow();
-        let rhs = other.data.borrow();
-        *lhs == *rhs
-    }
-}
