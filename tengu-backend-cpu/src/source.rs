@@ -2,9 +2,10 @@ use crate::tensor::Tensor;
 
 mod binary;
 mod cast;
+mod copy;
 mod unary_fn;
 
-// NOTE: Marker tags.
+// NOTE: AsSource trait for specialization.
 
 /// Marker tag to represent underlying types for tensor elements that are supported by this
 /// backend. It is needed becase there's no negative trait bounds in stable Rust.
@@ -13,6 +14,11 @@ pub struct Supported;
 /// Marker tag to represent underlying types for tensor elements that are not supported by this
 /// backend.
 pub struct Unsupported;
+
+pub trait AsSource<T = Supported> {
+    fn as_source(&self) -> Source<'_>;
+    fn into_source(self) -> Source<'static>;
+}
 
 // NOTE: Source implementation.
 
@@ -87,6 +93,8 @@ impl Owned {
     }
 }
 
+// NOTE: From implementation.
+
 macro_rules! impl_from {
     ( $type:ty, $variant:ident ) => {
         impl<'a> From<&'a Tensor<$type>> for Source<'a> {
@@ -106,10 +114,3 @@ impl_from!(bool, Bool);
 impl_from!(u32, U32);
 impl_from!(i32, I32);
 impl_from!(f32, F32);
-
-// NOTE: AsSource trait for specialization.
-
-pub trait AsSource<T = Supported> {
-    fn as_source(&self) -> Source<'_>;
-    fn into_source(self) -> Source<'static>;
-}

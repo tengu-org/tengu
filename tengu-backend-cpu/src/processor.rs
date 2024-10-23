@@ -151,8 +151,9 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Returns
     /// A tuple containing the maximum count of elements between the two expressions and the resulting
     /// statement's shader representation.
-    fn statement(&mut self, _out: Self::Repr, _expr: Self::Repr) -> Self::Repr {
-        todo!()
+    fn statement(&mut self, out: Self::Repr, expr: Self::Repr) -> Self::Repr {
+        out.copy_from(&expr);
+        out
     }
 
     /// Generates a representation for a block of expressions. This is the top-level call and it
@@ -160,7 +161,5 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     ///
     /// # Parameters
     /// - `exprs`: An iterator over expression representations to be included in the block.
-    fn block(&mut self, _exprs: impl Iterator<Item = Self::Repr>) {
-        todo!()
-    }
+    fn block(&mut self, _exprs: impl Iterator<Item = Self::Repr>) {}
 }
