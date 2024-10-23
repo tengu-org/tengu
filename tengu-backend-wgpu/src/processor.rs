@@ -15,7 +15,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::{Function, StorageType, Tensor};
+use tengu_backend_tensor::{Function, Operator, StorageType, Tensor};
 use tracing::trace;
 
 use crate::source::Source;
@@ -160,8 +160,8 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Returns
     /// A tuple containing the maximum count of elements between the two expressions and the resulting
     /// expression's shader representation.
-    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, symbol: &str) -> Self::Repr {
-        let expression = self.emitter.binary(lhs.1, rhs.1, symbol);
+    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, operator: Operator) -> Self::Repr {
+        let expression = self.emitter.binary(lhs.1, rhs.1, operator);
         let element_count = lhs.0.max(rhs.0);
         (element_count, expression)
     }

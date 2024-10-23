@@ -3,7 +3,7 @@
 //! It leverages the backend processing capabilities to apply these operations on tensor data.
 
 use tengu_backend::{Backend, Processor};
-use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::{Operator, StorageType};
 
 use super::Expression;
 use crate::collector::Collector;
@@ -11,42 +11,6 @@ use crate::node::Node;
 use crate::shape::Shape;
 use crate::source::Source;
 use crate::unify::Unify;
-
-// NOTE: Operator
-
-/// Enum representing supported binary operators.
-#[derive(Copy, Clone)]
-enum Operator {
-    /// Addition operator.
-    Add,
-    /// Subtraction operator.
-    Sub,
-    /// Multiplication operator.
-    Mul,
-    /// Division operator.
-    Div,
-    /// Equality operator.
-    Eq,
-    /// Inequality operator.
-    Neq,
-}
-
-impl Operator {
-    /// Returns the symbolic representation of the operator.
-    ///
-    /// # Returns
-    /// A string slice representing the operator symbol.
-    fn symbol(&self) -> &str {
-        match self {
-            Self::Add => "+",
-            Self::Sub => "-",
-            Self::Mul => "*",
-            Self::Div => "/",
-            Self::Eq => "==",
-            Self::Neq => "!=",
-        }
-    }
-}
 
 // NOTE: Binary expression implementation.
 
@@ -150,7 +114,7 @@ where
     fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
         let lhs = self.lhs.visit(processor);
         let rhs = self.rhs.visit(processor);
-        processor.binary(lhs, rhs, self.operator.symbol())
+        processor.binary(lhs, rhs, self.operator)
     }
 }
 

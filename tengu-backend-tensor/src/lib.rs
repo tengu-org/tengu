@@ -27,9 +27,11 @@
 //!    - retrieve: Asynchronously accesses tensor data.
 
 mod function;
+mod operation;
 mod tensor;
 mod types;
 
 pub use function::{Function, UnaryFn};
+pub use operation::Operator;
 pub use tensor::Tensor;
 pub use types::{IOType, StorageType};

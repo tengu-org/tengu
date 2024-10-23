@@ -6,7 +6,7 @@
 
 use indoc::formatdoc;
 use itertools::Itertools;
-use tengu_backend_tensor::{Function, StorageType};
+use tengu_backend_tensor::{Function, Operator, StorageType};
 
 use crate::source::Source;
 use crate::tensor::Tensor;
@@ -79,7 +79,7 @@ impl Emitter {
     /// # Returns
     /// A `String` representing the unary function application.
     pub fn unary_fn(&mut self, inner: String, function: Function) -> String {
-        let symbol = symbol(function);
+        let symbol = fn_symbol(function);
         format!("{symbol}({inner})")
     }
 
@@ -92,7 +92,8 @@ impl Emitter {
     ///
     /// # Returns
     /// A `String` representing the binary operation.
-    pub fn binary(&mut self, lhs: String, rhs: String, symbol: &str) -> String {
+    pub fn binary(&mut self, lhs: String, rhs: String, operation: Operator) -> String {
+        let symbol = op_symbol(operation);
         format!("({lhs} {symbol} {rhs})")
     }
 
@@ -129,10 +130,21 @@ impl Emitter {
     }
 }
 
-fn symbol(function: Function) -> &'static str {
+fn fn_symbol(function: Function) -> &'static str {
     match function {
         Function::Log => "log",
         Function::Exp => "exp",
+    }
+}
+
+fn op_symbol(operator: Operator) -> &'static str {
+    match operator {
+        Operator::Add => "+",
+        Operator::Sub => "-",
+        Operator::Mul => "*",
+        Operator::Div => "/",
+        Operator::Eq => "==",
+        Operator::Neq => "!=",
     }
 }
 
@@ -191,7 +203,7 @@ mod tests {
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
-        let a_add_b = processor.binary(a, b, "*");
+        let a_add_b = processor.binary(a, b, Operator::Mul);
         assert_eq!(a_add_b, "(a[idx] * b[idx])");
     }
 
@@ -204,7 +216,7 @@ mod tests {
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
-        let a_add_b = processor.binary(a, b, "+");
+        let a_add_b = processor.binary(a, b, Operator::Add);
         let c = processor.var(&c);
         let statement = processor.statement(c, a_add_b);
         assert_eq!(statement, "c[idx] = (a[idx] + b[idx]);");
@@ -219,7 +231,7 @@ mod tests {
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
-        let a_add_b = processor.binary(a, b, "+");
+        let a_add_b = processor.binary(a, b, Operator::Add);
         let c = processor.var(&c);
         let statement = processor.statement(c, a_add_b);
         processor.block(std::iter::once(statement));

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::{Function, StorageType, UnaryFn};
+use tengu_backend_tensor::{Function, Operator, StorageType, UnaryFn};
 
 use crate::source::{AsSource, Source};
 use crate::tensor::Tensor;
@@ -115,8 +115,14 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Returns
     /// A tuple containing the maximum count of elements between the two expressions and the resulting
     /// expression's shader representation.
-    fn binary(&mut self, _lhs: Self::Repr, _rhs: Self::Repr, _symbol: &str) -> Self::Repr {
-        todo!()
+    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, operator: Operator) -> Self::Repr {
+        match operator {
+            Operator::Add => &lhs + &rhs,
+            Operator::Sub => &lhs - &rhs,
+            Operator::Mul => &lhs * &rhs,
+            Operator::Div => &lhs / &rhs,
+            _ => todo!(),
+        }
     }
 
     /// Generates the representation for the type cast of the inner expression to a specified type.
