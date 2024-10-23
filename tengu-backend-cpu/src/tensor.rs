@@ -5,6 +5,8 @@ use tengu_backend_tensor::StorageType;
 
 use crate::source::{AsSource, Source, Unsupported};
 
+mod unary_fn;
+
 pub struct Tensor<T> {
     label: String,
     count: usize,
@@ -57,12 +59,18 @@ impl<T: StorageType> AsSource<Unsupported> for Tensor<T> {
     fn as_source(&self) -> Source<'_> {
         panic!("unsupported type");
     }
+    fn into_source(self) -> Source<'static> {
+        panic!("unsupported type");
+    }
 }
 
 macro_rules! impl_as_source {
     ( $type:ty ) => {
         impl AsSource for Tensor<$type> {
             fn as_source(&self) -> Source<'_> {
+                self.into()
+            }
+            fn into_source(self) -> Source<'static> {
                 self.into()
             }
         }

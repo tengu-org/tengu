@@ -15,7 +15,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::{StorageType, Tensor};
+use tengu_backend_tensor::{Function, StorageType, Tensor};
 use tracing::trace;
 
 use crate::source::Source;
@@ -144,8 +144,8 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting expression's shader representation.
-    fn unary_fn(&mut self, inner: Self::Repr, symbol: &str) -> Self::Repr {
-        let expression = self.emitter.unary_fn(inner.1, symbol);
+    fn unary_fn(&mut self, inner: Self::Repr, function: Function) -> Self::Repr {
+        let expression = self.emitter.unary_fn(inner.1, function);
         let element_count = inner.0;
         (element_count, expression)
     }

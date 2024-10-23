@@ -6,7 +6,7 @@
 
 use indoc::formatdoc;
 use itertools::Itertools;
-use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::{Function, StorageType};
 
 use crate::source::Source;
 use crate::tensor::Tensor;
@@ -78,7 +78,8 @@ impl Emitter {
     ///
     /// # Returns
     /// A `String` representing the unary function application.
-    pub fn unary_fn(&mut self, inner: String, symbol: &str) -> String {
+    pub fn unary_fn(&mut self, inner: String, function: Function) -> String {
+        let symbol = symbol(function);
         format!("{symbol}({inner})")
     }
 
@@ -128,6 +129,13 @@ impl Emitter {
     }
 }
 
+fn symbol(function: Function) -> &'static str {
+    match function {
+        Function::Log => "log",
+        Function::Exp => "exp",
+    }
+}
+
 // NOTE: Default implementation
 
 impl Default for Emitter {
@@ -171,7 +179,7 @@ mod tests {
         let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
-        let cast_a = processor.unary_fn(a, "exp");
+        let cast_a = processor.unary_fn(a, Function::Exp);
         assert_eq!(cast_a, "exp(a[idx])");
     }
 

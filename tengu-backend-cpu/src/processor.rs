@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::{Function, StorageType, UnaryFn};
 
 use crate::source::{AsSource, Source};
 use crate::tensor::Tensor;
@@ -87,7 +87,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// A tuple containing the number of elements (always 0 for scalars) and its shader representation,
     /// which in this case will be a literal.
     fn scalar<T: StorageType>(&mut self, value: T) -> Self::Repr {
-        Tensor::<T>::repeat("label", [1], value).as_source().into_owned().lift()
+        Tensor::<T>::repeat("label", [1], value).into_source()
     }
 
     /// Generates the representation for a unary function applied to an inner expression.
@@ -98,8 +98,11 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting expression's shader representation.
-    fn unary_fn(&mut self, _inner: Self::Repr, _symbol: &str) -> Self::Repr {
-        todo!()
+    fn unary_fn(&mut self, inner: Self::Repr, function: Function) -> Self::Repr {
+        match function {
+            Function::Exp => inner.exp(),
+            Function::Log => inner.log(),
+        }
     }
 
     /// Generates the representation for a binary operation between two expressions.

@@ -1,5 +1,7 @@
 use crate::tensor::Tensor;
 
+mod unary_fn;
+
 // NOTE: Marker tags.
 
 /// Marker tag to represent underlying types for tensor elements that are supported by this
@@ -30,6 +32,13 @@ impl<'a> Source<'a> {
             },
         }
     }
+
+    pub fn variant(&self) -> &'static str {
+        match self {
+            Self::Owned(owned) => owned.variant(),
+            Self::Borrowed(borrowed) => borrowed.variant(),
+        }
+    }
 }
 
 // NOTE: Borrowed and Owned implementation.
@@ -40,6 +49,17 @@ pub enum Borrowed<'a> {
     U32(&'a Tensor<u32>),
     I32(&'a Tensor<i32>),
     F32(&'a Tensor<f32>),
+}
+
+impl<'a> Borrowed<'a> {
+    pub fn variant(&self) -> &'static str {
+        match self {
+            Self::Bool(_) => "bool",
+            Self::U32(_) => "u32",
+            Self::I32(_) => "i32",
+            Self::F32(_) => "f32",
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -53,6 +73,15 @@ pub enum Owned {
 impl Owned {
     pub fn lift(self) -> Source<'static> {
         Source::Owned(self)
+    }
+
+    pub fn variant(&self) -> &'static str {
+        match self {
+            Self::Bool(_) => "bool",
+            Self::U32(_) => "u32",
+            Self::I32(_) => "i32",
+            Self::F32(_) => "f32",
+        }
     }
 }
 
@@ -80,4 +109,5 @@ impl_from!(f32, F32);
 
 pub trait AsSource<T = Supported> {
     fn as_source(&self) -> Source<'_>;
+    fn into_source(self) -> Source<'static>;
 }
