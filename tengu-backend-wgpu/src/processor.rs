@@ -15,7 +15,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::{Function, Operator, StorageType, Tensor};
+use tengu_backend_tensor::{Function, Operator, StorageType, Tensor, Type};
 use tracing::trace;
 
 use crate::source::Source;
@@ -174,7 +174,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting cast expression's shader representation.
-    fn cast(&mut self, inner: Self::Repr, ty: &str) -> Self::Repr {
+    fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr {
         let expression = self.emitter.cast(inner.1, ty);
         let element_count = inner.0;
         (element_count, expression)

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::{Function, Operator, StorageType, UnaryFn};
+use tengu_backend_tensor::{Function, Operator, StorageType, Type, UnaryFn};
 
 use crate::source::{AsSource, Source};
 use crate::tensor::Tensor;
@@ -133,8 +133,13 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting cast expression's shader representation.
-    fn cast(&mut self, _inner: Self::Repr, _ty: &str) -> Self::Repr {
-        todo!()
+    fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr {
+        match ty {
+            Type::Bool => inner.cast_bool(),
+            Type::U32 => inner.cast_u32(),
+            Type::I32 => inner.cast_i32(),
+            Type::F32 => inner.cast_f32(),
+        }
     }
 
     /// Generates the representation of a statement combining an output and an expression.

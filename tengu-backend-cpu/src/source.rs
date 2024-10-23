@@ -1,6 +1,7 @@
 use crate::tensor::Tensor;
 
 mod binary;
+mod cast;
 mod unary_fn;
 
 // NOTE: Marker tags.

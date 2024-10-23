@@ -2,7 +2,7 @@
 //! of tensor expressions in a final tagless style. Implementations of the `Processor` trait are responsible
 //! for transforming or evaluating the AST nodes according to specific backend requirements.
 
-use tengu_backend_tensor::{Function, Operator, StorageType};
+use tengu_backend_tensor::{Function, Operator, StorageType, Type};
 
 use crate::Backend;
 
@@ -66,7 +66,7 @@ pub trait Processor<'a> {
     ///
     /// # Returns
     /// A new representation after casting.
-    fn cast(&mut self, inner: Self::Repr, ty: &str) -> Self::Repr;
+    fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr;
 
     /// Creates a representation of a statement that assigns an expression to an output.
     ///

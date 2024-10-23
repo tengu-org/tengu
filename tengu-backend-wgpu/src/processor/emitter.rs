@@ -6,7 +6,7 @@
 
 use indoc::formatdoc;
 use itertools::Itertools;
-use tengu_backend_tensor::{Function, Operator, StorageType};
+use tengu_backend_tensor::{Function, Operator, StorageType, Type};
 
 use crate::source::Source;
 use crate::tensor::Tensor;
@@ -105,8 +105,9 @@ impl Emitter {
     ///
     /// # Returns
     /// A `String` representing the casted expression.
-    pub fn cast(&mut self, inner: String, ty: &str) -> String {
-        format!("{ty}({inner})")
+    pub fn cast(&mut self, inner: String, ty: Type) -> String {
+        let symbol = type_symbol(ty);
+        format!("{symbol}({inner})")
     }
 
     /// Return a string representation of a statement.
@@ -148,6 +149,15 @@ fn op_symbol(operator: Operator) -> &'static str {
     }
 }
 
+fn type_symbol(ty: Type) -> &'static str {
+    match ty {
+        Type::Bool => "bool",
+        Type::U32 => "u32",
+        Type::I32 => "i32",
+        Type::F32 => "f32",
+    }
+}
+
 // NOTE: Default implementation
 
 impl Default for Emitter {
@@ -181,7 +191,7 @@ mod tests {
         let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
-        let cast_a = processor.cast(a, "f32");
+        let cast_a = processor.cast(a, Type::F32);
         assert_eq!(cast_a, "f32(a[idx])");
     }
 
