@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use tengu_backend::Backend;
+use tengu_backend::Processor as RawProcessor;
 use tengu_backend_tensor::{Function, Operator, StorageType, Type, UnaryFn};
 
 use crate::source::{Equality, Source};
@@ -50,8 +50,7 @@ impl<'a> Processor<'a> {
 
 // NOTE: Processor trait implementation
 
-impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
-    type Backend = CPUBackend;
+impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
     type Repr = Source<'a>;
 
     /// Processses the tensor. This is the bottom-level call, so the tensor will be added to the
@@ -64,7 +63,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Returns
     /// Processor representation of the tensor, consisting of the number of elements in the tensor
     /// and emitted shader representation of the tensor.
-    fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr {
+    fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
         use tengu_backend_tensor::Tensor;
         let label = tensor.label();
         let source: Source = tensor.into();

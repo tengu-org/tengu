@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Error, Result};
-use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::{IOType, StorageType};
 
 use crate::compute::Compute;
 use crate::limits::Limits;
@@ -48,20 +48,20 @@ impl tengu_backend::Backend for Backend {
         call(Readout);
     }
 
-    fn tensor<T: tengu_backend_tensor::IOType>(
-        self: &Rc<Self>,
-        label: impl Into<String>,
-        shape: impl Into<Vec<usize>>,
-        data: &[T],
-    ) -> Self::Tensor<T> {
-        Tensor::new(label, shape, data)
-    }
-
     fn zero<T: StorageType>(
         self: &Rc<Self>,
         label: impl Into<String>,
         shape: impl Into<Vec<usize>>,
     ) -> Self::Tensor<T> {
         Tensor::empty(label, shape)
+    }
+
+    fn tensor<T: IOType>(
+        self: &Rc<Self>,
+        label: impl Into<String>,
+        shape: impl Into<Vec<usize>>,
+        data: &[T],
+    ) -> Self::Tensor<T> {
+        Tensor::new(label, shape, data)
     }
 }

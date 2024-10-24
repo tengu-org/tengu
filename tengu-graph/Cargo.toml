@@ -8,8 +8,9 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 tengu-backend = { path = "../tengu-backend" }
 tengu-backend-wgpu = { path = "../tengu-backend-wgpu" }
+tengu-backend-cpu = { path = "../tengu-backend-cpu" }
 tengu-backend-tensor = { path = "../tengu-backend-tensor" }
-tengu-tensor = { path = "../tengu-tensor" }
+tengu-graph-tensor = { path = "../tengu-graph-tensor" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }

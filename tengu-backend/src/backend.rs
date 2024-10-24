@@ -13,12 +13,11 @@ use crate::*;
 
 /// The `Backend` trait provides an interface for tensor computation backends. It defines various associated
 /// types and methods for creating and managing tensors, processors, compute instances, linkers, and readouts.
-pub trait Backend {
-    /// The underlying raw tensor type.
-    type Tensor<T: StorageType>: Tensor;
+pub trait Backend: Sized {
+    type Tensor<T: StorageType>: Tensor<T>;
 
     /// The type of the node processor that will construct computation objects.
-    type Processor<'a>: Processor<'a, Backend = Self>
+    type Processor<'a>: Processor<'a, Self>
     where
         Self: 'a;
 
@@ -28,7 +27,7 @@ pub trait Backend {
         Self: 'a;
 
     /// The underlying linker type.
-    type Linker<'a>: Linker<Backend = Self>;
+    type Linker<'a>: Linker<Self>;
 
     /// The underlying readout type.
     type Readout<'a>: Readout<Backend = Self>;

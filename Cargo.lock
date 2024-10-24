@@ -2079,9 +2079,10 @@ dependencies = [
  "rand",
  "rand_distr",
  "tengu-backend",
+ "tengu-backend-cpu",
  "tengu-backend-tensor",
  "tengu-backend-wgpu",
- "tengu-tensor",
+ "tengu-graph-tensor",
  "thiserror",
  "tokio",
  "tracing",
@@ -2089,7 +2090,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tengu-tensor"
+name = "tengu-graph-tensor"
 version = "0.1.0"
 dependencies = [
  "anyhow",

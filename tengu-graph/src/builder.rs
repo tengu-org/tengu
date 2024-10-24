@@ -9,7 +9,7 @@ use rand::Rng;
 use rand_distr::Distribution;
 use rand_distr::Normal;
 use rand_distr::StandardNormal;
-use tengu_tensor::Tensor;
+use tengu_graph_tensor::Tensor;
 
 use std::rc::Rc;
 

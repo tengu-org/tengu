@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::cell::RefCell;
 
 use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::Tensor as RawTensor;
 
 mod arithmetic;
 mod cast;
@@ -56,9 +57,7 @@ impl<T: StorageType> Tensor<T> {
 
 // NOTE: Backend tensor trait implementation.
 
-impl<T: StorageType> tengu_backend_tensor::Tensor for Tensor<T> {
-    type Elem = T;
-
+impl<T: StorageType> RawTensor<T> for Tensor<T> {
     fn label(&self) -> &str {
         &self.label
     }
@@ -71,7 +70,7 @@ impl<T: StorageType> tengu_backend_tensor::Tensor for Tensor<T> {
         &self.shape
     }
 
-    async fn retrieve(&self) -> anyhow::Result<Cow<'_, [<Self::Elem as StorageType>::IOType]>> {
+    async fn retrieve(&self) -> anyhow::Result<Cow<'_, [T::IOType]>> {
         let data = self
             .data
             .borrow()

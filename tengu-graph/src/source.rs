@@ -3,7 +3,7 @@ use async_trait::async_trait;
 
 use tengu_backend::{Backend, Linker};
 use tengu_backend_tensor::StorageType;
-use tengu_tensor::Tensor;
+use tengu_graph_tensor::Tensor;
 
 use crate::shape::Shape;
 use crate::{Error, Result};
@@ -48,7 +48,7 @@ pub trait Source<B: Backend>: AsAny {
 // NOTE: Tensor implementation.
 
 #[async_trait(?Send)]
-impl<T: StorageType, B: Backend> Source<B> for Tensor<T, B> {
+impl<T: StorageType, B: Backend + 'static> Source<B> for Tensor<T, B> {
     /// Retrieves the label of the source.
     ///
     /// # Returns

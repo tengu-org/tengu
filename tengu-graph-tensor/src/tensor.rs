@@ -1,5 +1,3 @@
-//! Module for tensors in the tensor computation framework.
-//!
 //! This module defines the `Tensor` struct and associated methods for managing tensor objects
 //! using a specified backend. It also includes implementations for the `Source` and `Shape` traits,
 //! enabling tensor operations and shape management.
@@ -9,6 +7,7 @@ use std::rc::Rc;
 
 use tengu_backend::Backend;
 use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::Tensor as RawTensor;
 
 use crate::channel::Channel;
 use crate::probe::Probe;
@@ -18,10 +17,10 @@ use crate::{Error, Result};
 ///
 /// The `Tensor` struct is parameterized by a storage type `T` and a backend `B`. It includes
 /// fields for the tensor's shape, backend, and the underlying tensor data.
-pub struct Tensor<T: StorageType, B: Backend + 'static> {
+pub struct Tensor<T: StorageType, B: Backend> {
     backend: Rc<B>,
     raw: Rc<B::Tensor<T>>,
-    channel: OnceCell<Channel<T, B>>,
+    channel: OnceCell<Channel<T>>,
 }
 
 impl<T: StorageType, B: Backend> Tensor<T, B> {
@@ -55,7 +54,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     ///
     /// # Returns
     /// A `Probe` object for the tensor.
-    pub fn probe(&self) -> Probe<T, B> {
+    pub fn probe(&self) -> Probe<T> {
         Probe::new(self.channel().receiver())
     }
 
@@ -64,7 +63,6 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// # Returns
     /// A string slice representing the tensor's label.
     pub fn label(&self) -> &str {
-        use tengu_backend_tensor::Tensor;
         self.raw.label()
     }
 
@@ -76,7 +74,6 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// # Returns
     /// A result indicating the success of the operation.
     pub async fn retrieve(&self) -> Result<()> {
-        use tengu_backend_tensor::Tensor;
         if self.channel().is_full() {
             return Ok(());
         }
@@ -91,7 +88,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     ///
     /// # Returns
     /// A reference to the tensor's channel.
-    fn channel(&self) -> &Channel<T, B> {
+    fn channel(&self) -> &Channel<T> {
         self.channel.get_or_init(|| Channel::new())
     }
 }

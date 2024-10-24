@@ -7,7 +7,7 @@
 
 use tengu_backend::{Backend, Processor};
 use tengu_backend_tensor::StorageType;
-use tengu_tensor::Tensor;
+use tengu_graph_tensor::Tensor;
 
 use cast::Cast;
 use ops::Binary;
@@ -192,7 +192,7 @@ where
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<'a>>::Repr {
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<'a, B>>::Repr {
         match self {
             Self::Scalar(scalar) => processor.scalar(*scalar),
             Self::Tensor(tensor) => processor.var(tensor.raw()),

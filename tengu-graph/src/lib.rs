@@ -90,3 +90,6 @@ mod unify;
 pub use error::{Error, Result};
 pub use tengu::Tengu;
 pub use tengu_backend_tensor::{IOType, StorageType};
+
+pub use tengu_backend_cpu::Backend as CPU;
+pub use tengu_backend_wgpu::Backend as WGPU;

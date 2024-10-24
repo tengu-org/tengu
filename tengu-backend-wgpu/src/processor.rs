@@ -13,12 +13,13 @@
 //!   type casting, and block generation.
 
 use std::collections::{BTreeMap, HashSet};
-
-use tengu_backend::Backend;
-use tengu_backend_tensor::{Function, Operator, StorageType, Tensor, Type};
 use tracing::trace;
 
+use tengu_backend::Processor as RawProcessor;
+use tengu_backend_tensor::{Function, Operator, StorageType, Type};
+
 use crate::source::Source;
+use crate::tensor::Tensor;
 use crate::Backend as WGPUBackend;
 use declarator::Declarator;
 use emitter::Emitter;
@@ -95,8 +96,7 @@ impl<'a> Processor<'a> {
 
 // NOTE: Processor trait implementation
 
-impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
-    type Backend = WGPUBackend;
+impl<'a> RawProcessor<'a, WGPUBackend> for Processor<'a> {
     type Repr = (usize, String);
 
     /// Processses the tensor. This is the bottom-level call, so the tensor will be added to the
@@ -109,7 +109,8 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Returns
     /// Processor representation of the tensor, consisting of the number of elements in the tensor
     /// and emitted shader representation of the tensor.
-    fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr {
+    fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
+        use tengu_backend_tensor::Tensor;
         let label = Tensor::label(tensor);
         if !self.visited.contains(label) {
             self.declarator.var(self.current_binding, tensor);

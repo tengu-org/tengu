@@ -1,6 +1,6 @@
 use tengu_backend::Backend;
 use tengu_backend_tensor::StorageType;
-use tengu_tensor::Tensor;
+use tengu_graph_tensor::Tensor;
 
 /// A trait for types that have a shape.
 ///

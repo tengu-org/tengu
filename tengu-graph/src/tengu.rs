@@ -7,13 +7,13 @@
 use std::rc::Rc;
 use tengu_backend::Backend;
 use tengu_backend_tensor::IOType;
-use tengu_backend_wgpu::Backend as WGPUBackend;
 
 use crate::builder::Builder;
 use crate::expression::Expression;
 use crate::graph::Graph;
 use crate::shape::Shape;
 use crate::Result;
+use crate::{CPU, WGPU};
 
 /// Main struct for the Tengu tensor computation framework.
 ///
@@ -82,12 +82,22 @@ impl<B: Backend + 'static> Tengu<B> {
     }
 }
 
-impl Tengu<WGPUBackend> {
+impl Tengu<WGPU> {
     /// Creates a new instance of the Tengu framework with the WGPU backend.
     ///
     /// # Returns
     /// A result containing a reference-counted `Tengu` instance or an error.
     pub async fn wgpu() -> Result<Rc<Self>> {
+        Tengu::new().await
+    }
+}
+
+impl Tengu<CPU> {
+    /// Creates a new instance of the Tengu framework with the WGPU backend.
+    ///
+    /// # Returns
+    /// A result containing a reference-counted `Tengu` instance or an error.
+    pub async fn cpu() -> Result<Rc<Self>> {
         Tengu::new().await
     }
 }

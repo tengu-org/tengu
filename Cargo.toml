@@ -2,10 +2,11 @@
 members = [
     "tengu-backend",
     "tengu-backend-wgpu",
+    "tengu-backend-cpu",
     "tengu-backend-tensor",
     "tengu-graph",
-    "tengu-tensor",
-    "tengu-wgpu", "tengu-backend-cpu",
+    "tengu-graph-tensor",
+    "tengu-wgpu",
 ]
 resolver = "2"
 

@@ -95,7 +95,7 @@ where
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
         let epxression = self.expression.visit(processor);
         processor.cast(epxression, T::as_type())
     }

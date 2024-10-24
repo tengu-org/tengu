@@ -15,6 +15,7 @@ use std::rc::Rc;
 use async_trait::async_trait;
 use tengu_backend::Error;
 use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::Tensor as RawTensor;
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize, Encoder};
 
 use crate::source::Source;
@@ -102,9 +103,7 @@ impl<T: StorageType> Source for Tensor<T> {
 
 // NOTE: Tensor trait implementation.
 
-impl<T: StorageType> tengu_backend_tensor::Tensor for Tensor<T> {
-    type Elem = T;
-
+impl<T: StorageType> RawTensor<T> for Tensor<T> {
     /// Returns the label of the tensor.
     ///
     /// # Returns

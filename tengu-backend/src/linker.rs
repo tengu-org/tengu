@@ -8,10 +8,7 @@ use crate::Backend;
 /// The `Linker` trait defines a set of operations for propagating tensor data within a computation graph.
 /// Types that implement this trait can manage the copying of tensor data between different storage
 /// locations or parts of the computation graph.
-pub trait Linker {
-    /// The type of the backend that this linker interacts with.
-    type Backend: Backend;
-
+pub trait Linker<B: Backend> {
     /// Copies tensor data from one tensor to another.
     ///
     /// # Parameters
@@ -20,9 +17,5 @@ pub trait Linker {
     ///
     /// # Type Parameters
     /// - `T`: The type of data stored in the tensors, which must implement the `StorageType` trait.
-    fn copy_link<T: StorageType>(
-        &mut self,
-        from: &<Self::Backend as Backend>::Tensor<T>,
-        to: &<Self::Backend as Backend>::Tensor<T>,
-    );
+    fn copy_link<T: StorageType>(&mut self, from: &B::Tensor<T>, to: &B::Tensor<T>);
 }

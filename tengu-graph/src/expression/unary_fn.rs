@@ -113,7 +113,7 @@ impl<B: Backend + 'static> Node<B> for UnaryFn<B> {
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
         let expr = self.expression.visit(processor);
         processor.unary_fn(expr, self.function)
     }

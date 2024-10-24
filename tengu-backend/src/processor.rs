@@ -12,10 +12,7 @@ use crate::Backend;
 /// representations returned by subexpression methods and returns a representation for that particular
 /// epxression. This means that recursion is handled on the frontend and the job of the processor
 /// is only to produce final representation (hence the final tagless style).
-pub trait Processor<'a> {
-    /// The type of the backend that this processor interacts with.
-    type Backend: Backend;
-
+pub trait Processor<'a, B: Backend> {
     /// The type of the representation produced and accepted by this processor.
     type Repr;
 
@@ -26,7 +23,7 @@ pub trait Processor<'a> {
     ///
     /// # Returns
     /// A representation of the tensor variable.
-    fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr;
+    fn var<T: StorageType>(&mut self, tensor: &'a B::Tensor<T>) -> Self::Repr;
 
     /// Processes a scalar value and produces its representation.
     ///
