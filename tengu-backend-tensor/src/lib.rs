@@ -28,12 +28,12 @@
 
 mod cast;
 mod function;
-mod operation;
+mod operator;
 mod tensor;
 mod types;
 
 pub use cast::Type;
 pub use function::{Function, UnaryFn};
-pub use operation::Operator;
+pub use operator::Operator;
 pub use tensor::{create_label, Tensor};
 pub use types::{IOType, StorageType};
