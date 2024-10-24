@@ -1,11 +1,5 @@
 //! This module provides the implementation of the `Tensor` struct, which represents a tensor in the WGPU backend.
 //! It includes functionality for creating tensors, managing their data, and interfacing with the GPU for compute operations.
-//!
-//! ## Overview
-//!
-//! A `Tensor` is a fundamental data structure used in GPU computations, representing a multi-dimensional array of data.
-//! This module defines the `Tensor` struct and implements various traits to integrate tensors with the Tengu backend and WGPU
-//! operations.
 
 use std::borrow::Cow;
 use std::cell::OnceCell;

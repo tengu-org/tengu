@@ -8,19 +8,19 @@ use tracing::trace;
 use crate::processor::Processor;
 use crate::Backend as WGPUBackend;
 
-/// The `Stage` struct is used to perform staging operations in the WGPU backend.
+/// The `Readout` struct is used to perform readout operations on the WGPU backend.
 pub struct Readout<'a> {
     encoder: &'a mut Encoder,
 }
 
 impl<'a> Readout<'a> {
-    /// Creates a new `Stage` instance.
+    /// Creates a new `Readout` instance.
     ///
     /// # Parameters
     /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operations.
     ///
     /// # Returns
-    /// A new instance of `Stage`.
+    /// A new instance of `Readout`.
     pub fn new(encoder: &'a mut Encoder) -> Self {
         Self { encoder }
     }

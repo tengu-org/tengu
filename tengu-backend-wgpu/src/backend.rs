@@ -77,6 +77,9 @@ impl tengu_backend::Backend for Backend {
 
     /// Creates a new `Processor` instance.
     ///
+    /// # Parameters
+    /// - `readouts`: A set of readout labels to be used by the processor.
+    ///
     /// # Returns
     /// A new `Processor` instance.
     fn processor<'a>(&self, readouts: &'a HashSet<String>) -> Self::Processor<'a> {
@@ -136,6 +139,7 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Parameters
     /// - `label`: A label for the tensor.
+    /// - `shape`: The shape of the tensor.
     /// - `data`: A slice of data to initialize the tensor with.
     ///
     /// # Returns
@@ -156,7 +160,7 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Parameters
     /// - `label`: A label for the tensor.
-    /// - `count`: The number of elements in the tensor.
+    /// - `shape`: The shape of the tensor.
     ///
     /// # Returns
     /// A new zero-initialized tensor.

@@ -44,6 +44,9 @@ pub struct Processor<'a> {
 impl<'a> Processor<'a> {
     /// Creates a new `Processor` instance.
     ///
+    /// # Parameters
+    /// - `readouts`: A reference to a set of readout labels.
+    ///
     /// # Returns
     /// A new instance of `Processor`.
     pub fn new(readouts: &'a HashSet<String>) -> Self {
@@ -141,7 +144,7 @@ impl<'a> RawProcessor<'a, WGPUBackend> for Processor<'a> {
     ///
     /// # Parameters
     /// - `inner`: The inner expression representation.
-    /// - `symbol`: The symbol representing the unary function.
+    /// - `function`: The unary function to apply.
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting expression's shader representation.
@@ -156,7 +159,7 @@ impl<'a> RawProcessor<'a, WGPUBackend> for Processor<'a> {
     /// # Parameters
     /// - `lhs`: The left-hand side expression representation.
     /// - `rhs`: The right-hand side expression representation.
-    /// - `symbol`: The symbol representing the binary operation.
+    /// - `operator`: The binary operator to apply.
     ///
     /// # Returns
     /// A tuple containing the maximum count of elements between the two expressions and the resulting
@@ -171,7 +174,7 @@ impl<'a> RawProcessor<'a, WGPUBackend> for Processor<'a> {
     ///
     /// # Parameters
     /// - `inner`: The inner expression representation.
-    /// - `ty`: The target type as a string.
+    /// - `ty`: The target type to cast to.
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting cast expression's shader representation.

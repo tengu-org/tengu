@@ -38,7 +38,7 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Parameters
     /// - `inner`: The inner representation to which the unary function is applied.
-    /// - `symbol`: The symbol representing the unary function.
+    /// - `function`: The unary function to apply.
     ///
     /// # Returns
     /// A new representation after applying the unary function.
@@ -49,7 +49,7 @@ pub trait Processor<'a, B: Backend> {
     /// # Parameters
     /// - `lhs`: The left-hand side representation.
     /// - `rhs`: The right-hand side representation.
-    /// - `symbol`: The symbol representing the binary operation.
+    /// - `operator`: The binary operator to apply.
     ///
     /// # Returns
     /// A new representation after applying the binary operation.
@@ -59,7 +59,7 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Parameters
     /// - `inner`: The inner representation to be cast.
-    /// - `ty`: The target type for the cast.
+    /// - `ty`: The target type to cast to.
     ///
     /// # Returns
     /// A new representation after casting.
