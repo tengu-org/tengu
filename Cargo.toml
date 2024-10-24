@@ -7,6 +7,7 @@ members = [
     "tengu-graph",
     "tengu-graph-tensor",
     "tengu-wgpu",
+    "tengu-utils",
 ]
 resolver = "2"
 
