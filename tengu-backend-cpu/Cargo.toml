@@ -1,11 +1,15 @@
 [package]
-name = "tengu-tensor"
+name = "tengu-backend-cpu"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+tengu-wgpu = { path = "../tengu-wgpu" }
 tengu-backend = { path = "../tengu-backend" }
 tengu-backend-tensor = { path = "../tengu-backend-tensor" }
-flume = { workspace = true }
+tengu-utils = { path = "../tengu-utils" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"

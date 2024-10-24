@@ -13,12 +13,13 @@
 //!   type casting, and block generation.
 
 use std::collections::{BTreeMap, HashSet};
-
-use tengu_backend::Backend;
-use tengu_backend_tensor::{StorageType, Tensor};
 use tracing::trace;
 
+use tengu_backend::Processor as RawProcessor;
+use tengu_backend_tensor::{Function, Operator, StorageType, Type};
+
 use crate::source::Source;
+use crate::tensor::Tensor;
 use crate::Backend as WGPUBackend;
 use declarator::Declarator;
 use emitter::Emitter;
@@ -42,6 +43,9 @@ pub struct Processor<'a> {
 
 impl<'a> Processor<'a> {
     /// Creates a new `Processor` instance.
+    ///
+    /// # Parameters
+    /// - `readouts`: A reference to a set of readout labels.
     ///
     /// # Returns
     /// A new instance of `Processor`.
@@ -75,7 +79,7 @@ impl<'a> Processor<'a> {
         self.sources.values().copied()
     }
 
-    /// Returns an iterator over the source tensors acquird from the tensor AST that can be used in
+    /// Returns an iterator over the source tensors acquired from the tensor AST that can be used in
     /// readout operations.
     ///
     /// # Returns
@@ -95,8 +99,7 @@ impl<'a> Processor<'a> {
 
 // NOTE: Processor trait implementation
 
-impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
-    type Backend = WGPUBackend;
+impl<'a> RawProcessor<'a, WGPUBackend> for Processor<'a> {
     type Repr = (usize, String);
 
     /// Processses the tensor. This is the bottom-level call, so the tensor will be added to the
@@ -109,7 +112,8 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Returns
     /// Processor representation of the tensor, consisting of the number of elements in the tensor
     /// and emitted shader representation of the tensor.
-    fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr {
+    fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
+        use tengu_backend_tensor::Tensor;
         let label = Tensor::label(tensor);
         if !self.visited.contains(label) {
             self.declarator.var(self.current_binding, tensor);
@@ -140,12 +144,12 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     ///
     /// # Parameters
     /// - `inner`: The inner expression representation.
-    /// - `symbol`: The symbol representing the unary function.
+    /// - `function`: The unary function to apply.
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting expression's shader representation.
-    fn unary_fn(&mut self, inner: Self::Repr, symbol: &str) -> Self::Repr {
-        let expression = self.emitter.unary_fn(inner.1, symbol);
+    fn unary_fn(&mut self, inner: Self::Repr, function: Function) -> Self::Repr {
+        let expression = self.emitter.unary_fn(inner.1, function);
         let element_count = inner.0;
         (element_count, expression)
     }
@@ -155,13 +159,13 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// # Parameters
     /// - `lhs`: The left-hand side expression representation.
     /// - `rhs`: The right-hand side expression representation.
-    /// - `symbol`: The symbol representing the binary operation.
+    /// - `operator`: The binary operator to apply.
     ///
     /// # Returns
     /// A tuple containing the maximum count of elements between the two expressions and the resulting
     /// expression's shader representation.
-    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, symbol: &str) -> Self::Repr {
-        let expression = self.emitter.binary(lhs.1, rhs.1, symbol);
+    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, operator: Operator) -> Self::Repr {
+        let expression = self.emitter.binary(lhs.1, rhs.1, operator);
         let element_count = lhs.0.max(rhs.0);
         (element_count, expression)
     }
@@ -170,11 +174,11 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     ///
     /// # Parameters
     /// - `inner`: The inner expression representation.
-    /// - `ty`: The target type as a string.
+    /// - `ty`: The target type to cast to.
     ///
     /// # Returns
     /// A tuple containing the number of elements and the resulting cast expression's shader representation.
-    fn cast(&mut self, inner: Self::Repr, ty: &str) -> Self::Repr {
+    fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr {
         let expression = self.emitter.cast(inner.1, ty);
         let element_count = inner.0;
         (element_count, expression)

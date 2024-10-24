@@ -1,11 +1,12 @@
 //! This module defines the `Linker` struct which implements the `Linker` trait from the `tengu_backend` crate.
 //! The `Linker` is responsible for copying data between GPU buffers using the WGPU backend.
 
-use tengu_backend::Backend;
+use tengu_backend::Linker as RawLinker;
 use tengu_backend_tensor::StorageType;
 use tengu_wgpu::Encoder;
 
 use crate::source::Source;
+use crate::tensor::Tensor;
 use crate::Backend as WGPUBackend;
 
 /// The `Linker` struct is used to manage and perform copy operations between GPU buffers.
@@ -27,20 +28,14 @@ impl<'a> Linker<'a> {
     }
 }
 
-impl<'a> tengu_backend::Linker for Linker<'a> {
-    type Backend = WGPUBackend;
-
+impl<'a> RawLinker<WGPUBackend> for Linker<'a> {
     /// Copies data from one tensor buffer to another. This operation works only on typed tensors,
     /// so the downcast conversion from sources should be performed elsewhere.
     ///
     /// # Parameters
     /// - `from`: A reference to the source tensor.
     /// - `to`: A reference to the destination tensor.
-    fn copy_link<T: StorageType>(
-        &mut self,
-        from: &<Self::Backend as Backend>::Tensor<T>,
-        to: &<Self::Backend as Backend>::Tensor<T>,
-    ) {
+    fn copy_link<T: StorageType>(&mut self, from: &Tensor<T>, to: &Tensor<T>) {
         self.encoder.copy_buffer(from.buffer(), to.buffer());
     }
 }

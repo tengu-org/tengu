@@ -11,7 +11,7 @@ use as_any::Downcast;
 use futures::Future;
 use tengu_backend::Backend;
 use tengu_backend_tensor::StorageType;
-use tengu_tensor::{Probe, Tensor};
+use tengu_graph_tensor::{Probe, Tensor};
 
 use crate::source::Source;
 use crate::{Error, Result, Tengu};
@@ -238,7 +238,7 @@ impl<B: Backend + 'static> Graph<B> {
     ///
     /// # Returns
     /// A result containing the probe or an error if the tensor is not found or if there is a type mismatch.
-    pub fn add_probe<T: StorageType>(&mut self, path: &str) -> Result<Probe<T, B>> {
+    pub fn add_probe<T: StorageType>(&mut self, path: &str) -> Result<Probe<T>> {
         let (block_label, source_label) = path
             .split_once('/')
             .ok_or_else(|| Error::InvalidLinkPath(path.to_string()))?;

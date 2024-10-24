@@ -45,7 +45,7 @@ impl<B: Backend + 'static> Computation<B> {
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    pub fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+    pub fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
         self.statement.visit(processor)
     }
 

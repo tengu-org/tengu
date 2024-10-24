@@ -24,8 +24,6 @@ impl Limits {
 }
 
 impl tengu_backend::Limits for Limits {
-    type Backend = WGPUBackend;
-
     /// Returns the maximum number of tensors that can be used in a single compute stage.
     /// This number is equal to the maximum buffer count for one shader stage in WGPU.
     ///

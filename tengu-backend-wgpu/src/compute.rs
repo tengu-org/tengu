@@ -15,7 +15,8 @@
 //!    pipeline. It binds the resources required for the compute operations.
 //! 3. **Dispatch Workgroups**: The `run` method then dispatches the workgroups to execute the compute operations on the GPU.
 
-use tengu_backend::{Backend, Error, Result};
+use tengu_backend::Compute as RawCompute;
+use tengu_backend::{Error, Result};
 use tengu_wgpu::{Device, Pipeline};
 use tracing::trace;
 
@@ -73,9 +74,7 @@ impl<'a> Compute<'a> {
     }
 }
 
-impl<'a> tengu_backend::Compute for Compute<'a> {
-    type Backend = WGPUBackend;
-
+impl<'a> RawCompute<WGPUBackend> for Compute<'a> {
     /// Runs the compute operations by setting up the pipeline, bind group, and dispatching workgroups.
     ///
     /// # Parameters
@@ -83,7 +82,7 @@ impl<'a> tengu_backend::Compute for Compute<'a> {
     ///
     /// # Returns
     /// A `Result` indicating whether the compute operations were successful or an error occurred.
-    fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()> {
+    fn run(&mut self, processor: &Processor<'_>) -> Result<()> {
         trace!("Executing compute operation");
         let pipeline = self.pipeline(processor)?;
         let workgroup_count = processor.element_count() as u32 / WORKGROUP_SIZE + 1;

@@ -3,37 +3,13 @@
 //! `UnaryFn` variant on the `Expression` struct.
 
 use tengu_backend::{Backend, Processor};
-use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::{Function, StorageType};
 
 use super::Expression;
 use crate::collector::Collector;
 use crate::node::Node;
 use crate::shape::Shape;
 use crate::source::Source;
-
-// NOTE: Function
-
-/// Enum representing supported unary functions.
-#[derive(Copy, Clone)]
-pub enum Function {
-    /// Logarithm function.
-    Log,
-    /// Exponentiation function.
-    Exp,
-}
-
-impl Function {
-    /// Returns the symbolic representation of the function.
-    ///
-    /// # Returns
-    /// A static string slice representing the function symbol.
-    fn symbol(&self) -> &'static str {
-        match self {
-            Self::Log => "log",
-            Self::Exp => "exp",
-        }
-    }
-}
 
 // NOTE: UnaryFn
 
@@ -137,10 +113,9 @@ impl<B: Backend + 'static> Node<B> for UnaryFn<B> {
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
         let expr = self.expression.visit(processor);
-        let symbol = self.function.symbol();
-        processor.unary_fn(expr, symbol)
+        processor.unary_fn(expr, self.function)
     }
 }
 

@@ -19,6 +19,8 @@
 
 use std::fmt::{Debug, Display};
 
+use crate::Type;
+
 /// A type that can be used to transfer data between CPU and GPU.
 ///
 /// This trait combines the properties of `StorageType` and `bytemuck::Pod`
@@ -72,20 +74,38 @@ where
     fn convert(self) -> Self::IOType {
         self.into()
     }
+
+    fn as_type() -> Type;
 }
 
 impl StorageType for f32 {
     type IOType = f32;
+
+    fn as_type() -> Type {
+        Type::F32
+    }
 }
 
 impl StorageType for u32 {
     type IOType = u32;
+
+    fn as_type() -> Type {
+        Type::U32
+    }
 }
 
 impl StorageType for i32 {
     type IOType = i32;
+
+    fn as_type() -> Type {
+        Type::I32
+    }
 }
 
 impl StorageType for bool {
     type IOType = u32;
+
+    fn as_type() -> Type {
+        Type::Bool
+    }
 }

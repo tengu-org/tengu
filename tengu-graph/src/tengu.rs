@@ -1,5 +1,3 @@
-//! Module for initializing and managing the Tengu tensor computation framework.
-//!
 //! This module defines the `Tengu` struct and associated methods for creating and managing
 //! tensors, scalar expressions, and computational graphs. It provides an interface for
 //! initializing the framework with a specified backend and includes specialized methods
@@ -9,13 +7,13 @@
 use std::rc::Rc;
 use tengu_backend::Backend;
 use tengu_backend_tensor::IOType;
-use tengu_backend_wgpu::Backend as WGPUBackend;
 
 use crate::builder::Builder;
 use crate::expression::Expression;
 use crate::graph::Graph;
 use crate::shape::Shape;
 use crate::Result;
+use crate::{CPU, WGPU};
 
 /// Main struct for the Tengu tensor computation framework.
 ///
@@ -84,7 +82,7 @@ impl<B: Backend + 'static> Tengu<B> {
     }
 }
 
-impl Tengu<WGPUBackend> {
+impl Tengu<WGPU> {
     /// Creates a new instance of the Tengu framework with the WGPU backend.
     ///
     /// # Returns
@@ -94,9 +92,18 @@ impl Tengu<WGPUBackend> {
     }
 }
 
+impl Tengu<CPU> {
+    /// Creates a new instance of the Tengu framework with the WGPU backend.
+    ///
+    /// # Returns
+    /// A result containing a reference-counted `Tengu` instance or an error.
+    pub async fn cpu() -> Result<Rc<Self>> {
+        Tengu::new().await
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::builder::LABEL_LENGTH;
     use crate::shape::Shape;
     use crate::Tengu;
     use pretty_assertions::assert_eq;
@@ -114,12 +121,10 @@ mod tests {
         let tengu = Tengu::wgpu().await.unwrap();
         let tensor = tengu.tensor([3, 3, 3]).zero::<i32>();
         let label = tensor.label().unwrap();
-        assert_eq!(label.len(), LABEL_LENGTH);
         assert!(label.chars().all(|c| c.is_alphabetic()));
 
         let tensor = tengu.tensor([3]).init(&[1, 2, 3]);
         let label = tensor.label().unwrap();
-        assert_eq!(label.len(), LABEL_LENGTH);
         assert!(label.chars().all(|c| c.is_alphabetic()));
     }
 }

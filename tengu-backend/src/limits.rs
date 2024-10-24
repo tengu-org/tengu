@@ -3,8 +3,6 @@
 
 /// The `Limits` trait defines a set of operations for querying the limitations of a backend.
 pub trait Limits {
-    type Backend;
-
     /// Returns the maximum number of tensors that can be used in a single compute stage.
     ///
     /// # Returns

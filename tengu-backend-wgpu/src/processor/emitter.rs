@@ -6,7 +6,7 @@
 
 use indoc::formatdoc;
 use itertools::Itertools;
-use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::{Function, Operator, StorageType, Type};
 
 use crate::source::Source;
 use crate::tensor::Tensor;
@@ -78,7 +78,8 @@ impl Emitter {
     ///
     /// # Returns
     /// A `String` representing the unary function application.
-    pub fn unary_fn(&mut self, inner: String, symbol: &str) -> String {
+    pub fn unary_fn(&mut self, inner: String, function: Function) -> String {
+        let symbol = fn_symbol(function);
         format!("{symbol}({inner})")
     }
 
@@ -91,7 +92,8 @@ impl Emitter {
     ///
     /// # Returns
     /// A `String` representing the binary operation.
-    pub fn binary(&mut self, lhs: String, rhs: String, symbol: &str) -> String {
+    pub fn binary(&mut self, lhs: String, rhs: String, operation: Operator) -> String {
+        let symbol = op_symbol(operation);
         format!("({lhs} {symbol} {rhs})")
     }
 
@@ -103,8 +105,9 @@ impl Emitter {
     ///
     /// # Returns
     /// A `String` representing the casted expression.
-    pub fn cast(&mut self, inner: String, ty: &str) -> String {
-        format!("{ty}({inner})")
+    pub fn cast(&mut self, inner: String, ty: Type) -> String {
+        let symbol = type_symbol(ty);
+        format!("{symbol}({inner})")
     }
 
     /// Return a string representation of a statement.
@@ -125,6 +128,33 @@ impl Emitter {
     /// - `exprs`: An iterator over expressions to include in the block.
     pub fn block(&mut self, exprs: impl Iterator<Item = String>) {
         self.expression = exprs.into_iter().join("\n    ");
+    }
+}
+
+fn fn_symbol(function: Function) -> &'static str {
+    match function {
+        Function::Log => "log",
+        Function::Exp => "exp",
+    }
+}
+
+fn op_symbol(operator: Operator) -> &'static str {
+    match operator {
+        Operator::Add => "+",
+        Operator::Sub => "-",
+        Operator::Mul => "*",
+        Operator::Div => "/",
+        Operator::Eq => "==",
+        Operator::Neq => "!=",
+    }
+}
+
+fn type_symbol(ty: Type) -> &'static str {
+    match ty {
+        Type::Bool => "bool",
+        Type::U32 => "u32",
+        Type::I32 => "i32",
+        Type::F32 => "f32",
     }
 }
 
@@ -161,7 +191,7 @@ mod tests {
         let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
-        let cast_a = processor.cast(a, "f32");
+        let cast_a = processor.cast(a, Type::F32);
         assert_eq!(cast_a, "f32(a[idx])");
     }
 
@@ -171,7 +201,7 @@ mod tests {
         let a = backend.tensor("a", [4], &[1, 2, 3, 4]);
         let mut processor = Emitter::new();
         let a = processor.var(&a);
-        let cast_a = processor.unary_fn(a, "exp");
+        let cast_a = processor.unary_fn(a, Function::Exp);
         assert_eq!(cast_a, "exp(a[idx])");
     }
 
@@ -183,7 +213,7 @@ mod tests {
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
-        let a_add_b = processor.binary(a, b, "*");
+        let a_add_b = processor.binary(a, b, Operator::Mul);
         assert_eq!(a_add_b, "(a[idx] * b[idx])");
     }
 
@@ -196,7 +226,7 @@ mod tests {
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
-        let a_add_b = processor.binary(a, b, "+");
+        let a_add_b = processor.binary(a, b, Operator::Add);
         let c = processor.var(&c);
         let statement = processor.statement(c, a_add_b);
         assert_eq!(statement, "c[idx] = (a[idx] + b[idx]);");
@@ -211,7 +241,7 @@ mod tests {
         let mut processor = Emitter::new();
         let a = processor.var(&a);
         let b = processor.var(&b);
-        let a_add_b = processor.binary(a, b, "+");
+        let a_add_b = processor.binary(a, b, Operator::Add);
         let c = processor.var(&c);
         let statement = processor.statement(c, a_add_b);
         processor.block(std::iter::once(statement));

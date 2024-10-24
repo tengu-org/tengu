@@ -15,7 +15,7 @@ pub trait Node<B: Backend>: Shape {
     ///
     /// # Returns
     /// The inner representation of the processor, as defined by `tengu-backend`.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr;
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<'a, B>>::Repr;
 
     /// Collect sources from the expression tree.
     ///

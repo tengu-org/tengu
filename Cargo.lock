@@ -2022,11 +2022,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "tengu-backend-cpu"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "pretty_assertions",
+ "tengu-backend",
+ "tengu-backend-tensor",
+ "tengu-utils",
+ "tengu-wgpu",
+ "thiserror",
+]
+
+[[package]]
 name = "tengu-backend-tensor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytemuck",
+ "random-string",
 ]
 
 [[package]]
@@ -2065,11 +2079,11 @@ dependencies = [
  "pretty_assertions",
  "rand",
  "rand_distr",
- "random-string",
  "tengu-backend",
+ "tengu-backend-cpu",
  "tengu-backend-tensor",
  "tengu-backend-wgpu",
- "tengu-tensor",
+ "tengu-graph-tensor",
  "thiserror",
  "tokio",
  "tracing",
@@ -2077,7 +2091,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tengu-tensor"
+name = "tengu-graph-tensor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -2086,6 +2100,10 @@ dependencies = [
  "tengu-backend-tensor",
  "thiserror",
 ]
+
+[[package]]
+name = "tengu-utils"
+version = "0.1.0"
 
 [[package]]
 name = "tengu-wgpu"

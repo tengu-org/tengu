@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Tensor error: {0}")]
-    TensorError(#[source] tengu_tensor::Error),
+    TensorError(#[source] tengu_graph_tensor::Error),
     #[error("Backend error: {0}")]
     BackendError(#[from] tengu_backend::Error),
     #[error("Cannot find source with label {0}")]

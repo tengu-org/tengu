@@ -56,7 +56,7 @@ impl<T, B> Shape for Cast<T, B> {
 
 // NOTE: Node implenentation.
 
-impl<T, B> Node<B> for Cast<T, B>
+impl<T: StorageType, B> Node<B> for Cast<T, B>
 where
     T: Clone + 'static,
     B: Backend + 'static,
@@ -95,10 +95,9 @@ where
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
         let epxression = self.expression.visit(processor);
-        let ty = std::any::type_name::<T>().to_string();
-        processor.cast(epxression, &ty)
+        processor.cast(epxression, T::as_type())
     }
 }
 

@@ -96,7 +96,7 @@ impl<B: Backend + 'static> Node<B> for Statement<B> {
     ///
     /// # Returns
     /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor>::Repr {
+    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
         let output = self.output.visit(processor);
         let expression = self.expression.visit(processor);
         processor.statement(output, expression)

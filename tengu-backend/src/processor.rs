@@ -2,7 +2,7 @@
 //! of tensor expressions in a final tagless style. Implementations of the `Processor` trait are responsible
 //! for transforming or evaluating the AST nodes according to specific backend requirements.
 
-use tengu_backend_tensor::StorageType;
+use tengu_backend_tensor::{Function, Operator, StorageType, Type};
 
 use crate::Backend;
 
@@ -12,10 +12,7 @@ use crate::Backend;
 /// representations returned by subexpression methods and returns a representation for that particular
 /// epxression. This means that recursion is handled on the frontend and the job of the processor
 /// is only to produce final representation (hence the final tagless style).
-pub trait Processor<'a> {
-    /// The type of the backend that this processor interacts with.
-    type Backend: Backend;
-
+pub trait Processor<'a, B: Backend> {
     /// The type of the representation produced and accepted by this processor.
     type Repr;
 
@@ -26,7 +23,7 @@ pub trait Processor<'a> {
     ///
     /// # Returns
     /// A representation of the tensor variable.
-    fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr;
+    fn var<T: StorageType>(&mut self, tensor: &'a B::Tensor<T>) -> Self::Repr;
 
     /// Processes a scalar value and produces its representation.
     ///
@@ -41,32 +38,32 @@ pub trait Processor<'a> {
     ///
     /// # Parameters
     /// - `inner`: The inner representation to which the unary function is applied.
-    /// - `symbol`: The symbol representing the unary function.
+    /// - `function`: The unary function to apply.
     ///
     /// # Returns
     /// A new representation after applying the unary function.
-    fn unary_fn(&mut self, inner: Self::Repr, symbol: &str) -> Self::Repr;
+    fn unary_fn(&mut self, inner: Self::Repr, function: Function) -> Self::Repr;
 
     /// Applies a binary operation to two representations and produces a new representation.
     ///
     /// # Parameters
     /// - `lhs`: The left-hand side representation.
     /// - `rhs`: The right-hand side representation.
-    /// - `symbol`: The symbol representing the binary operation.
+    /// - `operator`: The binary operator to apply.
     ///
     /// # Returns
     /// A new representation after applying the binary operation.
-    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, symbol: &str) -> Self::Repr;
+    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, operator: Operator) -> Self::Repr;
 
     /// Creates a representation of a type cast applyied to a tensor expression.
     ///
     /// # Parameters
     /// - `inner`: The inner representation to be cast.
-    /// - `ty`: The target type for the cast.
+    /// - `ty`: The target type to cast to.
     ///
     /// # Returns
     /// A new representation after casting.
-    fn cast(&mut self, inner: Self::Repr, ty: &str) -> Self::Repr;
+    fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr;
 
     /// Creates a representation of a statement that assigns an expression to an output.
     ///
