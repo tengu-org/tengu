@@ -3,8 +3,6 @@ use std::cell::RefCell;
 
 use tengu_backend_tensor::StorageType;
 
-use crate::source::{AsSource, Source, Unsupported};
-
 mod arithmetic;
 mod cast;
 mod relational;
@@ -55,35 +53,6 @@ impl<T: StorageType> Tensor<T> {
         other.data.borrow_mut().copy_from_slice(&self.data.borrow());
     }
 }
-
-// NOTE: AsSource implementations.
-
-impl<T: StorageType> AsSource<Unsupported> for Tensor<T> {
-    fn as_source(&self) -> Source<'_> {
-        panic!("unsupported type");
-    }
-    fn into_source(self) -> Source<'static> {
-        panic!("unsupported type");
-    }
-}
-
-macro_rules! impl_as_source {
-    ( $type:ty ) => {
-        impl AsSource for Tensor<$type> {
-            fn as_source(&self) -> Source<'_> {
-                self.into()
-            }
-            fn into_source(self) -> Source<'static> {
-                self.into()
-            }
-        }
-    };
-}
-
-impl_as_source!(bool);
-impl_as_source!(u32);
-impl_as_source!(i32);
-impl_as_source!(f32);
 
 // NOTE: Backend tensor trait implementation.
 

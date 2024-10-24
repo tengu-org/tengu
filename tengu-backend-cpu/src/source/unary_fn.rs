@@ -1,21 +1,13 @@
 use tengu_backend_tensor::UnaryFn;
 
-use crate::tensor::Tensor;
-
-use super::{AsSource, Borrowed, Owned, Source};
+use super::Source;
 
 macro_rules! impl_unary_fn {
     ( $fn:ident, $( [$variant:ident, $type:ty] )+ ) => {
         fn $fn(&self) -> Self {
             match self {
-                Source::Owned(owned) => match owned {
-                    $(Owned::$variant(tensor) => <Tensor<$type> as AsSource>::into_source(tensor.$fn()),)+
-                    other => panic!("{} is not supported for {}", stringify!($fn), other.variant()),
-                },
-                Source::Borrowed(borrowed) => match borrowed {
-                    $(Borrowed::$variant(tensor) => <Tensor<$type> as AsSource>::into_source(tensor.$fn()),)+
-                    other => panic!("{} is not supported for {}", stringify!($fn), other.variant()),
-                },
+                $(Self::$variant(_) => self.as_ref::<$type>().exp().into())+,
+                other => panic!("{} is not supported for {}", stringify!($fn), other.variant()),
             }
         }
     };

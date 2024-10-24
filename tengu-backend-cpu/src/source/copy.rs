@@ -1,46 +1,12 @@
-use super::{Borrowed, Owned, Source};
+use super::Source;
 
 impl<'a> Source<'a> {
-    pub fn copy_from(&self, rhs: &Self) {
-        match (self, rhs) {
-            (Source::Owned(lhs), Source::Owned(rhs)) => lhs.copy_from(rhs),
-            (Source::Owned(lhs), Source::Borrowed(rhs)) => lhs.copy_from(rhs),
-            (Source::Borrowed(lhs), Source::Owned(rhs)) => lhs.copy_from(rhs),
-            (Source::Borrowed(lhs), Source::Borrowed(rhs)) => lhs.copy_from(rhs),
+    pub fn copy_from(&self, other: &Self) {
+        match (self, other) {
+            (Source::U32(_), Source::U32(_)) => other.as_ref::<u32>().copy_to(self.as_ref::<u32>()),
+            (Source::I32(_), Source::I32(_)) => other.as_ref::<i32>().copy_to(self.as_ref::<i32>()),
+            (Source::F32(_), Source::F32(_)) => other.as_ref::<f32>().copy_to(self.as_ref::<f32>()),
+            (lhs, rhs) => panic!("Cannot copy from {} to {}", rhs.variant(), lhs.variant()),
         }
     }
-}
-
-trait CopyFrom<Rhs = Self> {
-    fn copy_from(&self, other: &Rhs);
-}
-
-macro_rules! impl_copy_from {
-    ( $lhs:ident, $rhs:ident ) => {
-        fn copy_from(&self, other: &$rhs) {
-            match (self, other) {
-                ($lhs::Bool(lhs), $rhs::Bool(rhs)) => rhs.copy_to(lhs),
-                ($lhs::U32(lhs), $rhs::U32(rhs)) => rhs.copy_to(lhs),
-                ($lhs::I32(lhs), $rhs::I32(rhs)) => rhs.copy_to(lhs),
-                ($lhs::F32(lhs), $rhs::F32(rhs)) => rhs.copy_to(lhs),
-                (lhs, rhs) => panic!("Cannot copy from {} to {}", rhs.variant(), lhs.variant()),
-            }
-        }
-    };
-}
-
-impl<'a> CopyFrom for Borrowed<'a> {
-    impl_copy_from!(Borrowed, Borrowed);
-}
-
-impl<'a> CopyFrom<Owned> for Borrowed<'a> {
-    impl_copy_from!(Borrowed, Owned);
-}
-
-impl<'a> CopyFrom<Borrowed<'a>> for Owned {
-    impl_copy_from!(Owned, Borrowed);
-}
-
-impl CopyFrom<Owned> for Owned {
-    impl_copy_from!(Owned, Owned);
 }

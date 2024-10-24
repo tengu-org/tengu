@@ -9,4 +9,6 @@ tengu-backend = { path = "../tengu-backend" }
 tengu-backend-tensor = { path = "../tengu-backend-tensor" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
-castaway = "0.2.3"
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"

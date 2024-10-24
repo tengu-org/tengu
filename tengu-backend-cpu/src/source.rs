@@ -1,3 +1,5 @@
+use std::any::{Any, TypeId};
+
 use crate::tensor::Tensor;
 
 mod arithmetic;
@@ -7,113 +9,130 @@ mod relational;
 mod unary_fn;
 
 pub use relational::Equality;
+use tengu_backend_tensor::StorageType;
 
-// NOTE: AsSource trait for specialization.
-
-/// Marker tag to represent underlying types for tensor elements that are supported by this
-/// backend. It is needed becase there's no negative trait bounds in stable Rust.
-pub struct Supported;
-
-/// Marker tag to represent underlying types for tensor elements that are not supported by this
-/// backend.
-pub struct Unsupported;
-
-pub trait AsSource<T = Supported> {
-    fn as_source(&self) -> Source<'_>;
-    fn into_source(self) -> Source<'static>;
+pub enum Cage<'a> {
+    Borrowed(&'a dyn Any),
+    Owned(Box<dyn Any>),
 }
 
-// NOTE: Source implementation.
+impl<'a> Cage<'a> {
+    pub fn owned<T: Clone + 'static>(value: T) -> Self {
+        Self::Owned(Box::new(value))
+    }
 
-#[derive(Clone)]
+    pub fn borrowed<T: Clone + 'static>(value: &'a T) -> Self {
+        Self::Borrowed(value)
+    }
+
+    pub fn into_owned<T: Clone + 'static>(self) -> Option<T> {
+        match self {
+            Self::Borrowed(tensor) => tensor.downcast_ref::<T>().cloned(),
+            Self::Owned(tensor) => tensor.downcast::<T>().ok().map(|b| *b),
+        }
+    }
+
+    pub fn as_ref<T: Clone + 'static>(&self) -> Option<&T> {
+        match self {
+            Self::Borrowed(tensor) => tensor.downcast_ref::<T>(),
+            Self::Owned(tensor) => tensor.downcast_ref::<T>(),
+        }
+    }
+
+    pub fn cloned<T: Clone + 'static>(&self) -> Option<Self> {
+        let inner = self.as_ref::<T>().cloned()?;
+        Some(Cage::owned(inner))
+    }
+
+    pub fn lift<T: Clone + 'static>(self) -> Self {
+        match self {
+            Self::Owned(_) => self,
+            Self::Borrowed(tensor) => Self::Owned(Box::new(tensor.downcast_ref::<T>().unwrap().clone())),
+        }
+    }
+}
+
 pub enum Source<'a> {
-    Borrowed(Borrowed<'a>),
-    Owned(Owned),
+    U32(Cage<'a>),
+    I32(Cage<'a>),
+    F32(Cage<'a>),
+    Bool(Cage<'a>),
 }
 
 impl<'a> Source<'a> {
-    pub fn into_owned(self) -> Owned {
-        match self {
-            Self::Owned(owned) => owned,
-            Self::Borrowed(borrowed) => match borrowed {
-                Borrowed::Bool(bool) => Owned::Bool(bool.clone()),
-                Borrowed::U32(u32) => Owned::U32(u32.clone()),
-                Borrowed::I32(i32) => Owned::I32(i32.clone()),
-                Borrowed::F32(f32) => Owned::F32(f32.clone()),
-            },
-        }
+    pub fn into_owned<T: StorageType>(self) -> Tensor<T> {
+        let tensor = match self {
+            Self::U32(cage) => cage.into_owned::<Tensor<T>>(),
+            Self::I32(cage) => cage.into_owned::<Tensor<T>>(),
+            Self::F32(cage) => cage.into_owned::<Tensor<T>>(),
+            Self::Bool(cage) => cage.into_owned::<Tensor<T>>(),
+        };
+        tensor.expect("Source type mismatch")
+    }
+
+    pub fn as_ref<T: StorageType>(&self) -> &Tensor<T> {
+        let tensor = match self {
+            Self::U32(cage) => cage.as_ref::<Tensor<T>>(),
+            Self::I32(cage) => cage.as_ref::<Tensor<T>>(),
+            Self::F32(cage) => cage.as_ref::<Tensor<T>>(),
+            Self::Bool(cage) => cage.as_ref::<Tensor<T>>(),
+        };
+        tensor.expect("Source type mismatch")
     }
 
     pub fn variant(&self) -> &'static str {
         match self {
-            Self::Owned(owned) => owned.variant(),
-            Self::Borrowed(borrowed) => borrowed.variant(),
-        }
-    }
-}
-
-// NOTE: Borrowed and Owned implementation.
-
-#[derive(Clone)]
-pub enum Borrowed<'a> {
-    Bool(&'a Tensor<bool>),
-    U32(&'a Tensor<u32>),
-    I32(&'a Tensor<i32>),
-    F32(&'a Tensor<f32>),
-}
-
-impl<'a> Borrowed<'a> {
-    pub fn variant(&self) -> &'static str {
-        match self {
-            Self::Bool(_) => "bool",
             Self::U32(_) => "u32",
             Self::I32(_) => "i32",
             Self::F32(_) => "f32",
-        }
-    }
-}
-
-#[derive(Clone)]
-pub enum Owned {
-    Bool(Tensor<bool>),
-    U32(Tensor<u32>),
-    I32(Tensor<i32>),
-    F32(Tensor<f32>),
-}
-
-impl Owned {
-    pub fn lift(self) -> Source<'static> {
-        Source::Owned(self)
-    }
-
-    pub fn variant(&self) -> &'static str {
-        match self {
             Self::Bool(_) => "bool",
-            Self::U32(_) => "u32",
-            Self::I32(_) => "i32",
-            Self::F32(_) => "f32",
         }
     }
 }
 
-// NOTE: From implementation.
-
-macro_rules! impl_from {
-    ( $type:ty, $variant:ident ) => {
-        impl<'a> From<&'a Tensor<$type>> for Source<'a> {
-            fn from(value: &'a Tensor<$type>) -> Self {
-                Source::Borrowed(Borrowed::$variant(value))
-            }
+impl<'a> Clone for Source<'a> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::U32(cage) => Self::U32(cage.cloned::<Tensor<u32>>().expect("Source type mismatch")),
+            Self::I32(cage) => Self::I32(cage.cloned::<Tensor<i32>>().expect("Source type mismatch")),
+            Self::F32(cage) => Self::F32(cage.cloned::<Tensor<f32>>().expect("Source type mismatch")),
+            Self::Bool(cage) => Self::Bool(cage.cloned::<Tensor<bool>>().expect("Source type mismatch")),
         }
-        impl<'a> From<Tensor<$type>> for Source<'a> {
-            fn from(value: Tensor<$type>) -> Self {
-                Source::Owned(Owned::$variant(value))
-            }
-        }
-    };
+    }
 }
 
-impl_from!(bool, Bool);
-impl_from!(u32, U32);
-impl_from!(i32, I32);
-impl_from!(f32, F32);
+impl<'a, T: StorageType> From<Tensor<T>> for Source<'a> {
+    fn from(value: Tensor<T>) -> Self {
+        if TypeId::of::<T>() == TypeId::of::<u32>() {
+            return Source::U32(Cage::owned(value));
+        }
+        if TypeId::of::<T>() == TypeId::of::<i32>() {
+            return Source::I32(Cage::owned(value));
+        }
+        if TypeId::of::<T>() == TypeId::of::<f32>() {
+            return Source::F32(Cage::owned(value));
+        }
+        if TypeId::of::<T>() == TypeId::of::<bool>() {
+            return Source::Bool(Cage::owned(value));
+        }
+        unreachable!("Source type mismatch")
+    }
+}
+
+impl<'a, T: StorageType> From<&'a Tensor<T>> for Source<'a> {
+    fn from(value: &'a Tensor<T>) -> Self {
+        if TypeId::of::<T>() == TypeId::of::<u32>() {
+            return Source::U32(Cage::borrowed(value));
+        }
+        if TypeId::of::<T>() == TypeId::of::<i32>() {
+            return Source::I32(Cage::borrowed(value));
+        }
+        if TypeId::of::<T>() == TypeId::of::<f32>() {
+            return Source::F32(Cage::borrowed(value));
+        }
+        if TypeId::of::<T>() == TypeId::of::<bool>() {
+            return Source::Bool(Cage::borrowed(value));
+        }
+        unreachable!("Source type mismatch")
+    }
+}

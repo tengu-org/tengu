@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use tengu_backend::Backend;
 use tengu_backend_tensor::{Function, Operator, StorageType, Type, UnaryFn};
 
-use crate::source::{AsSource, Equality, Source};
+use crate::source::{Equality, Source};
 use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;
 
@@ -67,7 +67,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     fn var<T: StorageType>(&mut self, tensor: &'a <Self::Backend as Backend>::Tensor<T>) -> Self::Repr {
         use tengu_backend_tensor::Tensor;
         let label = tensor.label();
-        let source = tensor.as_source();
+        let source: Source = tensor.into();
         if !self.visited.contains(label) {
             self.sources.push(source.clone());
             self.visited.insert(label);
@@ -87,7 +87,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// A tuple containing the number of elements (always 0 for scalars) and its shader representation,
     /// which in this case will be a literal.
     fn scalar<T: StorageType>(&mut self, value: T) -> Self::Repr {
-        Tensor::<T>::repeat("label", [1], value).into_source()
+        Tensor::<T>::repeat("label", [1], value).into()
     }
 
     /// Generates the representation for a unary function applied to an inner expression.
@@ -122,7 +122,7 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
             Operator::Mul => &lhs * &rhs,
             Operator::Div => &lhs / &rhs,
             Operator::Eq => lhs.eq(&rhs),
-            Operator::Neq => lhs.eq(&rhs),
+            Operator::Neq => lhs.neq(&rhs),
         }
     }
 
@@ -136,10 +136,10 @@ impl<'a> tengu_backend::Processor<'a> for Processor<'a> {
     /// A tuple containing the number of elements and the resulting cast expression's shader representation.
     fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr {
         match ty {
-            Type::Bool => inner.cast_bool(),
-            Type::U32 => inner.cast_u32(),
-            Type::I32 => inner.cast_i32(),
-            Type::F32 => inner.cast_f32(),
+            Type::U32 => inner.cast::<u32>(),
+            Type::I32 => inner.cast::<i32>(),
+            Type::F32 => inner.cast::<f32>(),
+            Type::Bool => inner.cast::<bool>(),
         }
     }
 
