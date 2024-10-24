@@ -1,4 +1,10 @@
-use std::any::{Any, TypeId};
+//! This module defines the `Source` trait which is used to represent a data source that allows
+//! treating tensors in type-independent fashion. It relies heavly on the `Cage` struct to store
+//! tensors as `dyn Any` objects and maintain the type information in enum variants.
+
+use std::any::TypeId;
+use tengu_backend_tensor::StorageType;
+use tengu_utils::Cage;
 
 use crate::tensor::Tensor;
 
@@ -9,57 +15,28 @@ mod relational;
 mod unary_fn;
 
 pub use relational::Equality;
-use tengu_backend_tensor::StorageType;
 
-pub enum Cage<'a> {
-    Borrowed(&'a dyn Any),
-    Owned(Box<dyn Any>),
-}
-
-impl<'a> Cage<'a> {
-    pub fn owned<T: Clone + 'static>(value: T) -> Self {
-        Self::Owned(Box::new(value))
-    }
-
-    pub fn borrowed<T: Clone + 'static>(value: &'a T) -> Self {
-        Self::Borrowed(value)
-    }
-
-    pub fn into_owned<T: Clone + 'static>(self) -> Option<T> {
-        match self {
-            Self::Borrowed(tensor) => tensor.downcast_ref::<T>().cloned(),
-            Self::Owned(tensor) => tensor.downcast::<T>().ok().map(|b| *b),
-        }
-    }
-
-    pub fn as_ref<T: Clone + 'static>(&self) -> Option<&T> {
-        match self {
-            Self::Borrowed(tensor) => tensor.downcast_ref::<T>(),
-            Self::Owned(tensor) => tensor.downcast_ref::<T>(),
-        }
-    }
-
-    pub fn cloned<T: Clone + 'static>(&self) -> Option<Self> {
-        let inner = self.as_ref::<T>().cloned()?;
-        Some(Cage::owned(inner))
-    }
-
-    pub fn lift<T: Clone + 'static>(self) -> Self {
-        match self {
-            Self::Owned(_) => self,
-            Self::Borrowed(tensor) => Self::Owned(Box::new(tensor.downcast_ref::<T>().unwrap().clone())),
-        }
-    }
-}
-
+/// The `Source` trait represents a "type-less" tensor. It is used by the `Processor`
+/// to handle all tensors in a uniform fashion.
 pub enum Source<'a> {
+    /// A source variant storing a u32-based tensor.
     U32(Cage<'a>),
+    /// A source variant storing a i32-based tensor.
     I32(Cage<'a>),
+    /// A source variant storing a f32-based tensor.
     F32(Cage<'a>),
+    /// A source variant storing a bool-based tensor.
     Bool(Cage<'a>),
 }
 
 impl<'a> Source<'a> {
+    /// Consumes the source and returns the owned tensor.
+    ///
+    /// # Returns
+    /// The tensor stored in this source.
+    ///
+    /// # Panics
+    /// If the source type does not match the tensor type the method will panic.
     pub fn into_owned<T: StorageType>(self) -> Tensor<T> {
         let tensor = match self {
             Self::U32(cage) => cage.into_owned::<Tensor<T>>(),
@@ -70,6 +47,13 @@ impl<'a> Source<'a> {
         tensor.expect("Source type mismatch")
     }
 
+    /// Returns a reference to the tensor stored in this source.
+    ///
+    /// # Returns
+    /// A reference to the tensor stored in this source.
+    ///
+    /// # Panics
+    /// If the source type does not match the tensor type the method will panic.
     pub fn as_ref<T: StorageType>(&self) -> &Tensor<T> {
         let tensor = match self {
             Self::U32(cage) => cage.as_ref::<Tensor<T>>(),
@@ -80,6 +64,10 @@ impl<'a> Source<'a> {
         tensor.expect("Source type mismatch")
     }
 
+    /// Returns the string representation of the type variant of this `Source`.
+    ///
+    /// # Returns
+    /// A string slice representing the type variant of this `Source`.
     pub fn variant(&self) -> &'static str {
         match self {
             Self::U32(_) => "u32",
@@ -102,6 +90,9 @@ impl<'a> Clone for Source<'a> {
 }
 
 impl<'a, T: StorageType> From<Tensor<T>> for Source<'a> {
+    /// Converts a tensor into a source. The conversion is done at runtimes asing type information
+    /// provided by TypeId facilities. This particular implementation constructs an owned variant
+    /// of the `Source`.
     fn from(value: Tensor<T>) -> Self {
         if TypeId::of::<T>() == TypeId::of::<u32>() {
             return Source::U32(Cage::owned(value));
@@ -120,6 +111,9 @@ impl<'a, T: StorageType> From<Tensor<T>> for Source<'a> {
 }
 
 impl<'a, T: StorageType> From<&'a Tensor<T>> for Source<'a> {
+    /// Converts a tensor into a source. The conversion is done at runtimes asing type information
+    /// provided by TypeId facilities. This particular implementation constructs a borrowed variant
+    /// of the `Source`.
     fn from(value: &'a Tensor<T>) -> Self {
         if TypeId::of::<T>() == TypeId::of::<u32>() {
             return Source::U32(Cage::borrowed(value));

@@ -156,7 +156,7 @@ impl tengu_backend::Backend for Backend {
         Tensor::new(self, label, shape, buffer)
     }
 
-    /// Creates a new zero-initialized tensor with the specified count.
+    /// Creates a new zero-initialized tensor with the specified shape.
     ///
     /// # Parameters
     /// - `label`: A label for the tensor.

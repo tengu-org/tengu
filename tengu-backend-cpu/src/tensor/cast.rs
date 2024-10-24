@@ -13,7 +13,7 @@ macro_rules! impl_from {
         {
             fn from(other: &Tensor<$type>) -> Self {
                 let data: Vec<_> = other.data.borrow().iter().map(|v| (*v).cast()).collect();
-                Self::new(other.label.clone(), other.shape.clone(), data)
+                Self::new("", other.shape.clone(), data)
             }
         }
     };

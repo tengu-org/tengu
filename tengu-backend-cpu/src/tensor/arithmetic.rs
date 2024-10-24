@@ -15,7 +15,7 @@ impl<T: StorageType + Add<Output = T>> Add for &Tensor<T> {
             .zip(rhs.data.borrow().iter())
             .map(|(a, b)| *a + *b)
             .collect();
-        Tensor::new(self.label.clone(), self.shape.clone(), data)
+        Tensor::new("", self.shape.clone(), data)
     }
 }
 
@@ -30,7 +30,7 @@ impl<T: StorageType + Sub<Output = T>> Sub for &Tensor<T> {
             .zip(rhs.data.borrow().iter())
             .map(|(a, b)| *a - *b)
             .collect();
-        Tensor::new(self.label.clone(), self.shape.clone(), data)
+        Tensor::new("", self.shape.clone(), data)
     }
 }
 
@@ -45,7 +45,7 @@ impl<T: StorageType + Mul<Output = T>> Mul for &Tensor<T> {
             .zip(rhs.data.borrow().iter())
             .map(|(a, b)| *a * *b)
             .collect();
-        Tensor::new(self.label.clone(), self.shape.clone(), data)
+        Tensor::new("", self.shape.clone(), data)
     }
 }
 
@@ -60,6 +60,6 @@ impl<T: StorageType + Div<Output = T>> Div for &Tensor<T> {
             .zip(rhs.data.borrow().iter())
             .map(|(a, b)| *a / *b)
             .collect();
-        Tensor::new(self.label.clone(), self.shape.clone(), data)
+        Tensor::new("", self.shape.clone(), data)
     }
 }

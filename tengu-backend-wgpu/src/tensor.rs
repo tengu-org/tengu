@@ -1,4 +1,4 @@
-//! This module provides the implementation of the `Tensor` struct, which represents a tensor in the WGPU backend.
+//! This module provides the implementation of the `Tensor` struct, which represents a tensor on the WGPU backend.
 //! It includes functionality for creating tensors, managing their data, and interfacing with the GPU for compute operations.
 
 use std::borrow::Cow;
@@ -15,7 +15,7 @@ use tengu_wgpu::{Buffer, BufferUsage, ByteSize, Encoder};
 use crate::source::Source;
 use crate::Backend as WGPUBackend;
 
-/// Represents a tensor in the WGPU backend.
+/// Represents a tensor on the WGPU backend.
 pub struct Tensor<T> {
     backend: Rc<WGPUBackend>,
     label: String,
@@ -27,12 +27,12 @@ pub struct Tensor<T> {
 }
 
 impl<T: StorageType> Tensor<T> {
-    /// Creates a new `Tensor` with the specified backend, label, element count, and buffer.
+    /// Creates a new `Tensor` with the specified backend, label, shape, and buffer.
     ///
     /// # Parameters
     /// - `backend`: A reference-counted pointer to the WGPU backend.
     /// - `label`: A string label for identifying the tensor.
-    /// - `count`: The number of elements in the tensor.
+    /// - `shape`: The shape of the tensor as a vector of unsigned integers.
     /// - `buffer`: The GPU buffer storing the tensor's data.
     ///
     /// # Returns
@@ -122,10 +122,10 @@ impl<T: StorageType> RawTensor<T> for Tensor<T> {
         &self.shape
     }
 
-    /// Retrieves staging buffer data from the GPU to CPU buffer.
+    /// Retrieves staging buffer data from the GPU memory into the CPU buffer.
     ///
     /// # Returns
-    /// A `Result` indicating success or failure of the retrieval operation.
+    /// A `Cow` containing either a reference or owned buffer with the tensor data.
     async fn retrieve(&self) -> anyhow::Result<Cow<'_, [T::IOType]>> {
         let staging_buffer = self.stage();
         let buffer_slice = staging_buffer.slice(..);

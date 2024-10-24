@@ -79,7 +79,7 @@ impl<'a> Processor<'a> {
         self.sources.values().copied()
     }
 
-    /// Returns an iterator over the source tensors acquird from the tensor AST that can be used in
+    /// Returns an iterator over the source tensors acquired from the tensor AST that can be used in
     /// readout operations.
     ///
     /// # Returns

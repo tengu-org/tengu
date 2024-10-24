@@ -1,13 +1,26 @@
+/// This module defines lossy type casts between various backend-supported types.
+
+/// Trait for type casts.
 pub trait Cast<To> {
+    /// Casts the value to the target type.
+    ///
+    /// # Returns
+    /// The value casted to the target type.
     fn cast(self) -> To;
 }
 
 impl<T> Cast<T> for T {
+    /// Casts the value to the same type. Basically an identity method.
+    ///
+    /// # Returns
+    /// The value passed in without any changes.
     fn cast(self) -> T {
         self
     }
 }
 
+/// Implementations of type casts between various types. The following conversions are supported:
+/// Conversiions to bool are based on the value being non-zero.
 macro_rules! impl_convert {
     ( $from:ty, bool ) => {
         impl Cast<bool> for $from {

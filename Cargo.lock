@@ -2029,6 +2029,7 @@ dependencies = [
  "pretty_assertions",
  "tengu-backend",
  "tengu-backend-tensor",
+ "tengu-utils",
  "tengu-wgpu",
  "thiserror",
 ]
@@ -2099,6 +2100,10 @@ dependencies = [
  "tengu-backend-tensor",
  "thiserror",
 ]
+
+[[package]]
+name = "tengu-utils"
+version = "0.1.0"
 
 [[package]]
 name = "tengu-wgpu"

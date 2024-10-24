@@ -1,3 +1,12 @@
+//! This module defines the `Processor` struct which implements the `Processor` trait from the `tengu_backend` crate.
+//! It is responsible for managing sources availabe sources and performing computations for each
+//! operation supported by backend tensors.
+//!
+//! The `Processor` struct makes use of the final tagless style, which is an approach to
+//! embedding domain-specific languages (DSLs). This style allows for greater flexibility and extensibility
+//! by abstracting over the concrete representations of computations. In this particular case, `Processor`
+//! handles AST of tensor operations to collect source tensors and produce declaration and shader body code.
+
 use std::collections::HashSet;
 
 use tengu_backend::Processor as RawProcessor;
@@ -7,8 +16,7 @@ use crate::source::{Equality, Source};
 use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;
 
-// NOTE: Processor implementation.
-
+/// The `Processor` struct is used to manage and process tensor sources and perform tensor computations.
 pub struct Processor<'a> {
     visited: HashSet<&'a str>,
     sources: Vec<Source<'a>>,
@@ -38,7 +46,7 @@ impl<'a> Processor<'a> {
         self.sources.iter()
     }
 
-    /// Returns an iterator over the source tensors acquird from the tensor AST that can be used in
+    /// Returns an iterator over the source tensors acquired from the tensor AST that can be used in
     /// readout operations.
     ///
     /// # Returns
@@ -54,15 +62,13 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
     type Repr = Source<'a>;
 
     /// Processses the tensor. This is the bottom-level call, so the tensor will be added to the
-    /// list of available sources, and it will bee used to generate a declaration and part of the
-    /// shader body. Each uniquely labeled tensor will get a different binding.
+    /// list of available sources.
     ///
     /// # Parameters
-    /// - `tensor`: A reference to the tensor to be bound.
+    /// - `tensor`: A reference to the tensor to be stored.
     ///
     /// # Returns
-    /// Processor representation of the tensor, consisting of the number of elements in the tensor
-    /// and emitted shader representation of the tensor.
+    /// Processor representation of the tensor.
     fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
         use tengu_backend_tensor::Tensor;
         let label = tensor.label();
@@ -83,20 +89,19 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
     /// - `value`: The scalar value to be represented.
     ///
     /// # Returns
-    /// A tuple containing the number of elements (always 0 for scalars) and its shader representation,
-    /// which in this case will be a literal.
+    /// Processor representation of the scalar value as a `[1]`-shaped tensor.
     fn scalar<T: StorageType>(&mut self, value: T) -> Self::Repr {
-        Tensor::<T>::repeat("label", [1], value).into()
+        Tensor::<T>::repeat("", [1], value).into()
     }
 
     /// Generates the representation for a unary function applied to an inner expression.
     ///
     /// # Parameters
     /// - `inner`: The inner expression representation.
-    /// - `symbol`: The symbol representing the unary function.
+    /// - `function`: The unary function to apply.
     ///
     /// # Returns
-    /// A tuple containing the number of elements and the resulting expression's shader representation.
+    /// Processor representation of the unary function applied to the inner expression.
     fn unary_fn(&mut self, inner: Self::Repr, function: Function) -> Self::Repr {
         match function {
             Function::Exp => inner.exp(),
@@ -109,11 +114,10 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
     /// # Parameters
     /// - `lhs`: The left-hand side expression representation.
     /// - `rhs`: The right-hand side expression representation.
-    /// - `symbol`: The symbol representing the binary operation.
+    /// - `operator`: The binary operator to apply.
     ///
     /// # Returns
-    /// A tuple containing the maximum count of elements between the two expressions and the resulting
-    /// expression's shader representation.
+    /// Processor representation of the binary operation between the two expressions.
     fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, operator: Operator) -> Self::Repr {
         match operator {
             Operator::Add => &lhs + &rhs,
@@ -129,10 +133,10 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
     ///
     /// # Parameters
     /// - `inner`: The inner expression representation.
-    /// - `ty`: The target type as a string.
+    /// - `ty`: The target type to cast to.
     ///
     /// # Returns
-    /// A tuple containing the number of elements and the resulting cast expression's shader representation.
+    /// Processor representation of the inner expression cast to the specified type.
     fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr {
         match ty {
             Type::U32 => inner.cast::<u32>(),
@@ -142,22 +146,22 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
         }
     }
 
-    /// Generates the representation of a statement combining an output and an expression.
+    /// Copies the data from the `expr` expression to the `out` resulting source and outputs it as a
+    /// method result.
     ///
     /// # Parameters
     /// - `out`: The output expression representation.
     /// - `expr`: The input expression representation.
     ///
     /// # Returns
-    /// A tuple containing the maximum count of elements between the two expressions and the resulting
-    /// statement's shader representation.
+    /// Representation of the `out` source.
     fn statement(&mut self, out: Self::Repr, expr: Self::Repr) -> Self::Repr {
         out.copy_from(&expr);
         out
     }
 
-    /// Generates a representation for a block of expressions. This is the top-level call and it
-    /// will set internal structures such as shader code to their final value.
+    /// Generates a representation for a block of expressions. For CPU implementation, this is a
+    /// no-op.
     ///
     /// # Parameters
     /// - `exprs`: An iterator over expression representations to be included in the block.
