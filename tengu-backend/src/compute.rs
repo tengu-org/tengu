@@ -6,10 +6,7 @@ use crate::{Backend, Result};
 
 /// The `Compute` trait defines a set of operations for performing computations within a backend.
 /// Types that implement this trait can use a processor state to execute computation tasks.
-pub trait Compute {
-    /// The type of the backend that this compute trait interacts with.
-    type Backend: Backend;
-
+pub trait Compute<B: Backend> {
     /// Uses the given processor state to perform computations.
     ///
     /// # Parameters
@@ -18,5 +15,5 @@ pub trait Compute {
     ///
     /// # Returns
     /// A `Result` indicating whether the computation was successful or an error occurred.
-    fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) -> Result<()>;
+    fn run(&mut self, processor: &B::Processor<'_>) -> Result<()>;
 }

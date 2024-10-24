@@ -1,13 +1,13 @@
+use tengu_backend::Compute as RawCompute;
 use tengu_backend::Result;
 
-use crate::Backend;
+use crate::processor::Processor;
+use crate::Backend as CPUBackend;
 
 pub struct Compute;
 
-impl tengu_backend::Compute for Compute {
-    type Backend = Backend;
-
-    fn run(&mut self, _processor: &<Self::Backend as tengu_backend::Backend>::Processor<'_>) -> Result<()> {
+impl RawCompute<CPUBackend> for Compute {
+    fn run(&mut self, _processor: &Processor<'_>) -> Result<()> {
         Ok(())
     }
 }

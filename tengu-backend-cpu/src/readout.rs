@@ -1,9 +1,10 @@
-use crate::Backend;
+use tengu_backend::Readout as RawReadout;
+
+use crate::processor::Processor;
+use crate::Backend as CPUBackend;
 
 pub struct Readout;
 
-impl tengu_backend::Readout for Readout {
-    type Backend = Backend;
-
-    fn run(&mut self, _processor: &<Self::Backend as tengu_backend::Backend>::Processor<'_>) {}
+impl RawReadout<CPUBackend> for Readout {
+    fn run(&mut self, _processor: &Processor<'_>) {}
 }

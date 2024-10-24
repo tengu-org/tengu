@@ -1,10 +1,11 @@
 //! This module defines the `Readout` struct which implements the `Readout` trait from the `tengu_backend` crate.
 //! It is used for reading out the data from the GPU buffers into staging buffers using the WGPU backend.
 
-use tengu_backend::Backend;
+use tengu_backend::Readout as RawReadout;
 use tengu_wgpu::Encoder;
 use tracing::trace;
 
+use crate::processor::Processor;
 use crate::Backend as WGPUBackend;
 
 /// The `Stage` struct is used to perform staging operations in the WGPU backend.
@@ -25,15 +26,13 @@ impl<'a> Readout<'a> {
     }
 }
 
-impl<'a> tengu_backend::Readout for Readout<'a> {
-    type Backend = WGPUBackend;
-
+impl<'a> RawReadout<WGPUBackend> for Readout<'a> {
     /// Runs the readout operation by iterating over the sources of the processor
     /// and performing the readout operation on each tensor.
     ///
     /// # Parameters
     /// - `processor`: A reference to the processor from the backend which provides the sources.
-    fn run(&mut self, processor: &<Self::Backend as Backend>::Processor<'_>) {
+    fn run(&mut self, processor: &Processor<'_>) {
         trace!("Executing readout operation");
         for source in processor.readout_sources() {
             source.readout(self.encoder);
