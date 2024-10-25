@@ -7,12 +7,7 @@
 
 use std::borrow::Cow;
 
-use random_string::charsets::ALPHA;
-
 use crate::StorageType;
-
-/// The length of the label generated for tensors if no label is provided.
-const LABEL_LENGTH: usize = 6;
 
 /// A trait for representing tensors in the Tengu backend.
 ///
@@ -43,12 +38,4 @@ pub trait Tensor<T: StorageType> {
     /// # Returns
     /// A result containing a reference to the data stored in the tensor.
     async fn retrieve(&self) -> anyhow::Result<Cow<'_, [T::IOType]>>;
-}
-
-/// Creates a new random label for the tensor.
-///
-/// # Returns
-/// A string representing the label of the tensor.
-pub fn create_label() -> String {
-    random_string::generate(LABEL_LENGTH, ALPHA)
 }
