@@ -12,16 +12,16 @@ use std::collections::HashSet;
 use tengu_backend::Processor as RawProcessor;
 use tengu_backend_tensor::{Function, Operator, StorageType, Type, UnaryFn};
 
-use crate::source::{Equality, Source};
 use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;
+use source::{Equality, Source};
+
+mod source;
 
 /// The `Processor` struct is used to manage and process tensor sources and perform tensor computations.
 pub struct Processor<'a> {
     visited: HashSet<&'a str>,
     sources: Vec<Source<'a>>,
-    readouts: &'a HashSet<String>,
-    readout_sources: Vec<Source<'a>>,
 }
 
 impl<'a> Processor<'a> {
@@ -29,12 +29,10 @@ impl<'a> Processor<'a> {
     ///
     /// # Returns
     /// A new instance of `Processor`.
-    pub fn new(readouts: &'a HashSet<String>) -> Self {
+    pub fn new(_readouts: &'a HashSet<String>) -> Self {
         Self {
             visited: HashSet::new(),
             sources: Vec::new(),
-            readouts,
-            readout_sources: Vec::new(),
         }
     }
 
@@ -44,15 +42,6 @@ impl<'a> Processor<'a> {
     /// An iterator over source tensor references.
     pub fn sources(&'a self) -> impl Iterator<Item = &'a Source<'a>> {
         self.sources.iter()
-    }
-
-    /// Returns an iterator over the source tensors acquired from the tensor AST that can be used in
-    /// readout operations.
-    ///
-    /// # Returns
-    /// An iterator over source tensor references.
-    pub fn readout_sources(&'a self) -> impl Iterator<Item = &'a Source<'a>> {
-        self.readout_sources.iter()
     }
 }
 
@@ -76,9 +65,6 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
         if !self.visited.contains(label) {
             self.sources.push(source.clone());
             self.visited.insert(label);
-            if self.readouts.contains(label) {
-                self.readout_sources.push(source.clone());
-            }
         }
         source
     }
