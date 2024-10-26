@@ -50,7 +50,7 @@ impl<'a> Declarator<'a> {
     /// - `tensor`: The tensor to declare as a shader variable.
     pub fn var<T: StorageType>(&mut self, binding: usize, tensor: &'a Tensor<T>) {
         self.declarations
-            .entry(tensor.label())
+            .entry(tensor.label().expect("input tensors should have a label"))
             .or_insert_with(|| declaration(binding, tensor));
     }
 }
@@ -64,7 +64,7 @@ impl<'a> Declarator<'a> {
 /// # Returns
 /// A `String` containing the declaration for the tensor.
 fn declaration<T: StorageType>(binding: usize, tensor: &Tensor<T>) -> String {
-    let label = tensor.label();
+    let label = tensor.label().expect("input tensors should have a label");
     let access = access(tensor.buffer().usage());
     let ty = std::any::type_name::<T>();
     format!("@group({GROUP}) @binding({binding}) var<storage, {access}> {label}: array<{ty}>;")

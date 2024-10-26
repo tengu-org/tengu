@@ -19,11 +19,11 @@ use crate::Backend as WGPUBackend;
 /// Represents a tensor on the WGPU backend.
 pub struct Tensor<T> {
     backend: Rc<WGPUBackend>,
-    label: Label,
+    label: Option<Label>,
     count: usize,
     shape: Vec<usize>,
     staging_buffer: OnceCell<Buffer>,
-    buffer: Rc<Buffer>,
+    buffer: OnceCell<Buffer>,
     phantom: PhantomData<T>,
 }
 
@@ -48,11 +48,25 @@ impl<T: StorageType> Tensor<T> {
         let count = shape.iter().product();
         Self {
             backend: Rc::clone(backend),
-            label: label.into(),
+            label: Some(label.into()),
             count,
             shape,
             staging_buffer: OnceCell::new(),
             buffer: buffer.into(),
+            phantom: PhantomData,
+        }
+    }
+
+    pub fn empty(backend: &Rc<WGPUBackend>, shape: impl Into<Vec<usize>>) -> Self {
+        let shape = shape.into();
+        let count = shape.iter().product();
+        Self {
+            backend: Rc::clone(backend),
+            label: None,
+            count,
+            shape,
+            staging_buffer: OnceCell::new(),
+            buffer: OnceCell::new(),
             phantom: PhantomData,
         }
     }
@@ -64,9 +78,10 @@ impl<T: StorageType> Tensor<T> {
     fn stage(&self) -> &Buffer {
         self.staging_buffer.get_or_init(|| {
             let size = self.count.of::<T>();
+            let label = self.label.as_ref().map(|label| label.value()).unwrap_or_default();
             self.backend
                 .device()
-                .buffer::<T>(self.label.value(), BufferUsage::Staging)
+                .buffer::<T>(label, BufferUsage::Staging)
                 .empty(size)
         })
     }
@@ -80,8 +95,8 @@ impl<T: StorageType> Source for Tensor<T> {
     ///
     /// # Returns
     /// The label of the tensor.
-    fn label(&self) -> &str {
-        self.label.value()
+    fn label(&self) -> Option<&str> {
+        self.label.as_ref().map(|label| label.value())
     }
 
     /// Returns a reference to the GPU buffer storing the tensor's data.
@@ -89,7 +104,9 @@ impl<T: StorageType> Source for Tensor<T> {
     /// # Returns
     /// A reference to the `Buffer`.
     fn buffer(&self) -> &Buffer {
-        &self.buffer
+        self.buffer
+            .get()
+            .expect("intermediate vectors don't have associated buffers")
     }
 
     /// Copies the tensor's data from the GPU buffer to the staging buffer using the provided encoder.
@@ -97,7 +114,7 @@ impl<T: StorageType> Source for Tensor<T> {
     /// # Parameters
     /// - `encoder`: The encoder used to copy the buffer data.
     fn readout(&self, encoder: &mut Encoder) {
-        encoder.copy_buffer(&self.buffer, self.stage());
+        encoder.copy_buffer(self.buffer(), self.stage());
     }
 }
 
@@ -108,8 +125,8 @@ impl<T: StorageType> RawTensor<T> for Tensor<T> {
     ///
     /// # Returns
     /// The label of the tensor.
-    fn label(&self) -> &str {
-        self.label.value()
+    fn label(&self) -> Option<&str> {
+        self.label.as_ref().map(|label| label.value())
     }
 
     /// Returns the number of elements in the tensor.
@@ -162,6 +179,6 @@ mod tests {
     async fn tensor_emit() {
         let backend = WGPUBackend::new().await.unwrap();
         let tensor = backend.zero::<u32>("tenzor", [6]);
-        assert_eq!(tensor.label(), "tenzor");
+        assert_eq!(tensor.label().unwrap(), "tenzor");
     }
 }

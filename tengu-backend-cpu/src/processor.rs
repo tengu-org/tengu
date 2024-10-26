@@ -58,7 +58,7 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
     /// Processor representation of the tensor.
     fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
         use tengu_tensor::Tensor;
-        let label = tensor.label();
+        let label = tensor.label().expect("input tensors should have a label");
         let source: Source = tensor.into();
         if !self.visited.contains(label) {
             self.sources.push(source.clone());

@@ -18,8 +18,9 @@ pub trait Tensor<T: StorageType> {
     /// Returns the label of the tensor.
     ///
     /// # Returns
-    /// A string slice representing the label of the tensor.
-    fn label(&self) -> &str;
+    /// A string slice representing the label of the tensor if this tensor has a label,
+    /// `None` otherwise.
+    fn label(&self) -> Option<&str>;
 
     /// Returns the number of elements in the tensor.
     ///

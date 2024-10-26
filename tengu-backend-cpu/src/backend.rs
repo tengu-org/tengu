@@ -114,6 +114,6 @@ impl tengu_backend::Backend for Backend {
     /// # Returns
     /// A new zero-initialized tensor.
     fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<Label>, shape: impl Into<Vec<usize>>) -> Self::Tensor<T> {
-        Tensor::empty(label, shape)
+        Tensor::repeat(label, shape, T::default())
     }
 }

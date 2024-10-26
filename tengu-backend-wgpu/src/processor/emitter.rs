@@ -56,7 +56,8 @@ impl Emitter {
     /// # Returns
     /// A `String` representing the variable declaration.
     pub fn var<T: StorageType>(&mut self, tensor: &Tensor<T>) -> String {
-        format!("{}[idx]", tensor.label())
+        let label = tensor.label().expect("input tensors should have a label");
+        format!("{}[idx]", label)
     }
 
     /// Return a string representation of a scalar literal.

@@ -11,7 +11,7 @@ pub trait Source {
     ///
     /// # Returns
     /// A string slice representing the label of the source.
-    fn label(&self) -> &str;
+    fn label(&self) -> Option<&str>;
 
     /// Returns a reference to the buffer associated with the source.
     ///

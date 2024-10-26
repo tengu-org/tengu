@@ -114,7 +114,7 @@ impl<'a> RawProcessor<'a, WGPUBackend> for Processor<'a> {
     /// and emitted shader representation of the tensor.
     fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
         use tengu_tensor::Tensor;
-        let label = Tensor::label(tensor);
+        let label = Tensor::label(tensor).expect("input tensors should have a label");
         if !self.visited.contains(label) {
             self.declarator.var(self.current_binding, tensor);
             self.sources.insert(self.current_binding, tensor);

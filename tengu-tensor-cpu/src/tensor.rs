@@ -15,7 +15,7 @@ mod unary_fn;
 
 /// Represents a tensor on the CPU backend.
 pub struct Tensor<T> {
-    label: Label,
+    label: Option<Label>,
     count: usize,
     shape: Vec<usize>,
     data: RefCell<Vec<T>>,
@@ -36,10 +36,29 @@ impl<T: StorageType> Tensor<T> {
         let shape = shape.into();
         let count = shape.iter().product();
         Self {
-            label: label.into(),
+            label: Some(label.into()),
             count,
             shape,
             data: data.into().into(),
+        }
+    }
+
+    /// Creates a new empty `Tensor` with the specified shape and empty data. The tensor will be
+    /// zero-initialized but will have no label.
+    ///
+    /// # Parameters
+    /// - `shape`: The shape of the tensor as a vector of unsigned integers.
+    ///
+    /// # Returns
+    /// A new instance of `Tensor` with zero-initialized data.
+    pub fn empty(shape: impl Into<Vec<usize>>) -> Self {
+        let shape = shape.into();
+        let count = shape.iter().product();
+        Self {
+            label: None,
+            count,
+            shape,
+            data: vec![Default::default(); count].into(),
         }
     }
 
@@ -56,29 +75,10 @@ impl<T: StorageType> Tensor<T> {
         let shape = shape.into();
         let count = shape.iter().product();
         Self {
-            label: label.into(),
+            label: Some(label.into()),
             count,
             shape,
             data: vec![elem; count].into(),
-        }
-    }
-
-    /// Creates a new `Tensor` with the specified shape and zero-initialized data.
-    ///
-    /// # Parameters
-    /// - `label`: A string label for identifying the tensor.
-    /// - `shape`: The shape of the tensor as a vector of unsigned integers.
-    ///
-    /// # Returns
-    /// A new instance of `Tensor` with zero-initialized data.
-    pub fn empty(label: impl Into<Label>, shape: impl Into<Vec<usize>>) -> Self {
-        let shape = shape.into();
-        let count = shape.iter().product();
-        Self {
-            label: label.into(),
-            count,
-            shape,
-            data: vec![T::default(); count].into(),
         }
     }
 
@@ -106,8 +106,8 @@ impl<T: StorageType> RawTensor<T> for Tensor<T> {
     ///
     /// # Returns
     /// The label of the tensor.
-    fn label(&self) -> &str {
-        self.label.value()
+    fn label(&self) -> Option<&str> {
+        self.label.as_ref().map(|label| label.value())
     }
 
     /// Returns the number of elements in the tensor.
