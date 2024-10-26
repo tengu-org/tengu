@@ -6,7 +6,6 @@ use std::cell::OnceCell;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use async_trait::async_trait;
 use tengu_backend::Error;
 use tengu_tensor::StorageType;
 use tengu_tensor::Tensor as RawTensor;
@@ -89,7 +88,6 @@ impl<T: StorageType> Tensor<T> {
 
 // NOTE: Source trait implementation.
 
-#[async_trait]
 impl<T: StorageType> Source for Tensor<T> {
     /// Returns the label of the tensor.
     ///
