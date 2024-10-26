@@ -20,5 +20,6 @@ mod limits;
 mod linker;
 mod processor;
 mod readout;
+mod source;
 
 pub use backend::Backend;

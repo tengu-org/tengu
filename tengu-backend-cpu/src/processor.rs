@@ -13,10 +13,8 @@ use tengu_backend::Processor as RawProcessor;
 use tengu_tensor::{Function, Operator, StorageType, Type, UnaryFn};
 use tengu_tensor_cpu::Tensor;
 
+use crate::source::{Equality, Source};
 use crate::Backend as CPUBackend;
-use source::{Equality, Source};
-
-mod source;
 
 /// The `Processor` struct is used to manage and process tensor sources and perform tensor computations.
 pub struct Processor<'a> {
