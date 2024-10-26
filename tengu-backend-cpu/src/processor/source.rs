@@ -4,9 +4,8 @@
 
 use std::any::TypeId;
 use tengu_tensor::StorageType;
+use tengu_tensor_cpu::Tensor;
 use tengu_utils::Cage;
-
-use crate::tensor::Tensor;
 
 mod arithmetic;
 mod cast;

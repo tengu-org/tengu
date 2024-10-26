@@ -1,13 +1,10 @@
 [package]
-name = "tengu-backend-cpu"
+name = "tengu-tensor-cpu"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tengu-wgpu = { path = "../tengu-wgpu" }
-tengu-backend = { path = "../tengu-backend" }
 tengu-tensor = { path = "../tengu-tensor" }
-tengu-tensor-cpu = { path = "../tengu-tensor-cpu" }
 tengu-utils = { path = "../tengu-utils" }
 anyhow = { workspace = true }
 

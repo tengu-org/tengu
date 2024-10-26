@@ -24,7 +24,7 @@ rand = "0.8.5"
 rand_distr = "0.4.3"
 
 [dev-dependencies]
-pretty_assertions = "1.4.1"
+pretty_assertions = { workspace = true }
 pollster = { version = "0.3.0", features = ["macro"] }
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }

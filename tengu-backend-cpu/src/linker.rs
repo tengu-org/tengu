@@ -3,8 +3,8 @@
 
 use tengu_backend::Linker as RawLinker;
 use tengu_tensor::StorageType;
+use tengu_tensor_cpu::Tensor;
 
-use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;
 
 /// The `Linker` struct is used to manage and perform copy operations between CPU buffers.

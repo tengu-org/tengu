@@ -15,12 +15,10 @@
 //! - `tensor`: Defines the `Tensor` struct, which represents a tensor and provides methods for tensor operations.
 
 mod backend;
-mod cast;
 mod compute;
 mod limits;
 mod linker;
 mod processor;
 mod readout;
-mod tensor;
 
 pub use backend::Backend;

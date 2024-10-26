@@ -8,7 +8,6 @@ tengu-wgpu = { path = "../tengu-wgpu" }
 tengu-backend = { path = "../tengu-backend" }
 tengu-tensor = { path = "../tengu-tensor" }
 tengu-utils = { path = "../tengu-utils" }
-thiserror = { workspace = true }
 anyhow = { workspace = true }
 wgpu = { workspace = true }
 bytemuck = { workspace = true }
@@ -19,6 +18,6 @@ itertools = "0.13.0"
 indoc = "2.0.5"
 
 [dev-dependencies]
-pretty_assertions = "1.4.1"
+pretty_assertions = { workspace = true }
 regex = "1.11.0"
 tokio = { version = "1.40.0", features = ["rt", "rt-multi-thread", "macros"] }

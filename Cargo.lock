@@ -2030,9 +2030,9 @@ dependencies = [
  "pretty_assertions",
  "tengu-backend",
  "tengu-tensor",
+ "tengu-tensor-cpu",
  "tengu-utils",
  "tengu-wgpu",
- "thiserror",
 ]
 
 [[package]]
@@ -2051,7 +2051,6 @@ dependencies = [
  "tengu-tensor",
  "tengu-utils",
  "tengu-wgpu",
- "thiserror",
  "tokio",
  "tracing",
  "wgpu",
@@ -2100,6 +2099,16 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytemuck",
+]
+
+[[package]]
+name = "tengu-tensor-cpu"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "pretty_assertions",
+ "tengu-tensor",
+ "tengu-utils",
 ]
 
 [[package]]

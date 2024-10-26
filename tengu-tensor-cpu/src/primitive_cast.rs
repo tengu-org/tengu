@@ -1,7 +1,7 @@
 /// This module defines lossy type casts between various backend-supported types.
 
 /// Trait for type casts.
-pub trait Cast<To> {
+pub trait PrimitiveCast<To> {
     /// Casts the value to the target type.
     ///
     /// # Returns
@@ -9,7 +9,7 @@ pub trait Cast<To> {
     fn cast(self) -> To;
 }
 
-impl<T> Cast<T> for T {
+impl<T> PrimitiveCast<T> for T {
     /// Casts the value to the same type. Basically an identity method.
     ///
     /// # Returns
@@ -21,23 +21,23 @@ impl<T> Cast<T> for T {
 
 /// Implementations of type casts between various types. The following conversions are supported:
 /// Conversiions to bool are based on the value being non-zero.
-macro_rules! impl_convert {
+macro_rules! impl_primitive_cast {
     ( $from:ty, bool ) => {
-        impl Cast<bool> for $from {
+        impl PrimitiveCast<bool> for $from {
             fn cast(self) -> bool {
                 self != (0 as $from)
             }
         }
     };
     ( bool, $to:ty ) => {
-        impl Cast<$to> for bool {
+        impl PrimitiveCast<$to> for bool {
             fn cast(self) -> $to {
                 self as u32 as $to
             }
         }
     };
     ( $from:ty, $to:ty ) => {
-        impl Cast<$to> for $from {
+        impl PrimitiveCast<$to> for $from {
             fn cast(self) -> $to {
                 self as $to
             }
@@ -45,15 +45,15 @@ macro_rules! impl_convert {
     };
 }
 
-impl_convert!(u32, i32);
-impl_convert!(u32, f32);
-impl_convert!(u32, bool);
-impl_convert!(i32, u32);
-impl_convert!(i32, f32);
-impl_convert!(i32, bool);
-impl_convert!(f32, u32);
-impl_convert!(f32, i32);
-impl_convert!(f32, bool);
-impl_convert!(bool, u32);
-impl_convert!(bool, i32);
-impl_convert!(bool, f32);
+impl_primitive_cast!(u32, i32);
+impl_primitive_cast!(u32, f32);
+impl_primitive_cast!(u32, bool);
+impl_primitive_cast!(i32, u32);
+impl_primitive_cast!(i32, f32);
+impl_primitive_cast!(i32, bool);
+impl_primitive_cast!(f32, u32);
+impl_primitive_cast!(f32, i32);
+impl_primitive_cast!(f32, bool);
+impl_primitive_cast!(bool, u32);
+impl_primitive_cast!(bool, i32);
+impl_primitive_cast!(bool, f32);

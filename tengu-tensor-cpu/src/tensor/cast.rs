@@ -1,7 +1,7 @@
 use tengu_tensor::StorageType;
 
 use super::Tensor;
-use crate::cast::Cast;
+use crate::primitive_cast::PrimitiveCast;
 
 // NOTE: Tensor casting.
 
@@ -9,7 +9,7 @@ macro_rules! impl_from {
     ( $type:ty ) => {
         impl<T: StorageType> From<&Tensor<$type>> for Tensor<T>
         where
-            $type: Cast<T>,
+            $type: PrimitiveCast<T>,
         {
             fn from(other: &Tensor<$type>) -> Self {
                 let data: Vec<_> = other.data.borrow().iter().map(|v| (*v).cast()).collect();

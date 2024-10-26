@@ -8,6 +8,7 @@ use std::rc::Rc;
 
 use tengu_backend::{Error, Result};
 use tengu_tensor::{IOType, StorageType};
+use tengu_tensor_cpu::Tensor;
 use tengu_utils::Label;
 
 use crate::compute::Compute;
@@ -15,7 +16,6 @@ use crate::limits::Limits;
 use crate::linker::Linker;
 use crate::processor::Processor;
 use crate::readout::Readout;
-use crate::tensor::Tensor;
 
 pub struct Backend;
 
