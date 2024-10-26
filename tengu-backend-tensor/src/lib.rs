@@ -31,9 +31,11 @@ mod function;
 mod operator;
 mod tensor;
 mod types;
+mod utils;
 
 pub use cast::Type;
 pub use function::{Function, UnaryFn};
 pub use operator::Operator;
-pub use tensor::{create_label, Tensor};
+pub use tensor::Tensor;
 pub use types::{IOType, StorageType};
+pub use utils::*;
