@@ -7,7 +7,8 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Error, Result};
-use tengu_backend_tensor::{IOType, StorageType};
+use tengu_tensor::{IOType, StorageType};
+use tengu_utils::Label;
 
 use crate::compute::Compute;
 use crate::limits::Limits;
@@ -69,7 +70,7 @@ impl tengu_backend::Backend for Backend {
     /// # Parameters
     /// - `label`: A label for compute operations.
     /// - `call`: A function that takes a `Compute` and performs compute operations.
-    fn compute<F>(&self, _label: &str, call: F) -> Result<()>
+    fn compute<F>(&self, _label: impl AsRef<str>, call: F) -> Result<()>
     where
         F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>,
     {
@@ -82,7 +83,7 @@ impl tengu_backend::Backend for Backend {
     /// # Parameters
     /// - `label`: A label for the readout operations.
     /// - `call`: A function that takes a `Readout` value and copies data into staging buffers.
-    fn readout(&self, _label: &str, call: impl FnOnce(Self::Readout<'_>)) {
+    fn readout(&self, _label: impl AsRef<str>, call: impl FnOnce(Self::Readout<'_>)) {
         call(Readout);
     }
 
@@ -97,7 +98,7 @@ impl tengu_backend::Backend for Backend {
     /// A new tensor initialized with the provided data.
     fn tensor<T: IOType>(
         self: &Rc<Self>,
-        label: impl Into<String>,
+        label: impl Into<Label>,
         shape: impl Into<Vec<usize>>,
         data: &[T],
     ) -> Self::Tensor<T> {
@@ -112,11 +113,7 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Returns
     /// A new zero-initialized tensor.
-    fn zero<T: StorageType>(
-        self: &Rc<Self>,
-        label: impl Into<String>,
-        shape: impl Into<Vec<usize>>,
-    ) -> Self::Tensor<T> {
+    fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<Label>, shape: impl Into<Vec<usize>>) -> Self::Tensor<T> {
         Tensor::empty(label, shape)
     }
 }

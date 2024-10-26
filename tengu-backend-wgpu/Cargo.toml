@@ -6,7 +6,8 @@ edition = "2021"
 [dependencies]
 tengu-wgpu = { path = "../tengu-wgpu" }
 tengu-backend = { path = "../tengu-backend" }
-tengu-backend-tensor = { path = "../tengu-backend-tensor" }
+tengu-tensor = { path = "../tengu-tensor" }
+tengu-utils = { path = "../tengu-utils" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }
 wgpu = { workspace = true }

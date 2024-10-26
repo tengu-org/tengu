@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tengu-backend-tensor = { path = "../tengu-backend-tensor" }
+tengu-tensor = { path = "../tengu-tensor" }
+tengu-utils = { path = "../tengu-utils" }
 thiserror = { workspace = true }
 anyhow = { workspace = true }

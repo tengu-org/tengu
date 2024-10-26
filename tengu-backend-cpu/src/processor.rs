@@ -10,7 +10,7 @@
 use std::collections::HashSet;
 
 use tengu_backend::Processor as RawProcessor;
-use tengu_backend_tensor::{Function, Operator, StorageType, Type, UnaryFn};
+use tengu_tensor::{Function, Operator, StorageType, Type, UnaryFn};
 
 use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;
@@ -59,7 +59,7 @@ impl<'a> RawProcessor<'a, CPUBackend> for Processor<'a> {
     /// # Returns
     /// Processor representation of the tensor.
     fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
-        use tengu_backend_tensor::Tensor;
+        use tengu_tensor::Tensor;
         let label = tensor.label();
         let source: Source = tensor.into();
         if !self.visited.contains(label) {

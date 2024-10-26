@@ -16,7 +16,7 @@ use std::collections::{BTreeMap, HashSet};
 use tracing::trace;
 
 use tengu_backend::Processor as RawProcessor;
-use tengu_backend_tensor::{Function, Operator, StorageType, Type};
+use tengu_tensor::{Function, Operator, StorageType, Type};
 
 use crate::source::Source;
 use crate::tensor::Tensor;
@@ -113,7 +113,7 @@ impl<'a> RawProcessor<'a, WGPUBackend> for Processor<'a> {
     /// Processor representation of the tensor, consisting of the number of elements in the tensor
     /// and emitted shader representation of the tensor.
     fn var<T: StorageType>(&mut self, tensor: &'a Tensor<T>) -> Self::Repr {
-        use tengu_backend_tensor::Tensor;
+        use tengu_tensor::Tensor;
         let label = Tensor::label(tensor);
         if !self.visited.contains(label) {
             self.declarator.var(self.current_binding, tensor);

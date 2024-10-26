@@ -1,4 +1,4 @@
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 
 use super::Source;
 use crate::{cast::Cast, tensor::Tensor};

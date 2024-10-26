@@ -2,10 +2,9 @@ use as_any::{AsAny, Downcast};
 use async_trait::async_trait;
 
 use tengu_backend::{Backend, Linker};
-use tengu_backend_tensor::StorageType;
+use tengu_graph_tensor::StorageType;
 use tengu_graph_tensor::Tensor;
 
-use crate::shape::Shape;
 use crate::{Error, Result};
 
 /// A trait for tensors to treat the uniformly irrespective of their underlying type.

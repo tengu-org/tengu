@@ -1,9 +1,9 @@
 [workspace]
 members = [
+    "tengu-tensor",
     "tengu-backend",
     "tengu-backend-wgpu",
     "tengu-backend-cpu",
-    "tengu-backend-tensor",
     "tengu-graph",
     "tengu-graph-tensor",
     "tengu-wgpu",

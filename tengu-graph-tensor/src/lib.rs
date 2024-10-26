@@ -24,4 +24,6 @@ mod tensor;
 
 pub use error::{Error, Result};
 pub use probe::Probe;
+pub use tengu_tensor::{IOType, StorageType};
 pub use tensor::Tensor;
+

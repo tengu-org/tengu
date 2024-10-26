@@ -6,7 +6,7 @@
 
 use std::rc::Rc;
 use tengu_backend::Backend;
-use tengu_backend_tensor::IOType;
+use tengu_graph_tensor::IOType;
 
 use crate::builder::Builder;
 use crate::expression::Expression;

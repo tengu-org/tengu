@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 tengu-backend = { path = "../tengu-backend" }
-tengu-backend-tensor = { path = "../tengu-backend-tensor" }
+tengu-tensor = { path = "../tengu-tensor" }
 flume = { workspace = true }
 thiserror = { workspace = true }
 anyhow = { workspace = true }

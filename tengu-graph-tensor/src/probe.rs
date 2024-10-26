@@ -3,7 +3,7 @@
 //! tensor data asynchronously.
 
 use flume::Receiver;
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 
 use crate::{Error, Result};
 

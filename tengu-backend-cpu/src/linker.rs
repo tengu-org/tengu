@@ -2,7 +2,7 @@
 //! The `Linker` is responsible for copying data between CPU buffers using the CPU backend.
 
 use tengu_backend::Linker as RawLinker;
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 
 use crate::tensor::Tensor;
 use crate::Backend as CPUBackend;

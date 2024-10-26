@@ -10,12 +10,13 @@ use rand_distr::Distribution;
 use rand_distr::Normal;
 use rand_distr::StandardNormal;
 use tengu_graph_tensor::Tensor;
+use tengu_utils::Label;
 
 use std::rc::Rc;
 
 use num::Float;
 use tengu_backend::Backend;
-use tengu_backend_tensor::IOType;
+use tengu_graph_tensor::IOType;
 
 use crate::expression::Expression;
 use crate::{Error, Result, StorageType};
@@ -26,7 +27,7 @@ use crate::{Error, Result, StorageType};
 pub struct Builder<B: Backend> {
     shape: Vec<usize>,
     count: usize,
-    label: Option<String>,
+    label: Option<Label>,
     backend: Rc<B>,
 }
 
@@ -56,7 +57,7 @@ impl<B: Backend> Builder<B> {
     ///
     /// # Returns
     /// The `Builder` instance with the updated label.
-    pub fn label(mut self, label: impl Into<String>) -> Self {
+    pub fn label(mut self, label: impl Into<Label>) -> Self {
         self.label = Some(label.into());
         self
     }
@@ -68,8 +69,8 @@ impl<B: Backend> Builder<B> {
     ///
     /// # Returns
     /// An expression representing the tensor initialized to zero.
-    pub fn zero<T: StorageType>(mut self) -> Expression<T, B> {
-        let label = self.get_or_create_label();
+    pub fn zero<T: StorageType>(self) -> Expression<T, B> {
+        let label = self.label.unwrap_or_default();
         let tensor = self.backend.zero(label, self.shape);
         let tensor = Tensor::new(&self.backend, tensor);
         Expression::Tensor(tensor)
@@ -88,9 +89,9 @@ impl<B: Backend> Builder<B> {
     ///
     /// # Panics
     /// Panics if the length of the data does not match the shape of the tensor.
-    pub fn init<T: IOType>(mut self, data: &[T]) -> Expression<T, B> {
+    pub fn init<T: IOType>(self, data: &[T]) -> Expression<T, B> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
-        let label = self.get_or_create_label();
+        let label = self.label.unwrap_or_default();
         let tensor = self.backend.tensor(label, self.shape, data);
         let tensor = Tensor::new(&self.backend, tensor);
         Expression::Tensor(tensor)
@@ -111,13 +112,13 @@ impl<B: Backend> Builder<B> {
     ///
     /// # Returns
     /// An expression representing the tensor initialized with random data.
-    pub fn random<T, D, R>(mut self, rng: R, distr: D) -> Expression<T, B>
+    pub fn random<T, D, R>(self, rng: R, distr: D) -> Expression<T, B>
     where
         T: IOType,
         D: Distribution<T>,
         R: Rng,
     {
-        let label = self.get_or_create_label();
+        let label = self.label.unwrap_or_default();
         let data = rng.sample_iter(distr).take(self.count).collect::<Vec<_>>();
         let tensor = self.backend.tensor(label, self.shape, &data);
         let tensor = Tensor::new(&self.backend, tensor);
@@ -175,20 +176,12 @@ impl<B: Backend> Builder<B> {
     ///
     /// # Panics
     /// Panics if the length of the data does not match the shape of the tensor.
-    pub fn bools(mut self, data: &[bool]) -> Expression<u32, B> {
+    pub fn bools(self, data: &[bool]) -> Expression<u32, B> {
         assert_eq!(data.len(), self.count, "data length does not match shape");
         let data = data.iter().map(|v| *v as u32).collect::<Vec<_>>();
-        let label = self.get_or_create_label();
-        let tensor = self.backend.tensor(&label, self.shape, &data);
+        let label = self.label.unwrap_or_default();
+        let tensor = self.backend.tensor(label.value(), self.shape, &data);
         let tensor = Tensor::new(&self.backend, tensor);
         Expression::Tensor(tensor)
-    }
-
-    /// Retrieves or creates a new random label for the tensor.
-    ///
-    /// # Returns
-    /// A string representing the label of the tensor.
-    fn get_or_create_label(&mut self) -> String {
-        self.label.take().unwrap_or_else(tengu_backend_tensor::create_label)
     }
 }

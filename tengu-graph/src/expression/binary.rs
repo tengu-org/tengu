@@ -3,7 +3,7 @@
 //! It leverages the backend processing capabilities to apply these operations on tensor data.
 
 use tengu_backend::{Backend, Processor};
-use tengu_backend_tensor::{Operator, StorageType};
+use tengu_graph_tensor::{Operator, StorageType};
 
 use super::Expression;
 use crate::collector::Collector;

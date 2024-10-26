@@ -4,8 +4,9 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
 
-use tengu_backend_tensor::StorageType;
-use tengu_backend_tensor::Tensor as RawTensor;
+use tengu_tensor::StorageType;
+use tengu_tensor::Tensor as RawTensor;
+use tengu_utils::Label;
 
 mod arithmetic;
 mod cast;
@@ -14,7 +15,7 @@ mod unary_fn;
 
 /// Represents a tensor on the CPU backend.
 pub struct Tensor<T> {
-    label: String,
+    label: Label,
     count: usize,
     shape: Vec<usize>,
     data: RefCell<Vec<T>>,
@@ -31,7 +32,7 @@ impl<T: StorageType> Tensor<T> {
     ///
     /// # Returns
     /// A new instance of `Tensor`.
-    pub fn new(label: impl Into<String>, shape: impl Into<Vec<usize>>, data: impl Into<Vec<T>>) -> Self {
+    pub fn new(label: impl Into<Label>, shape: impl Into<Vec<usize>>, data: impl Into<Vec<T>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
         Self {
@@ -51,7 +52,7 @@ impl<T: StorageType> Tensor<T> {
     ///
     /// # Returns
     /// A new instance of `Tensor` holding `elem` in every cell.
-    pub fn repeat(label: impl Into<String>, shape: impl Into<Vec<usize>>, elem: T) -> Self {
+    pub fn repeat(label: impl Into<Label>, shape: impl Into<Vec<usize>>, elem: T) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
         Self {
@@ -70,7 +71,7 @@ impl<T: StorageType> Tensor<T> {
     ///
     /// # Returns
     /// A new instance of `Tensor` with zero-initialized data.
-    pub fn empty(label: impl Into<String>, shape: impl Into<Vec<usize>>) -> Self {
+    pub fn empty(label: impl Into<Label>, shape: impl Into<Vec<usize>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
         Self {
@@ -98,7 +99,7 @@ impl<T: StorageType> RawTensor<T> for Tensor<T> {
     /// # Returns
     /// The label of the tensor.
     fn label(&self) -> &str {
-        &self.label
+        self.label.value()
     }
 
     /// Returns the number of elements in the tensor.
@@ -153,7 +154,7 @@ mod tests {
     use std::rc::Rc;
 
     use tengu_backend::{Backend, Processor};
-    use tengu_backend_tensor::{Function, Operator, Type};
+    use tengu_tensor::{Function, Operator, Type};
 
     use crate::Backend as CPUBackend;
 

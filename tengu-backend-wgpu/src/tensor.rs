@@ -8,8 +8,9 @@ use std::rc::Rc;
 
 use async_trait::async_trait;
 use tengu_backend::Error;
-use tengu_backend_tensor::StorageType;
-use tengu_backend_tensor::Tensor as RawTensor;
+use tengu_tensor::StorageType;
+use tengu_tensor::Tensor as RawTensor;
+use tengu_utils::Label;
 use tengu_wgpu::{Buffer, BufferUsage, ByteSize, Encoder};
 
 use crate::source::Source;
@@ -18,7 +19,7 @@ use crate::Backend as WGPUBackend;
 /// Represents a tensor on the WGPU backend.
 pub struct Tensor<T> {
     backend: Rc<WGPUBackend>,
-    label: String,
+    label: Label,
     count: usize,
     shape: Vec<usize>,
     staging_buffer: OnceCell<Buffer>,
@@ -37,12 +38,17 @@ impl<T: StorageType> Tensor<T> {
     ///
     /// # Returns
     /// A new instance of `Tensor`.
-    pub fn new(backend: &Rc<WGPUBackend>, label: String, shape: impl Into<Vec<usize>>, buffer: Buffer) -> Self {
+    pub fn new(
+        backend: &Rc<WGPUBackend>,
+        label: impl Into<Label>,
+        shape: impl Into<Vec<usize>>,
+        buffer: Buffer,
+    ) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
         Self {
             backend: Rc::clone(backend),
-            label,
+            label: label.into(),
             count,
             shape,
             staging_buffer: OnceCell::new(),
@@ -60,7 +66,7 @@ impl<T: StorageType> Tensor<T> {
             let size = self.count.of::<T>();
             self.backend
                 .device()
-                .buffer::<T>(&self.label, BufferUsage::Staging)
+                .buffer::<T>(self.label.value(), BufferUsage::Staging)
                 .empty(size)
         })
     }
@@ -75,7 +81,7 @@ impl<T: StorageType> Source for Tensor<T> {
     /// # Returns
     /// The label of the tensor.
     fn label(&self) -> &str {
-        &self.label
+        self.label.value()
     }
 
     /// Returns a reference to the GPU buffer storing the tensor's data.
@@ -103,7 +109,7 @@ impl<T: StorageType> RawTensor<T> for Tensor<T> {
     /// # Returns
     /// The label of the tensor.
     fn label(&self) -> &str {
-        &self.label
+        self.label.value()
     }
 
     /// Returns the number of elements in the tensor.

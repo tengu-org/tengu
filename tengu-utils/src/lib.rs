@@ -3,5 +3,7 @@
 //! Therefore, no other tengu-related crates should be included in the crate manifest.
 
 mod cage;
+mod label;
 
 pub use cage::Cage;
+pub use label::Label;

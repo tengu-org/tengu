@@ -10,7 +10,7 @@ use std::rc::Rc;
 use as_any::Downcast;
 use futures::Future;
 use tengu_backend::Backend;
-use tengu_backend_tensor::StorageType;
+use tengu_graph_tensor::StorageType;
 use tengu_graph_tensor::{Probe, Tensor};
 
 use crate::source::Source;

@@ -6,7 +6,7 @@
 //! tensor as a result.
 
 use tengu_backend::{Backend, Processor};
-use tengu_backend_tensor::StorageType;
+use tengu_graph_tensor::StorageType;
 
 use crate::collector::Collector;
 use crate::expression::Expression;

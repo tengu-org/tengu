@@ -2,7 +2,7 @@
 //! functionalities for sending and receiving tensor data between tensors and probes.
 
 use flume::{Receiver, Sender};
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 
 use crate::{Error, Result};
 

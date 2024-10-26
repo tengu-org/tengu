@@ -6,8 +6,8 @@ use std::cell::OnceCell;
 use std::rc::Rc;
 
 use tengu_backend::Backend;
-use tengu_backend_tensor::StorageType;
-use tengu_backend_tensor::Tensor as RawTensor;
+use tengu_tensor::StorageType;
+use tengu_tensor::Tensor as RawTensor;
 
 use crate::channel::Channel;
 use crate::probe::Probe;
@@ -64,6 +64,22 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     /// A string slice representing the tensor's label.
     pub fn label(&self) -> &str {
         self.raw.label()
+    }
+
+    /// Returns the shape of the tensor.
+    ///
+    /// # Returns
+    /// A slice of tensor's dimensions.
+    pub fn shape(&self) -> &[usize] {
+        self.raw.shape()
+    }
+
+    /// Returns the number of elements in the tensor.
+    ///
+    /// # Returns
+    /// The number of elements in this tensor.
+    pub fn count(&self) -> usize {
+        self.raw.count()
     }
 
     /// Reads the tensor data from the source and sends it to associated probes.

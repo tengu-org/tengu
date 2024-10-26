@@ -6,7 +6,7 @@
 
 use itertools::Itertools;
 use std::collections::HashMap;
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 use tengu_wgpu::BufferUsage;
 
 use crate::source::Source;

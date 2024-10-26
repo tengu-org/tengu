@@ -1,9 +1,8 @@
 [package]
-name = "tengu-backend-tensor"
+name = "tengu-tensor"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 bytemuck = { workspace = true }
 anyhow = { workspace = true }
-random-string = "1.1.0"

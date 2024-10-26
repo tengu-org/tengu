@@ -7,7 +7,8 @@
 use std::collections::HashSet;
 use std::rc::Rc;
 
-use tengu_backend_tensor::{IOType, StorageType, Tensor};
+use tengu_tensor::{IOType, StorageType, Tensor};
+use tengu_utils::Label;
 
 use crate::*;
 
@@ -68,14 +69,14 @@ pub trait Backend: Sized {
     /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
     /// - `call`: A callback function that takes the readout as an argument and performs the
     ///   staging operation.
-    fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>));
+    fn readout(&self, label: impl AsRef<str>, call: impl FnOnce(Self::Readout<'_>));
 
     /// Computes the specified function on the backend using the provided callback.
     ///
     /// # Parameters
     /// - `label`: A label for the computation, to be used by backend for debugging purposes.
     /// - `call`: A callback function that takes the compute instance as an argument.
-    fn compute<F>(&self, label: &str, call: F) -> Result<()>
+    fn compute<F>(&self, label: impl AsRef<str>, call: F) -> Result<()>
     where
         F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>;
 
@@ -87,8 +88,7 @@ pub trait Backend: Sized {
     ///
     /// # Returns
     /// A new zero-initialized tensor.
-    fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<String>, shape: impl Into<Vec<usize>>)
-        -> Self::Tensor<T>;
+    fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<Label>, shape: impl Into<Vec<usize>>) -> Self::Tensor<T>;
 
     /// Creates a new tensor with the specified label and data.
     ///
@@ -101,7 +101,7 @@ pub trait Backend: Sized {
     /// A new tensor initialized with the given data.
     fn tensor<T: IOType>(
         self: &Rc<Self>,
-        label: impl Into<String>,
+        label: impl Into<Label>,
         shape: impl Into<Vec<usize>>,
         data: &[T],
     ) -> Self::Tensor<T>;

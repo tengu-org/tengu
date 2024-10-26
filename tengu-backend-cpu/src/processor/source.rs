@@ -3,7 +3,7 @@
 //! tensors as `dyn Any` objects and maintain the type information in enum variants.
 
 use std::any::TypeId;
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 use tengu_utils::Cage;
 
 use crate::tensor::Tensor;

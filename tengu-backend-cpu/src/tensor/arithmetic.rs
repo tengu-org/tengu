@@ -1,6 +1,6 @@
 use std::ops::{Add, Div, Mul, Sub};
 
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 
 use super::Tensor;
 

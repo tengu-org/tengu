@@ -3,7 +3,7 @@
 //! `UnaryFn` variant on the `Expression` struct.
 
 use tengu_backend::{Backend, Processor};
-use tengu_backend_tensor::{Function, StorageType};
+use tengu_graph_tensor::{Function, StorageType};
 
 use super::Expression;
 use crate::collector::Collector;

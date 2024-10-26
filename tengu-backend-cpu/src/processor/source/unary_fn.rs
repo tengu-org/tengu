@@ -1,4 +1,4 @@
-use tengu_backend_tensor::UnaryFn;
+use tengu_tensor::UnaryFn;
 
 use super::Source;
 

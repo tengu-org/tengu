@@ -8,7 +8,8 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Error, Result};
-use tengu_backend_tensor::{IOType, StorageType};
+use tengu_tensor::{IOType, StorageType};
+use tengu_utils::Label;
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 use tracing::trace;
 
@@ -103,15 +104,17 @@ impl tengu_backend::Backend for Backend {
     /// # Parameters
     /// - `label`: A label for compute operations.
     /// - `call`: A function that takes a `Compute` and performs compute operations.
-    fn compute<F>(&self, label: &str, call: F) -> Result<()>
+    fn compute<F>(&self, label: impl AsRef<str>, call: F) -> Result<()>
     where
         F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>,
     {
         trace!("Executing compute step");
         let commands = self
             .device
-            .encoder(label)
-            .pass(label, |pass| call(Compute::new(&self.device, label, pass)))
+            .encoder(label.as_ref())
+            .pass(label.as_ref(), |pass| {
+                call(Compute::new(&self.device, label.as_ref(), pass))
+            })
             .map_err(|e| Error::ComputeError(e.into()))?
             .finish();
         trace!("Submitting compute commands to the queue");
@@ -124,11 +127,11 @@ impl tengu_backend::Backend for Backend {
     /// # Parameters
     /// - `label`: A label for the readout operations.
     /// - `call`: A function that takes a `Readout` value and copies data into staging buffers.
-    fn readout(&self, label: &str, call: impl FnOnce(Self::Readout<'_>)) {
+    fn readout(&self, label: impl AsRef<str>, call: impl FnOnce(Self::Readout<'_>)) {
         trace!("Executing readout step");
         let commands = self
             .device
-            .encoder(label)
+            .encoder(label.as_ref())
             .stage(|encoder| call(Readout::new(encoder)))
             .finish();
         trace!("Submitting readout commands to the queue");
@@ -146,13 +149,16 @@ impl tengu_backend::Backend for Backend {
     /// A new tensor initialized with the provided data.
     fn tensor<T: IOType>(
         self: &Rc<Self>,
-        label: impl Into<String>,
+        label: impl Into<Label>,
         shape: impl Into<Vec<usize>>,
         data: &[T],
     ) -> Self::Tensor<T> {
         let label = label.into();
         trace!("Creating new tensor '{label}'");
-        let buffer = self.device().buffer::<T>(&label, BufferUsage::Read).with_data(data);
+        let buffer = self
+            .device()
+            .buffer::<T>(label.value(), BufferUsage::Read)
+            .with_data(data);
         Tensor::new(self, label, shape, buffer)
     }
 
@@ -164,16 +170,15 @@ impl tengu_backend::Backend for Backend {
     ///
     /// # Returns
     /// A new zero-initialized tensor.
-    fn zero<T: StorageType>(
-        self: &Rc<Self>,
-        label: impl Into<String>,
-        shape: impl Into<Vec<usize>>,
-    ) -> Self::Tensor<T> {
+    fn zero<T: StorageType>(self: &Rc<Self>, label: impl Into<Label>, shape: impl Into<Vec<usize>>) -> Self::Tensor<T> {
         let label = label.into();
         let shape = shape.into();
         let size = shape.iter().product::<usize>().of::<T>();
         trace!("Creating new zero tensor '{label}'");
-        let buffer = self.device().buffer::<T>(&label, BufferUsage::ReadWrite).empty(size);
+        let buffer = self
+            .device()
+            .buffer::<T>(label.value(), BufferUsage::ReadWrite)
+            .empty(size);
         Tensor::new(self, label, shape, buffer)
     }
 }

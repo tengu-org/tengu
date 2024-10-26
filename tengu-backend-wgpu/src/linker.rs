@@ -2,7 +2,7 @@
 //! The `Linker` is responsible for copying data between GPU buffers using the WGPU backend.
 
 use tengu_backend::Linker as RawLinker;
-use tengu_backend_tensor::StorageType;
+use tengu_tensor::StorageType;
 use tengu_wgpu::Encoder;
 
 use crate::source::Source;

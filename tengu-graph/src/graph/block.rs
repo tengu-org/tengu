@@ -12,7 +12,8 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Backend, Compute, Processor, Readout};
-use tengu_backend_tensor::StorageType;
+use tengu_graph_tensor::StorageType;
+use tengu_utils::Label;
 
 use super::computation::Computation;
 use crate::collector::Collector;
@@ -68,7 +69,7 @@ impl<B: Backend + 'static> Block<B> {
     ///
     /// # Returns
     /// A mutable reference to the `Block` instance for chaining with other block calls.
-    pub fn add_computation<T: StorageType>(&mut self, label: impl Into<String>, expr: Expression<T, B>) -> &mut Self {
+    pub fn add_computation<T: StorageType>(&mut self, label: impl Into<Label>, expr: Expression<T, B>) -> &mut Self {
         let output = self.tengu.tensor(expr.shape()).label(label).zero::<T>();
         let computation = Computation::new(output, expr);
         self.computations.push(computation);
