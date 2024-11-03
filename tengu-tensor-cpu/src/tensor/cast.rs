@@ -1,25 +1,17 @@
-use tengu_tensor::StorageType;
+use tengu_tensor::{Cast, StorageType};
 
 use super::Tensor;
 use crate::primitive_cast::PrimitiveCast;
 
-// NOTE: Tensor casting.
+impl<T, S> Cast<S> for Tensor<T>
+where
+    T: StorageType + PrimitiveCast<S>,
+    S: StorageType,
+{
+    type Output = Tensor<S>;
 
-macro_rules! impl_from {
-    ( $type:ty ) => {
-        impl<T: StorageType> From<&Tensor<$type>> for Tensor<T>
-        where
-            $type: PrimitiveCast<T>,
-        {
-            fn from(other: &Tensor<$type>) -> Self {
-                let data: Vec<_> = other.data.borrow().iter().map(|v| (*v).cast()).collect();
-                Self::new("", other.shape.clone(), data)
-            }
-        }
-    };
+    fn cast(&self) -> Self::Output {
+        let data: Vec<S> = self.data.borrow().iter().map(|v| (*v).cast()).collect();
+        Tensor::from_tensor(self, data)
+    }
 }
-
-impl_from!(u32);
-impl_from!(i32);
-impl_from!(f32);
-impl_from!(bool);

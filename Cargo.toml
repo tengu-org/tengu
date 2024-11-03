@@ -1,14 +1,15 @@
 [workspace]
 members = [
-    "tengu-tensor",
     "tengu-backend",
     "tengu-backend-wgpu",
     "tengu-backend-cpu",
     "tengu-graph",
     "tengu-graph-tensor",
-    "tengu-wgpu",
-    "tengu-utils",
+    "tengu-tensor",
     "tengu-tensor-cpu",
+    "tengu-tensor-wgpu",
+    "tengu-utils",
+    "tengu-wgpu",
 ]
 resolver = "2"
 

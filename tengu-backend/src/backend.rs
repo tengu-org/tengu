@@ -4,7 +4,6 @@
 
 #![allow(async_fn_in_trait)]
 
-use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_tensor::{IOType, StorageType, Tensor};
@@ -18,24 +17,19 @@ pub trait Backend: Sized {
     /// The underlying tensor type used by all backend subsystems.
     type Tensor<T: StorageType>: Tensor<T>;
 
-    /// The type of the node processor that will construct computation objects.
-    type Processor<'a>: Processor<'a, Self>
-    where
-        Self: 'a;
-
-    /// The underlying raw compute type.
-    type Compute<'a>: Compute<Self>
-    where
-        Self: 'a;
-
-    /// The underlying linker type.
-    type Linker<'a>: Linker<Self>;
-
-    /// The underlying readout type.
-    type Readout<'a>: Readout<Self>;
-
     /// The underliying limits type.
     type Limits: Limits;
+
+    // NOTE: Operations
+
+    /// The underlying raw compute type.
+    type Compute: Compute<Self>;
+
+    /// The underlying propagate operation type.
+    type Propagate: Propagate<Self>;
+
+    /// The underlying readout type.
+    type Readout: Readout<Self>;
 
     /// Asynchronously creates a new backend instance.
     ///
@@ -49,36 +43,9 @@ pub trait Backend: Sized {
     /// The limits of the backend.
     fn limits(&self) -> Self::Limits;
 
-    /// Creates a processor that will be used to recursively process tensor AST and
-    /// convert them to the representation suitable for backend.
-    ///
-    /// # Returns
-    /// A processor instance for the backend.
-    fn processor<'a>(&self, readouts: &'a HashSet<String>) -> Self::Processor<'a>;
-
-    /// Propagates buffers through links using the provided callback.
-    ///
-    /// # Parameters
-    /// - `call`: A callback function that takes the linker as an argument propagates the
-    ///   information through the link.
-    fn propagate(&self, call: impl FnOnce(Self::Linker<'_>));
-
-    /// Updates staging data by copying graph state into the staging buffers.
-    ///
-    /// # Parameters
-    /// - `label`: A label for the readout operation, to be used by backend for debugging purposes.
-    /// - `call`: A callback function that takes the readout as an argument and performs the
-    ///   staging operation.
-    fn readout(&self, label: impl AsRef<str>, call: impl FnOnce(Self::Readout<'_>));
-
-    /// Computes the specified function on the backend using the provided callback.
-    ///
-    /// # Parameters
-    /// - `label`: A label for the computation, to be used by backend for debugging purposes.
-    /// - `call`: A callback function that takes the compute instance as an argument.
-    fn compute<F>(&self, label: impl AsRef<str>, call: F) -> Result<()>
-    where
-        F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>;
+    fn operation<O: Operation<Self>>(self: &Rc<Self>, label: impl Into<Label>) -> O {
+        O::new(self, label)
+    }
 
     /// Creates a new zero-initialized tensor with the specified label and element count.
     ///

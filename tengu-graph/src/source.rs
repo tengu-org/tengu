@@ -16,7 +16,7 @@ pub trait Source<B: Backend>: AsAny {
     ///
     /// # Returns
     /// The label of the source.
-    fn label(&self) -> &str;
+    fn label(&self) -> Option<&str>;
 
     /// Checks if the source matches another source.
     ///
@@ -52,7 +52,7 @@ impl<T: StorageType, B: Backend + 'static> Source<B> for Tensor<T, B> {
     ///
     /// # Returns
     /// The label of the source.
-    fn label(&self) -> &str {
+    fn label(&self) -> Option<&str> {
         self.label()
     }
 
@@ -78,7 +78,7 @@ impl<T: StorageType, B: Backend + 'static> Source<B> for Tensor<T, B> {
     /// A result indicating the success of the operation.
     fn copy(&self, to: &dyn Source<B>, linker: &mut B::Linker<'_>) -> Result<()> {
         let to = to.downcast_ref::<Self>().ok_or_else(|| Error::TypeMismatch)?;
-        linker.copy_link(self.raw(), to.raw());
+        linker.propagate(self.raw(), to.raw());
         Ok(())
     }
 

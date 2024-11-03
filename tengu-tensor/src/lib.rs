@@ -26,14 +26,14 @@
 //!    - shape: Retrieves the tensor's shape.
 //!    - retrieve: Asynchronously accesses tensor data.
 
-mod cast;
 mod function;
 mod operator;
 mod tensor;
 mod types;
+mod unify;
 
-pub use cast::Type;
-pub use function::{Function, UnaryFn};
-pub use operator::Operator;
-pub use tensor::Tensor;
+pub use function::Function;
+pub use operator::{Operator, Relation};
+pub use tensor::*;
 pub use types::{IOType, StorageType};
+pub use unify::Unify;

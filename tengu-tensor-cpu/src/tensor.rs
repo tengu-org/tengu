@@ -10,6 +10,7 @@ use tengu_utils::Label;
 
 mod arithmetic;
 mod cast;
+mod copy_from;
 mod relational;
 mod unary_fn;
 
@@ -43,22 +44,25 @@ impl<T: StorageType> Tensor<T> {
         }
     }
 
-    /// Creates a new empty `Tensor` with the specified shape and empty data. The tensor will be
-    /// zero-initialized but will have no label.
-    ///
-    /// # Parameters
-    /// - `shape`: The shape of the tensor as a vector of unsigned integers.
-    ///
-    /// # Returns
-    /// A new instance of `Tensor` with zero-initialized data.
-    pub fn empty(shape: impl Into<Vec<usize>>) -> Self {
+    pub fn from_tensor<S: StorageType>(other: &Tensor<S>, data: impl Into<Vec<T>>) -> Self {
+        Self {
+            label: None,
+            count: other.count,
+            shape: other.shape.clone(),
+            data: data.into().into(),
+        }
+    }
+
+    pub fn from_shape(shape: impl Into<Vec<usize>>, data: impl Into<Vec<T>>) -> Self {
         let shape = shape.into();
         let count = shape.iter().product();
+        let data = data.into();
+        assert!(count == data.len(), "data length doesn't match the shape");
         Self {
             label: None,
             count,
             shape,
-            data: vec![Default::default(); count].into(),
+            data: data.into(),
         }
     }
 
@@ -80,14 +84,6 @@ impl<T: StorageType> Tensor<T> {
             shape,
             data: vec![elem; count].into(),
         }
-    }
-
-    /// Copies data from another tensor into this tensor.
-    ///
-    /// # Parameters
-    /// - `other`: The tensor to copy data from.
-    pub fn copy_from(&self, other: &Self) {
-        self.data.borrow_mut().copy_from_slice(&other.data.borrow());
     }
 
     /// Consumes this tensor and returns the inner data buffer.

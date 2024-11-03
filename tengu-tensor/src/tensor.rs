@@ -7,14 +7,26 @@
 
 use std::borrow::Cow;
 
+pub use arithmetic::Arithmetic;
+pub use cast::Cast;
+pub use copy_from::CopyFrom;
+pub use relational::Relational;
+pub use unary_fn::UnaryFn;
+
 use crate::StorageType;
+
+mod arithmetic;
+mod cast;
+mod copy_from;
+mod relational;
+mod unary_fn;
 
 /// A trait for representing tensors in the Tengu backend.
 ///
 /// This trait defines the necessary operations and associated types required for
 /// interacting with tensors in a generic and type-safe manner. Implementors of
 /// this trait must specify the type of probe that can be bound to the tensor.
-pub trait Tensor<T: StorageType> {
+pub trait Tensor<T: StorageType>: Clone {
     /// Returns the label of the tensor.
     ///
     /// # Returns

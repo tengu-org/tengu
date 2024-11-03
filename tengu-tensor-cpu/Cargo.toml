@@ -7,6 +7,3 @@ edition = "2021"
 tengu-tensor = { path = "../tengu-tensor" }
 tengu-utils = { path = "../tengu-utils" }
 anyhow = { workspace = true }
-
-[dev-dependencies]
-pretty_assertions = { workspace = true }

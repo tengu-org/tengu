@@ -6,6 +6,10 @@ pub enum Error {
     RetrieveError(#[source] anyhow::Error),
     #[error("Compute error: {0}")]
     ComputeError(#[source] anyhow::Error),
+    #[error("Readout error: {0}")]
+    ReadoutError(#[source] anyhow::Error),
+    #[error("Propagate error: {0}")]
+    PropagateError(#[source] anyhow::Error),
     #[error("WGPU error: {0}")]
     WGPUError(#[source] anyhow::Error),
     #[error("OS error: {0}")]

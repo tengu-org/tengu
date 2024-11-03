@@ -1,11 +1,11 @@
-use std::fmt::Display;
+use std::{borrow::Borrow, fmt::Display};
 
 use random_string::charsets::ALPHA;
 
 /// The length of the label generated for tensors if no label is provided.
 const LABEL_LENGTH: usize = 6;
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Label {
     label: String,
 }
@@ -30,6 +30,12 @@ impl Default for Label {
 impl Display for Label {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.label)
+    }
+}
+
+impl Borrow<str> for Label {
+    fn borrow(&self) -> &str {
+        &self.label
     }
 }
 

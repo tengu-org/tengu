@@ -1,19 +1,21 @@
-use tengu_tensor::StorageType;
+use tengu_tensor::{Relational, StorageType};
 
 use super::Tensor;
 
-impl<T: StorageType + PartialEq> Tensor<T> {
-    pub fn eq(&self, other: &Self) -> Tensor<bool> {
+impl<T: StorageType + PartialEq> Relational for Tensor<T> {
+    type Output = Tensor<bool>;
+
+    fn eq(&self, other: &Self) -> Self::Output {
         let lhs = self.data.borrow();
         let rhs = other.data.borrow();
         let data: Vec<_> = lhs.iter().zip(rhs.iter()).map(|(lhs, rhs)| *lhs == *rhs).collect();
-        Tensor::new("", self.shape.clone(), data)
+        Tensor::from_tensor(self, data)
     }
 
-    pub fn neq(&self, other: &Self) -> Tensor<bool> {
+    fn neq(&self, other: &Self) -> Self::Output {
         let lhs = self.data.borrow();
         let rhs = other.data.borrow();
         let data: Vec<_> = lhs.iter().zip(rhs.iter()).map(|(lhs, rhs)| *lhs != *rhs).collect();
-        Tensor::new("", self.shape.clone(), data)
+        Tensor::from_tensor(self, data)
     }
 }

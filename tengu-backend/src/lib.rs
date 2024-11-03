@@ -44,17 +44,13 @@
 //!   buffers.
 
 mod backend;
-mod compute;
 mod error;
 mod limits;
-mod linker;
+mod operation;
 mod processor;
-mod readout;
 
 pub use backend::Backend;
-pub use compute::Compute;
 pub use error::{Error, Result};
 pub use limits::Limits;
-pub use linker::Linker;
+pub use operation::{Compute, Operation, Pass, Propagate, Readout};
 pub use processor::Processor;
-pub use readout::Readout;

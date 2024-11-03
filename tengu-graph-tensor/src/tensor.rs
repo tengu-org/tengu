@@ -62,7 +62,7 @@ impl<T: StorageType, B: Backend> Tensor<T, B> {
     ///
     /// # Returns
     /// A string slice representing the tensor's label.
-    pub fn label(&self) -> &str {
+    pub fn label(&self) -> Option<&str> {
         self.raw.label()
     }
 

@@ -4,25 +4,23 @@
 //! executing GPU operations. It provides methods to create tensors, perform compute operations, propagate data, and read out data
 //! from the GPU.
 
-use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Error, Result};
 use tengu_tensor::{IOType, StorageType};
+use tengu_tensor_wgpu::Tensor;
 use tengu_utils::Label;
 use tengu_wgpu::{BufferUsage, ByteSize, Device, WGPU};
 use tracing::trace;
 
-use crate::compute::Compute;
 use crate::limits::Limits;
-use crate::linker::Linker;
-use crate::processor::Processor;
-use crate::readout::Readout;
-use crate::tensor::Tensor;
+use crate::operation::compute::Compute;
+use crate::operation::propagate::Propagate;
+use crate::operation::readout::Readout;
 
 /// The `Backend` struct is responsible for managing the WGPU device and providing methods to create and manipulate GPU resources.
 pub struct Backend {
-    device: Device,
+    device: Rc<Device>,
 }
 
 impl Backend {
@@ -30,7 +28,7 @@ impl Backend {
     ///
     /// # Returns
     /// A reference to the `Device` object.
-    pub(crate) fn device(&self) -> &Device {
+    pub(crate) fn device(&self) -> &Rc<Device> {
         &self.device
     }
 }
@@ -44,7 +42,9 @@ impl Backend {
     /// # Returns
     /// A new instance of `Backend`.
     pub fn from_device(device: Device) -> Rc<Self> {
-        Rc::new(Self { device })
+        Rc::new(Self {
+            device: Rc::new(device),
+        })
     }
 }
 
@@ -52,11 +52,13 @@ impl Backend {
 
 impl tengu_backend::Backend for Backend {
     type Tensor<T: StorageType> = Tensor<T>;
-    type Compute<'a> = Compute<'a>;
-    type Processor<'a> = Processor<'a>;
-    type Linker<'a> = Linker<'a>;
-    type Readout<'a> = Readout<'a>;
     type Limits = Limits;
+
+    // NOTE: Operations
+
+    type Compute = Compute;
+    type Propagate = Propagate;
+    type Readout = Readout;
 
     /// Creates a new `Backend` instance asynchronously.
     ///
@@ -65,7 +67,9 @@ impl tengu_backend::Backend for Backend {
     async fn new() -> Result<Rc<Self>> {
         let device = WGPU::default_context().await.map_err(|e| Error::WGPUError(e.into()))?;
         trace!("Created WGPU instance for backend");
-        Ok(Rc::new(Self { device }))
+        Ok(Rc::new(Self {
+            device: Rc::new(device),
+        }))
     }
 
     /// Returns the limits of the backend.
@@ -74,68 +78,6 @@ impl tengu_backend::Backend for Backend {
     /// The limits of the backend.
     fn limits(&self) -> Self::Limits {
         Limits::new(self)
-    }
-
-    /// Creates a new `Processor` instance.
-    ///
-    /// # Parameters
-    /// - `readouts`: A set of readout labels to be used by the processor.
-    ///
-    /// # Returns
-    /// A new `Processor` instance.
-    fn processor<'a>(&self, readouts: &'a HashSet<String>) -> Self::Processor<'a> {
-        Processor::new(readouts)
-    }
-
-    /// Propagates data using the provided linker function.
-    ///
-    /// # Parameters
-    /// - `call`: A function that takes a `Linker` and performs data propagation.
-    fn propagate(&self, call: impl FnOnce(Self::Linker<'_>)) {
-        let mut encoder = self.device.encoder("linker");
-        trace!("Executing propagation step");
-        call(Linker::new(&mut encoder));
-        trace!("Submitting propagation commands to the queue");
-        self.device.submit(encoder.finish());
-    }
-
-    /// Executes a compute pass using the provided compute function.
-    ///
-    /// # Parameters
-    /// - `label`: A label for compute operations.
-    /// - `call`: A function that takes a `Compute` and performs compute operations.
-    fn compute<F>(&self, label: impl AsRef<str>, call: F) -> Result<()>
-    where
-        F: FnOnce(Self::Compute<'_>) -> anyhow::Result<()>,
-    {
-        trace!("Executing compute step");
-        let commands = self
-            .device
-            .encoder(label.as_ref())
-            .pass(label.as_ref(), |pass| {
-                call(Compute::new(&self.device, label.as_ref(), pass))
-            })
-            .map_err(|e| Error::ComputeError(e.into()))?
-            .finish();
-        trace!("Submitting compute commands to the queue");
-        self.device.submit(commands);
-        Ok(())
-    }
-
-    /// Copies data to staging buffers using the provided staging function.
-    ///
-    /// # Parameters
-    /// - `label`: A label for the readout operations.
-    /// - `call`: A function that takes a `Readout` value and copies data into staging buffers.
-    fn readout(&self, label: impl AsRef<str>, call: impl FnOnce(Self::Readout<'_>)) {
-        trace!("Executing readout step");
-        let commands = self
-            .device
-            .encoder(label.as_ref())
-            .stage(|encoder| call(Readout::new(encoder)))
-            .finish();
-        trace!("Submitting readout commands to the queue");
-        self.device.submit(commands);
     }
 
     /// Creates a new tensor with the provided data.
@@ -159,7 +101,7 @@ impl tengu_backend::Backend for Backend {
             .device()
             .buffer::<T>(label.value(), BufferUsage::Read)
             .with_data(data);
-        Tensor::new(self, label, shape, buffer)
+        Tensor::new(&self.device, label, shape, buffer)
     }
 
     /// Creates a new zero-initialized tensor with the specified shape.
@@ -179,6 +121,6 @@ impl tengu_backend::Backend for Backend {
             .device()
             .buffer::<T>(label.value(), BufferUsage::ReadWrite)
             .empty(size);
-        Tensor::new(self, label, shape, buffer)
+        Tensor::new(&self.device, label, shape, buffer)
     }
 }

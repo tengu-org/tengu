@@ -2049,6 +2049,7 @@ dependencies = [
  "regex",
  "tengu-backend",
  "tengu-tensor",
+ "tengu-tensor-wgpu",
  "tengu-utils",
  "tengu-wgpu",
  "tokio",
@@ -2065,7 +2066,6 @@ dependencies = [
  "async-trait",
  "futures",
  "indoc",
- "itertools",
  "num",
  "pollster",
  "pretty_assertions",
@@ -2099,6 +2099,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytemuck",
+ "itertools",
+ "tengu-utils",
 ]
 
 [[package]]
@@ -2106,9 +2108,22 @@ name = "tengu-tensor-cpu"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "pretty_assertions",
  "tengu-tensor",
  "tengu-utils",
+]
+
+[[package]]
+name = "tengu-tensor-wgpu"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "flume",
+ "tengu-backend",
+ "tengu-tensor",
+ "tengu-utils",
+ "tengu-wgpu",
+ "wgpu",
 ]
 
 [[package]]

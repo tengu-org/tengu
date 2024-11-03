@@ -2,9 +2,16 @@
 //! of tensor expressions in a final tagless style. Implementations of the `Processor` trait are responsible
 //! for transforming or evaluating the AST nodes according to specific backend requirements.
 
-use tengu_tensor::{Function, Operator, StorageType, Type};
+use std::{
+    borrow::Cow,
+    ops::{Add, Div, Mul, Sub},
+};
+
+use tengu_tensor::*;
 
 use crate::Backend;
+
+type Atom<'a, B, T> = Option<Cow<'a, <B as Backend>::Tensor<T>>>;
 
 /// The `Processor` trait defines a set of operations for processing tensor expressions.
 /// Types that implement this trait can produce and accept representations of tensor expressions
@@ -13,8 +20,11 @@ use crate::Backend;
 /// epxression. This means that recursion is handled on the frontend and the job of the processor
 /// is only to produce final representation (hence the final tagless style).
 pub trait Processor<'a, B: Backend> {
-    /// The type of the representation produced and accepted by this processor.
-    type Repr;
+    /// The type of a statement produces by the `statement` method of the processor.
+    type Statement;
+
+    /// The type of a block produced by the `block` method of the processor.
+    type Block;
 
     /// Processes a tensor variable and produces its representation.
     ///
@@ -23,7 +33,7 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Returns
     /// A representation of the tensor variable.
-    fn var<T: StorageType>(&mut self, tensor: &'a B::Tensor<T>) -> Self::Repr;
+    fn var<T: StorageType>(&mut self, tensor: &'a B::Tensor<T>) -> Atom<'a, B, T>;
 
     /// Processes a scalar value and produces its representation.
     ///
@@ -32,7 +42,7 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Returns
     /// A representation of the scalar value.
-    fn scalar<T: StorageType>(&mut self, value: T) -> Self::Repr;
+    fn scalar<T: StorageType>(&mut self, value: T) -> Atom<'a, B, T>;
 
     /// Applies a unary function to a representation and produces a new representation.
     ///
@@ -42,7 +52,18 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Returns
     /// A new representation after applying the unary function.
-    fn unary_fn(&mut self, inner: Self::Repr, function: Function) -> Self::Repr;
+    fn unary_fn<T>(&mut self, inner: Atom<'a, B, T>, function: Function) -> Atom<'a, B, T>
+    where
+        T: StorageType,
+        B::Tensor<T>: UnaryFn,
+    {
+        let inner = inner?;
+        let tensor = match function {
+            Function::Exp => inner.exp(),
+            Function::Log => inner.log(),
+        };
+        Some(Cow::Owned(tensor))
+    }
 
     /// Applies a binary operation to two representations and produces a new representation.
     ///
@@ -53,7 +74,35 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Returns
     /// A new representation after applying the binary operation.
-    fn binary(&mut self, lhs: Self::Repr, rhs: Self::Repr, operator: Operator) -> Self::Repr;
+    fn arithmetic<T>(&mut self, lhs: Atom<'a, B, T>, rhs: Atom<'a, B, T>, operator: Operator) -> Atom<'a, B, T>
+    where
+        T: StorageType,
+        T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T>,
+        B::Tensor<T>: Arithmetic,
+    {
+        let lhs = lhs?;
+        let rhs = rhs?;
+        let tensor = match operator {
+            Operator::Add => lhs.add(&rhs),
+            Operator::Sub => lhs.sub(&rhs),
+            Operator::Mul => lhs.mul(&rhs),
+            Operator::Div => lhs.div(&rhs),
+        };
+        Some(Cow::Owned(tensor))
+    }
+    fn relation<T>(&mut self, lhs: Atom<'a, B, T>, rhs: Atom<'a, B, T>, relation: Relation) -> Atom<'a, B, bool>
+    where
+        T: StorageType + PartialEq,
+        B::Tensor<T>: Relational<Output = B::Tensor<bool>>,
+    {
+        let lhs = lhs?;
+        let rhs = rhs?;
+        let tensor = match relation {
+            Relation::Eq => lhs.eq(&rhs),
+            Relation::Neq => lhs.neq(&rhs),
+        };
+        Some(Cow::Owned(tensor))
+    }
 
     /// Creates a representation of a type cast applyied to a tensor expression.
     ///
@@ -63,7 +112,15 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Returns
     /// A new representation after casting.
-    fn cast(&mut self, inner: Self::Repr, ty: Type) -> Self::Repr;
+    fn cast<S, T>(&mut self, inner: Atom<'a, B, T>) -> Atom<'a, B, S>
+    where
+        T: StorageType,
+        S: StorageType,
+        B::Tensor<T>: Cast<S, Output = B::Tensor<S>>,
+    {
+        let tensor = (*inner?).cast();
+        Some(Cow::Owned(tensor))
+    }
 
     /// Creates a representation of a statement that assigns an expression to an output.
     ///
@@ -73,11 +130,20 @@ pub trait Processor<'a, B: Backend> {
     ///
     /// # Returns
     /// A representation of the statement.
-    fn statement(&mut self, out: Self::Repr, expr: Self::Repr) -> Self::Repr;
+    fn statement<T: StorageType>(&mut self, out: &'a B::Tensor<T>, expr: Atom<'a, B, T>) -> Self::Statement
+    where
+        B::Tensor<T>: CopyFrom;
 
     /// Processes a block of expressions.
     ///
     /// # Parameters
     /// - `exprs`: An iterator over the expressions to be processed.
-    fn block(&mut self, exprs: impl Iterator<Item = Self::Repr>);
+    fn block(&mut self, exprs: impl IntoIterator<Item = Self::Statement>) -> Self::Block;
+
+    /// Processes a link.
+    ///
+    /// # Parameters
+    /// - `from`: A reference to the source tensor.
+    /// - `to`: A reference to the destination tensor.
+    fn link<T: StorageType>(&mut self, from: &'a B::Tensor<T>, to: &'a B::Tensor<T>);
 }

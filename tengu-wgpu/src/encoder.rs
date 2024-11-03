@@ -77,10 +77,13 @@ impl Encoder {
     ///
     /// # Returns
     /// The updated `Encoder` instance.
-    pub fn stage(mut self, call: impl FnOnce(&mut Encoder)) -> Self {
+    pub fn stage<F>(mut self, call: F) -> Result<Self>
+    where
+        F: FnOnce(&mut Encoder) -> anyhow::Result<()>,
+    {
         trace!("Executing readout");
-        call(&mut self);
-        self
+        call(&mut self).map_err(Error::ReadoutError)?;
+        Ok(self)
     }
 
     /// Copies the contents of one buffer to another.

@@ -1,0 +1,14 @@
+[package]
+name = "tengu-tensor-wgpu"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tengu-tensor = { path = "../tengu-tensor" }
+tengu-utils = { path = "../tengu-utils" }
+tengu-wgpu = { path = "../tengu-wgpu" }
+tengu-backend = { path = "../tengu-backend" }
+anyhow = { workspace = true }
+flume = { workspace = true }
+wgpu = { workspace = true }
+bytemuck = { workspace = true }

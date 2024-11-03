@@ -2,6 +2,8 @@
 //! a buffer, a label, and a methods to readout and retrieve and  data from the GPU. It is needed to treat tensor in
 //! uniform fashion, irrespecitve of their underlying storage type.
 
+use tengu_tensor::StorageType;
+use tengu_tensor_wgpu::Tensor;
 use tengu_wgpu::{Buffer, Encoder};
 
 /// The `Source` trait represents a "type-less" tensor. It is implemented only by tensor and used
@@ -24,13 +26,18 @@ pub trait Source {
     /// # Parameters
     /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operation.
     fn readout(&self, encoder: &mut Encoder);
+}
 
-    /// Propagates tensor data to the target tensor.
-    ///
-    /// # Parameters
-    /// - `target`: A reference to the target tensor to which data will be propagated.
-    /// - `encoder`: A mutable reference to an `Encoder` object used for the readout operation.
-    fn propagate(&self, target: &dyn Source, encoder: &mut Encoder) {
-        encoder.copy_buffer(self.buffer(), target.buffer());
+impl<T: StorageType> Source for Tensor<T> {
+    fn label(&self) -> Option<&str> {
+        <Self as tengu_tensor::Tensor<T>>::label(self)
+    }
+
+    fn buffer(&self) -> &Buffer {
+        self.buffer()
+    }
+
+    fn readout(&self, encoder: &mut Encoder) {
+        self.readout(encoder)
     }
 }

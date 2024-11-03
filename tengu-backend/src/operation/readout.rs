@@ -4,7 +4,12 @@
 //! operation is a staging buffer which stores the results on the backend side until it is
 //! sent to the respective probe.
 
-use crate::Backend;
+use std::collections::HashSet;
+
+use tengu_utils::Label;
+
+use crate::operation::Operation;
+use crate::{Backend, Processor};
 
 /// A trait for handling readout operations in the Tengu backend.
 ///
@@ -12,11 +17,10 @@ use crate::Backend;
 /// extracting results from computations performed on the backend. Implementors of
 /// this trait must specify the type of backend used and provide a method for running
 /// the readout process.
-pub trait Readout<B: Backend> {
-    /// Runs the readout process using the specified processor to provider information about tensors.
-    ///
-    /// # Parameters
-    /// - `processor`: A reference to the processor used for finding tensors and performing
-    ///   the staging operation on them.
-    fn run(&mut self, processor: &B::Processor<'_>);
+pub trait Readout<B: Backend>: Operation<B> {
+    type Processor<'a>: Processor<'a, B>
+    where
+        Self: 'a;
+
+    fn processor<'a>(&self, readouts: &'a HashSet<Label>) -> Self::Processor<'a>;
 }

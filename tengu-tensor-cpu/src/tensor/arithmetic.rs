@@ -1,65 +1,58 @@
 use std::ops::{Add, Div, Mul, Sub};
 
-use tengu_tensor::StorageType;
+use tengu_tensor::{Arithmetic, StorageType, Unify};
 
 use super::Tensor;
 
-impl<T: StorageType + Add<Output = T>> Add for &Tensor<T> {
-    type Output = Tensor<T>;
-
-    fn add(self, rhs: Self) -> Self::Output {
+impl<T: StorageType> Arithmetic for Tensor<T>
+where
+    T: Add<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T>,
+{
+    fn add(&self, other: &Self) -> Self {
+        let shape = self.shape.unify(&other.shape).expect("Shape mismatch");
         let data: Vec<T> = self
             .data
             .borrow()
             .iter()
-            .zip(rhs.data.borrow().iter())
+            .zip(other.data.borrow().iter())
             .map(|(a, b)| *a + *b)
             .collect();
-        Tensor::new("", self.shape.clone(), data)
+        Tensor::from_shape(shape, data)
     }
-}
 
-impl<T: StorageType + Sub<Output = T>> Sub for &Tensor<T> {
-    type Output = Tensor<T>;
-
-    fn sub(self, rhs: Self) -> Self::Output {
+    fn sub(&self, other: &Self) -> Self {
+        let shape = self.shape.unify(&other.shape).expect("Shape mismatch");
         let data: Vec<T> = self
             .data
             .borrow()
             .iter()
-            .zip(rhs.data.borrow().iter())
+            .zip(other.data.borrow().iter())
             .map(|(a, b)| *a - *b)
             .collect();
-        Tensor::new("", self.shape.clone(), data)
+        Tensor::from_shape(shape, data)
     }
-}
 
-impl<T: StorageType + Mul<Output = T>> Mul for &Tensor<T> {
-    type Output = Tensor<T>;
-
-    fn mul(self, rhs: Self) -> Self::Output {
+    fn mul(&self, other: &Self) -> Self {
+        let shape = self.shape.unify(&other.shape).expect("Shape mismatch");
         let data: Vec<T> = self
             .data
             .borrow()
             .iter()
-            .zip(rhs.data.borrow().iter())
+            .zip(other.data.borrow().iter())
             .map(|(a, b)| *a * *b)
             .collect();
-        Tensor::new("", self.shape.clone(), data)
+        Tensor::from_shape(shape, data)
     }
-}
 
-impl<T: StorageType + Div<Output = T>> Div for &Tensor<T> {
-    type Output = Tensor<T>;
-
-    fn div(self, rhs: Self) -> Self::Output {
+    fn div(&self, other: &Self) -> Self {
+        let shape = self.shape.unify(&other.shape).expect("Shape mismatch");
         let data: Vec<T> = self
             .data
             .borrow()
             .iter()
-            .zip(rhs.data.borrow().iter())
+            .zip(other.data.borrow().iter())
             .map(|(a, b)| *a / *b)
             .collect();
-        Tensor::new("", self.shape.clone(), data)
+        Tensor::from_shape(shape, data)
     }
 }

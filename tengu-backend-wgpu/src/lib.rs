@@ -22,12 +22,9 @@
 //! - `tensor`: Defines the `Tensor` struct, which represents a tensor stored on the GPU and provides methods for tensor operations.
 
 mod backend;
-mod compute;
 mod limits;
-mod linker;
+mod operation;
 mod processor;
-mod readout;
 mod source;
-mod tensor;
 
 pub use backend::Backend;

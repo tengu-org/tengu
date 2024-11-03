@@ -11,6 +11,10 @@ pub enum Operator {
     Mul,
     /// Division operator.
     Div,
+}
+
+#[derive(Clone, Copy)]
+pub enum Relation {
     /// Equality operator.
     Eq,
     /// Inequality operator.
