@@ -6,12 +6,9 @@
 //! tensor as a result.
 
 use tengu_backend::{Backend, Processor};
-use tengu_graph_tensor::StorageType;
+use tengu_graph_tensor::{Expression, StorageType};
 
 use crate::collector::Collector;
-use crate::expression::Expression;
-use crate::node::Node;
-use crate::shape::Shape;
 use crate::source::Source;
 
 /// A struct representing a computation in the Tengu framework.

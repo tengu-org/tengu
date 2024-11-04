@@ -14,7 +14,6 @@ pub struct Executor<'a, B: Backend> {
     backend: &'a B,
     blocks: Vec<&'a Block<B>>,
     links: Vec<RealizedLink<'a, B>>,
-    compute
 }
 
 impl<'a, B: Backend + 'static> Executor<'a, B> {

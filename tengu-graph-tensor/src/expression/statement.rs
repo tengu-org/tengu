@@ -2,22 +2,23 @@
 //! tensor statements within expressions. It ensures that tensor shapes match and provides
 //! methods for processing and visiting tensor expressions.
 
-use tengu_backend::{Backend, Processor};
-use tengu_graph_tensor::StorageType;
+use tengu_backend::Backend;
+use tengu_tensor::StorageType;
 
 use super::Expression;
-use crate::collector::Collector;
 use crate::node::Node;
-use crate::shape::Shape;
-use crate::source::Source;
 
 /// Struct representing a tensor statement, containing an output tensor and an expression tensor.
-pub struct Statement<B: Backend> {
-    output: Box<dyn Node<B>>,
-    expression: Box<dyn Node<B>>,
+pub struct Statement<T, B> {
+    output: Box<dyn Node<T, B>>,
+    expression: Box<dyn Node<T, B>>,
 }
 
-impl<B: Backend + 'static> Statement<B> {
+impl<T, B> Statement<T, B>
+where
+    B: Backend + 'static,
+    T: StorageType,
+{
     /// Creates a new `Statement` instance.
     ///
     /// # Parameters
@@ -29,7 +30,10 @@ impl<B: Backend + 'static> Statement<B> {
     ///
     /// # Panics
     /// Panics if the shapes of `output` and `expression` do not match.
-    pub fn new<T: StorageType>(output: Expression<T, B>, expression: Expression<T, B>) -> Self {
+    pub fn new<S1: StorageType, S2: StorageType>(
+        output: Expression<T, S1, B>,
+        expression: Expression<T, S2, B>,
+    ) -> Self {
         assert_eq!(expression.shape(), output.shape(), "statement shapes don't match");
         Self {
             output: Box::new(output),
@@ -38,9 +42,13 @@ impl<B: Backend + 'static> Statement<B> {
     }
 }
 
-// NOTE: Shape implementation.
+// NOTE: Node implementation.
 
-impl<B: Backend> Shape for Statement<B> {
+impl<T, B> Node<T, B> for Statement<T, B>
+where
+    B: Backend + 'static,
+    T: StorageType,
+{
     /// Returns the number of elements in the output tensor.
     ///
     /// # Returns
@@ -56,56 +64,23 @@ impl<B: Backend> Shape for Statement<B> {
     fn shape(&self) -> &[usize] {
         self.output.shape()
     }
-}
 
-// NOTE: Node implementation.
-
-impl<B: Backend + 'static> Node<B> for Statement<B> {
     /// Returns a boxed clone of the `Statement` instance.
     ///
     /// # Returns
     /// A boxed clone of the `Statement` instance.
-    fn clone_box(&self) -> Box<dyn Node<B>> {
+    fn clone_box(&self) -> Box<dyn Node<T, B>> {
         Box::new(self.clone())
-    }
-
-    /// Collect sources from the statement.
-    ///
-    /// # Parameters
-    /// - `collector`: A mutable reference to the collector.
-    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
-        self.expression.collect(collector);
-        self.output.collect(collector);
-    }
-
-    /// Finds a source node by its label in the output or expression tensors.
-    ///
-    /// # Parameters
-    /// - `label`: The label of the source node to find.
-    ///
-    /// # Returns
-    /// An optional reference to the found source node.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>> {
-        self.output.find(label).or_else(|| self.expression.find(label))
-    }
-
-    /// Visits the node with the given processor and processes the tensor statement.
-    ///
-    /// # Parameters
-    /// - `processor`: The processor used to visit the node.
-    ///
-    /// # Returns
-    /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
-        let output = self.output.visit(processor);
-        let expression = self.expression.visit(processor);
-        processor.statement(output, expression)
     }
 }
 
 // NOTE: Clone implementation.
 
-impl<B: Backend> Clone for Statement<B> {
+impl<T, B> Clone for Statement<T, B>
+where
+    B: Backend + 'static,
+    T: StorageType,
+{
     /// Creates a clone of the `Statement` instance.
     ///
     /// # Returns

@@ -53,4 +53,4 @@ pub use backend::Backend;
 pub use error::{Error, Result};
 pub use limits::Limits;
 pub use operation::{Compute, Operation, Pass, Propagate, Readout};
-pub use processor::Processor;
+pub use processor::{Atom, Processor};

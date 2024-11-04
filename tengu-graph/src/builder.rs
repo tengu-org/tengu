@@ -16,9 +16,8 @@ use std::rc::Rc;
 
 use num::Float;
 use tengu_backend::Backend;
-use tengu_graph_tensor::IOType;
+use tengu_graph_tensor::{Expression, IOType};
 
-use crate::expression::Expression;
 use crate::{Error, Result, StorageType};
 
 /// A struct for building tensors with specified shapes and initializations.

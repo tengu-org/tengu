@@ -6,12 +6,10 @@
 
 use std::rc::Rc;
 use tengu_backend::Backend;
-use tengu_graph_tensor::IOType;
+use tengu_graph_tensor::{Expression, IOType};
 
 use crate::builder::Builder;
-use crate::expression::Expression;
 use crate::graph::Graph;
-use crate::shape::Shape;
 use crate::Result;
 use crate::{CPU, WGPU};
 
@@ -58,7 +56,7 @@ impl<B: Backend + 'static> Tengu<B> {
     ///
     /// # Returns
     /// A `Builder` instance for creating the tensor.
-    pub fn like<T: IOType>(self: &Rc<Self>, expr: &Expression<T, B>) -> Builder<B> {
+    pub fn like<T: IOType>(self: &Rc<Self>, expr: &Expression<T, T, B>) -> Builder<B> {
         Builder::new(&self.backend, expr.shape())
     }
 
@@ -69,7 +67,7 @@ impl<B: Backend + 'static> Tengu<B> {
     ///
     /// # Returns
     /// An `Expression` representing the scalar.
-    pub fn scalar<T: IOType>(self: &Rc<Self>, scalar: T) -> Expression<T, B> {
+    pub fn scalar<T: IOType>(self: &Rc<Self>, scalar: T) -> Expression<T, T, B> {
         Expression::Scalar(scalar)
     }
 
@@ -104,7 +102,6 @@ impl Tengu<CPU> {
 
 #[cfg(test)]
 mod tests {
-    use crate::shape::Shape;
     use crate::Tengu;
     use pretty_assertions::assert_eq;
 

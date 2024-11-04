@@ -11,7 +11,7 @@ use tengu_tensor::*;
 
 use crate::Backend;
 
-type Atom<'a, B, T> = Option<Cow<'a, <B as Backend>::Tensor<T>>>;
+pub type Atom<'a, B, T> = Option<Cow<'a, <B as Backend>::Tensor<T>>>;
 
 /// The `Processor` trait defines a set of operations for processing tensor expressions.
 /// Types that implement this trait can produce and accept representations of tensor expressions

@@ -5,23 +5,22 @@
 //! unary functions, and statements. It provides a comprehensive interface for constructing
 //! and processing these expressions.
 
-use tengu_backend::{Backend, Processor};
-use tengu_graph_tensor::StorageType;
-use tengu_graph_tensor::Tensor;
+use tengu_backend::Backend;
+use tengu_tensor::StorageType;
 
+use crate::node::Node;
+use crate::Tensor;
+
+use arithmetic::Arithmetic;
 use cast::Cast;
-use ops::Binary;
+use relational::Relational;
 use statement::Statement;
 use unary_fn::UnaryFn;
 
-use crate::collector::Collector;
-use crate::node::Node;
-use crate::shape::Shape;
-use crate::source::Source;
-
-mod binary;
+mod arithmetic;
 mod cast;
 mod ops;
+mod relational;
 mod statement;
 mod unary_fn;
 
@@ -31,22 +30,25 @@ mod unary_fn;
 ///
 /// The `Expression` enum can represent scalar values, tensors, binary operations, casts,
 /// unary functions, and statements.
-pub enum Expression<T: StorageType, B: Backend + 'static>
+pub enum Expression<T, S, B>
 where
     T: StorageType,
+    S: StorageType,
     B: Backend + 'static,
 {
     Scalar(T),
     Tensor(Tensor<T, B>),
-    Binary(Binary<B>),
-    Cast(Cast<T, B>),
-    UnaryFn(UnaryFn<B>),
-    Statement(Statement<B>),
+    Arithmetic(Arithmetic<T, B>),
+    Relational(Relational<S, B>),
+    Cast(Cast<T, S, B>),
+    UnaryFn(UnaryFn<T, B>),
+    Statement(Statement<T, B>),
 }
 
-impl<T, B> Expression<T, B>
+impl<T, S, B> Expression<T, S, B>
 where
     T: StorageType,
+    S: StorageType,
     B: Backend + 'static,
 {
     /// Returns the label of the expression if it is a tensor.
@@ -55,7 +57,7 @@ where
     /// An optional reference to the label string if the epxression is a tensor, None otherwise.
     pub fn label(&self) -> Option<&str> {
         match self {
-            Self::Tensor(tensor) => Some(tensor.label()),
+            Self::Tensor(tensor) => tensor.label(),
             _ => None,
         }
     }
@@ -67,7 +69,7 @@ where
     ///
     /// # Returns
     /// A new cast expression with the target storage type.
-    pub fn cast<S: StorageType>(self) -> Expression<S, B> {
+    pub fn cast<U: StorageType>(self) -> Expression<U, T, B> {
         Expression::Cast(Cast::new(self))
     }
 
@@ -75,7 +77,7 @@ where
     ///
     /// # Returns
     /// A new expression representing the logarithm of the original expression.
-    pub fn log(self) -> Expression<T, B> {
+    pub fn log(self) -> Expression<T, S, B> {
         Self::UnaryFn(UnaryFn::log(self))
     }
 
@@ -83,7 +85,7 @@ where
     ///
     /// # Returns
     /// A new expression representing the exponential of the original expression.
-    pub fn exp(self) -> Expression<T, B> {
+    pub fn exp(self) -> Expression<T, S, B> {
         Self::UnaryFn(UnaryFn::exp(self))
     }
 
@@ -95,16 +97,17 @@ where
     ///
     /// # Returns
     /// A new statement expression.
-    pub fn statement(expr: Expression<T, B>, output: Expression<T, B>) -> Self {
+    pub fn statement(expr: Expression<T, S, B>, output: Expression<T, S, B>) -> Self {
         Self::Statement(Statement::new(expr, output))
     }
 }
 
-// NOTE: Shape implementation.
+// NOTE: Node implementation.
 
-impl<T, B> Shape for Expression<T, B>
+impl<T, S, B> Node<T, B> for Expression<T, S, B>
 where
     T: StorageType,
+    S: StorageType,
     B: Backend + 'static,
 {
     /// Returns the shape of the expression.
@@ -115,7 +118,8 @@ where
         match self {
             Self::Scalar(_) => &[1],
             Self::Tensor(tensor) => tensor.shape(),
-            Self::Binary(binary) => binary.shape(),
+            Self::Arithmetic(arithmetic) => arithmetic.shape(),
+            Self::Relational(relational) => relational.shape(),
             Self::Cast(cast) => cast.shape(),
             Self::UnaryFn(unary_fn) => unary_fn.shape(),
             Self::Statement(statement) => statement.shape(),
@@ -129,84 +133,31 @@ where
         match self {
             Self::Scalar(_) => 1,
             Self::Tensor(tensor) => tensor.count(),
-            Self::Binary(binary) => binary.count(),
+            Self::Arithmetic(arithmetic) => arithmetic.count(),
+            Self::Relational(relational) => relational.count(),
             Self::Cast(cast) => cast.count(),
             Self::UnaryFn(unary_fn) => unary_fn.count(),
             Self::Statement(statement) => statement.count(),
         }
     }
-}
 
-// NOTE: Node implementation.
-
-impl<T, B> Node<B> for Expression<T, B>
-where
-    T: StorageType,
-    B: Backend + 'static,
-{
     /// Clones the expression into a boxed trait object.
     ///
     /// # Returns
     /// A boxed trait object containing the cloned expression.
-    fn clone_box(&self) -> Box<dyn Node<B>> {
+    fn clone_box(&self) -> Box<dyn Node<T, B>> {
         Box::new(self.clone())
-    }
-
-    /// Collect sources from the expression tree.
-    ///
-    /// # Parameters
-    /// - `collector`: A mutable reference to the collector.
-    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
-        match self {
-            Self::Scalar(_) => {}
-            Self::Tensor(tensor) => collector.add(tensor),
-            Self::Binary(binary) => binary.collect(collector),
-            Self::Cast(cast) => cast.collect(collector),
-            Self::UnaryFn(unary_fn) => unary_fn.collect(collector),
-            Self::Statement(statement) => statement.collect(collector),
-        }
-    }
-
-    /// Finds a source within the expression by its label.
-    ///
-    /// # Parameters
-    /// - `label`: The label of the source to find.
-    ///
-    /// # Returns
-    /// An optional reference to the source.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>> {
-        match self {
-            Self::Scalar(_) => None,
-            Self::Tensor(tensor) => (tensor.label() == label).then_some(tensor),
-            Self::Binary(binary) => binary.find(label),
-            Self::Cast(cast) => cast.find(label),
-            Self::UnaryFn(unary_fn) => unary_fn.find(label),
-            Self::Statement(statement) => statement.find(label),
-        }
-    }
-
-    /// Visits the expression with a processor.
-    ///
-    /// # Parameters
-    /// - `processor`: A mutable reference to the processor.
-    ///
-    /// # Returns
-    /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<'a, B>>::Repr {
-        match self {
-            Self::Scalar(scalar) => processor.scalar(*scalar),
-            Self::Tensor(tensor) => processor.var(tensor.raw()),
-            Self::Binary(binary) => binary.visit(processor),
-            Self::Cast(cast) => cast.visit(processor),
-            Self::UnaryFn(unary_fn) => unary_fn.visit(processor),
-            Self::Statement(statement) => statement.visit(processor),
-        }
     }
 }
 
 // NOTE: Clone implementation.
 
-impl<T: StorageType, B: Backend> Clone for Expression<T, B> {
+impl<T, S, B> Clone for Expression<T, S, B>
+where
+    T: StorageType,
+    S: StorageType,
+    B: Backend,
+{
     /// Clones the expression.
     ///
     /// # Returns
@@ -215,7 +166,8 @@ impl<T: StorageType, B: Backend> Clone for Expression<T, B> {
         match self {
             Self::Scalar(scalar) => Self::Scalar(*scalar),
             Self::Tensor(tensor) => Self::Tensor(tensor.clone()),
-            Self::Binary(binary) => Self::Binary(binary.clone()),
+            Self::Arithmetic(arithmetic) => Self::Arithmetic(arithmetic.clone()),
+            Self::Relational(relational) => Self::Relational(relational.clone()),
             Self::Cast(cast) => Self::Cast(cast.clone()),
             Self::UnaryFn(unary_fn) => Self::UnaryFn(unary_fn.clone()),
             Self::Statement(statement) => Self::Statement(statement.clone()),

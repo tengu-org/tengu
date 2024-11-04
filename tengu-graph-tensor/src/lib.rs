@@ -19,11 +19,13 @@
 
 mod channel;
 mod error;
+mod expression;
+mod node;
 mod probe;
 mod tensor;
 
 pub use error::{Error, Result};
+pub use expression::Expression;
 pub use probe::Probe;
 pub use tengu_tensor::{IOType, StorageType};
 pub use tensor::Tensor;
-

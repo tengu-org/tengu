@@ -12,13 +12,11 @@ use std::collections::HashSet;
 use std::rc::Rc;
 
 use tengu_backend::{Backend, Compute, Processor, Readout};
-use tengu_graph_tensor::StorageType;
+use tengu_graph_tensor::{Expression, StorageType};
 use tengu_utils::Label;
 
 use super::computation::Computation;
 use crate::collector::Collector;
-use crate::expression::Expression;
-use crate::shape::Shape;
 use crate::source::Source;
 use crate::{Error, Result, Tengu};
 

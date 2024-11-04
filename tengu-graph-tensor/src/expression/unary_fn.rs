@@ -2,24 +2,25 @@
 //! such as logarithm and exponentiation in tensor expressions. This is a helper struct for storing
 //! `UnaryFn` variant on the `Expression` struct.
 
-use tengu_backend::{Backend, Processor};
-use tengu_graph_tensor::{Function, StorageType};
+use tengu_backend::Backend;
+use tengu_tensor::{Function, StorageType};
 
 use super::Expression;
-use crate::collector::Collector;
 use crate::node::Node;
-use crate::shape::Shape;
-use crate::source::Source;
 
 // NOTE: UnaryFn
 
 /// Struct representing a unary function applied to a tensor expression.
-pub struct UnaryFn<B> {
+pub struct UnaryFn<T, B> {
     function: Function,
-    expression: Box<dyn Node<B>>,
+    expression: Box<dyn Node<T, B>>,
 }
 
-impl<B: Backend + 'static> UnaryFn<B> {
+impl<T, B> UnaryFn<T, B>
+where
+    B: Backend + 'static,
+    T: StorageType,
+{
     /// Creates a new `UnaryFn` instance.
     ///
     /// # Parameters
@@ -28,7 +29,7 @@ impl<B: Backend + 'static> UnaryFn<B> {
     ///
     /// # Returns
     /// A new `UnaryFn` instance.
-    pub fn new<T: StorageType>(function: Function, expr: Expression<T, B>) -> Self {
+    pub fn new<S: StorageType>(function: Function, expr: Expression<T, S, B>) -> Self {
         Self {
             function,
             expression: Box::new(expr),
@@ -42,7 +43,7 @@ impl<B: Backend + 'static> UnaryFn<B> {
     ///
     /// # Returns
     /// A new `UnaryFn` instance with the exponentiation function.
-    pub fn exp<T: StorageType>(expr: Expression<T, B>) -> Self {
+    pub fn exp<S: StorageType>(expr: Expression<T, S, B>) -> Self {
         Self::new(Function::Exp, expr)
     }
 
@@ -53,14 +54,18 @@ impl<B: Backend + 'static> UnaryFn<B> {
     ///
     /// # Returns
     /// A new `UnaryFn` instance with the logarithm function.
-    pub fn log<T: StorageType>(expr: Expression<T, B>) -> Self {
+    pub fn log<S: StorageType>(expr: Expression<T, S, B>) -> Self {
         Self::new(Function::Log, expr)
     }
 }
 
-// NOTE: Trait implementations.
+// NOTE: Node implementation.
 
-impl<B> Shape for UnaryFn<B> {
+impl<T, B> Node<T, B> for UnaryFn<T, B>
+where
+    B: Backend + 'static,
+    T: StorageType,
+{
     /// Returns the number of elements in the tensor.
     ///
     /// # Returns
@@ -76,52 +81,23 @@ impl<B> Shape for UnaryFn<B> {
     fn shape(&self) -> &[usize] {
         self.expression.shape()
     }
-}
 
-impl<B: Backend + 'static> Node<B> for UnaryFn<B> {
     /// Returns a boxed clone of the `UnaryFn` instance.
     ///
     /// # Returns
     /// A boxed clone of the `UnaryFn` instance.
-    fn clone_box(&self) -> Box<dyn Node<B>> {
+    fn clone_box(&self) -> Box<dyn Node<T, B>> {
         Box::new(self.clone())
-    }
-
-    /// Collect sources from the unary operation.
-    ///
-    /// # Parameters
-    /// - `collector`: A mutable reference to the collector.
-    fn collect<'a>(&'a self, collector: &mut Collector<'a, B>) {
-        self.expression.collect(collector);
-    }
-
-    /// Finds a source node by its label.
-    ///
-    /// # Parameters
-    /// - `label`: The label of the source node to find.
-    ///
-    /// # Returns
-    /// An optional reference to the found source node.
-    fn find<'a>(&'a self, label: &str) -> Option<&'a dyn Source<B>> {
-        self.expression.find(label)
-    }
-
-    /// Visits the node with the given processor and applies the unary function.
-    ///
-    /// # Parameters
-    /// - `processor`: The processor used to visit the node.
-    ///
-    /// # Returns
-    /// The inner representation used by the processor.
-    fn visit<'a>(&'a self, processor: &mut B::Processor<'a>) -> <B::Processor<'a> as Processor<B>>::Repr {
-        let expr = self.expression.visit(processor);
-        processor.unary_fn(expr, self.function)
     }
 }
 
 // NOTE: Clone implementation.
 
-impl<B: Backend> Clone for UnaryFn<B> {
+impl<T, B> Clone for UnaryFn<T, B>
+where
+    B: Backend + 'static,
+    T: StorageType,
+{
     /// Creates a clone of the `UnaryFn` instance.
     ///
     /// # Returns

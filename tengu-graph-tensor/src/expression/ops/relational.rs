@@ -2,13 +2,14 @@
 //! It leverages the backend processing capabilities to apply these operations on tensor data.
 
 use tengu_backend::Backend;
-use tengu_graph_tensor::StorageType;
+use tengu_tensor::StorageType;
 
-use super::{Binary, Expression};
+use super::super::{Expression, Relational};
 
-impl<T, B> Expression<T, B>
+impl<T, S, B> Expression<T, S, B>
 where
     T: StorageType,
+    S: StorageType,
     B: Backend + 'static,
 {
     /// Compares two tensor expressions for equality.
@@ -18,7 +19,7 @@ where
     ///
     /// # Returns
     /// An `Expression` of type `bool` indicating the result of the equality comparison.
-    pub fn eq(self, rhs: Self) -> Expression<bool, B> {
-        Binary::eq(self, rhs)
+    pub fn eq<U: StorageType>(self, rhs: Expression<T, U, B>) -> Expression<bool, T, B> {
+        Relational::eq(self, rhs)
     }
 }
